@@ -1,0 +1,328 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────
+ * FuelVoice Design System
+ * 
+ * Color palette: Deep navy/slate + amber/orange fuel accents
+ * Inspired by: Stripe, Linear, Vercel, Apple
+ * ───────────────────────────────────────────── */
+
+@theme inline {
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Brand Colors — Fuel/Energy themed */
+  --color-brand-50: #FFF7ED;
+  --color-brand-100: #FFEDD5;
+  --color-brand-200: #FED7AA;
+  --color-brand-300: #FDBA74;
+  --color-brand-400: #FB923C;
+  --color-brand-500: #F97316;
+  --color-brand-600: #EA580C;
+  --color-brand-700: #C2410C;
+  --color-brand-800: #9A3412;
+  --color-brand-900: #7C2D12;
+
+  /* Accent — Amber for warmth */
+  --color-accent-400: #FBBF24;
+  --color-accent-500: #F59E0B;
+  --color-accent-600: #D97706;
+
+  /* Success — Emerald */
+  --color-success-400: #34D399;
+  --color-success-500: #10B981;
+  --color-success-600: #059669;
+
+  /* Danger — Rose */
+  --color-danger-400: #FB7185;
+  --color-danger-500: #F43F5E;
+  --color-danger-600: #E11D48;
+
+  /* Warning — Amber */
+  --color-warning-400: #FBBF24;
+  --color-warning-500: #F59E0B;
+  --color-warning-600: #D97706;
+
+  /* Surfaces — Dark mode focused */
+  --color-surface-950: #030712;
+  --color-surface-900: #0C1222;
+  --color-surface-800: #111827;
+  --color-surface-700: #1E293B;
+  --color-surface-600: #334155;
+  --color-surface-500: #475569;
+  --color-surface-400: #64748B;
+  --color-surface-300: #94A3B8;
+  --color-surface-200: #CBD5E1;
+  --color-surface-100: #E2E8F0;
+  --color-surface-50: #F1F5F9;
+  --color-surface-0: #FFFFFF;
+}
+
+/* ─────────────────────────────────────────────
+ * CSS Variables for dynamic theming
+ * ───────────────────────────────────────────── */
+
+:root {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F8FAFC;
+  --bg-tertiary: #F1F5F9;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F8FAFC;
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --bg-glass-strong: rgba(255, 255, 255, 0.85);
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #94A3B8;
+  --text-inverse: #FFFFFF;
+
+  --border-primary: #E2E8F0;
+  --border-secondary: #F1F5F9;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 20px rgba(249, 115, 22, 0.15);
+}
+
+.dark {
+  --bg-primary: #030712;
+  --bg-secondary: #0C1222;
+  --bg-tertiary: #111827;
+  --bg-card: #111827;
+  --bg-card-hover: #1E293B;
+  --bg-glass: rgba(17, 24, 39, 0.75);
+  --bg-glass-strong: rgba(17, 24, 39, 0.9);
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --text-inverse: #0F172A;
+
+  --border-primary: #1E293B;
+  --border-secondary: #111827;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 30px rgba(249, 115, 22, 0.2);
+}
+
+/* ─────────────────────────────────────────────
+ * Base Styles
+ * ───────────────────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+}
+
+/* ─────────────────────────────────────────────
+ * Glassmorphism Utilities
+ * ───────────────────────────────────────────── */
+
+.glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-primary);
+}
+
+.glass-strong {
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-primary);
+}
+
+/* ─────────────────────────────────────────────
+ * Card Styles
+ * ───────────────────────────────────────────── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-primary);
+}
+
+.card-glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+}
+
+/* ─────────────────────────────────────────────
+ * Gradient Mesh Background (Hero)
+ * ───────────────────────────────────────────── */
+
+.gradient-mesh {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(249, 115, 22, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(234, 88, 12, 0.06) 0%, transparent 50%);
+}
+
+.dark .gradient-mesh {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(249, 115, 22, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(234, 88, 12, 0.04) 0%, transparent 50%);
+}
+
+/* ─────────────────────────────────────────────
+ * Skeleton Loading Animation
+ * ───────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 25%,
+    var(--bg-secondary) 50%,
+    var(--bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ─────────────────────────────────────────────
+ * Star Rating Component
+ * ───────────────────────────────────────────── */
+
+.star-rating {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.star {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.star:hover {
+  transform: scale(1.2);
+}
+
+.star-filled {
+  color: #F59E0B;
+}
+
+.star-empty {
+  color: var(--text-tertiary);
+}
+
+/* ─────────────────────────────────────────────
+ * Toast Notification
+ * ───────────────────────────────────────────── */
+
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ─────────────────────────────────────────────
+ * Custom Scrollbar
+ * ───────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* ─────────────────────────────────────────────
+ * Focus Styles (Accessibility)
+ * ───────────────────────────────────────────── */
+
+*:focus-visible {
+  outline: 2px solid #F97316;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─────────────────────────────────────────────
+ * Leaflet Map Overrides
+ * ───────────────────────────────────────────── */
+
+.leaflet-container {
+  border-radius: 16px;
+  z-index: 0;
+}
+
+/* ─────────────────────────────────────────────
+ * Floating Animation
+ * ───────────────────────────────────────────── */
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 3s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.animate-float-slow {
+  animation: float 4s ease-in-out infinite;
+  animation-delay: 0.5s;
+}

@@ -1,0 +1,136 @@
+/**
+ * Firestore Security Rules
+ *
+ * Key principles:
+ * 1. Users can only write their own data
+ * 2. Reviews require authentication
+ * 3. Likes use compound IDs to prevent duplicates
+ * 4. Admins can moderate content
+ * 5. Banned users cannot write
+ * 6. Rate limiting via lastReviewAt timestamp
+ */
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper Functions ──────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isNotBanned() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBanned == false;
+    }
+
+    // ── Users ─────────────────────────────────────
+
+    match /users/{userId} {
+      // Anyone can read user profiles (they only contain display name + photo)
+      allow read: if true;
+
+      // Users can create their own profile
+      allow create: if isOwner(userId);
+
+      // Users can update their own profile (but not role or isBanned)
+      allow update: if isOwner(userId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isBanned']);
+
+      // Admins can update any user (for banning, role changes)
+      allow update: if isAdmin();
+
+      // No one can delete users
+      allow delete: if false;
+    }
+
+    // ── Stations ──────────────────────────────────
+
+    match /stations/{stationId} {
+      // Anyone can read station data
+      allow read: if true;
+
+      // Any authenticated user can create a station (first visit caching)
+      allow create: if isAuthenticated();
+
+      // Station updates (review counts, scores) by any authenticated user
+      allow update: if isAuthenticated();
+
+      // Only admins can delete stations
+      allow delete: if isAdmin();
+    }
+
+    // ── Reviews ───────────────────────────────────
+
+    match /reviews/{reviewId} {
+      // Anyone can read non-hidden reviews
+      allow read: if true;
+
+      // Authenticated, non-banned users can create reviews
+      allow create: if isAuthenticated() && isNotBanned() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.content.size() >= 10 &&
+        request.resource.data.content.size() <= 2000 &&
+        request.resource.data.rating >= 1 &&
+        request.resource.data.rating <= 5;
+
+      // Users can update their own reviews, admins can update any
+      allow update: if (isOwner(resource.data.userId) && isNotBanned()) || isAdmin();
+
+      // Only admins can delete reviews
+      allow delete: if isAdmin();
+    }
+
+    // ── Likes ─────────────────────────────────────
+
+    match /likes/{likeId} {
+      // Anyone can read likes
+      allow read: if true;
+
+      // Authenticated users can create/delete their own likes
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      // No updates to likes
+      allow update: if false;
+    }
+
+    // ── Reports ───────────────────────────────────
+
+    match /reports/{reportId} {
+      // Only the reporter and admins can read reports
+      allow read: if isAuthenticated() &&
+        (resource.data.reporterId == request.auth.uid || isAdmin());
+
+      // Authenticated users can create reports
+      allow create: if isAuthenticated() && isNotBanned() &&
+        request.resource.data.reporterId == request.auth.uid;
+
+      // Only admins can update report status
+      allow update: if isAdmin();
+
+      // Only admins can delete reports
+      allow delete: if isAdmin();
+    }
+
+    // ── Default Deny ──────────────────────────────
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

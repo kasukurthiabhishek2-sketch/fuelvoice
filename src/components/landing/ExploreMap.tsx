@@ -549,6 +549,72 @@ export function ExploreMapInner({
         }
       `}</style>
 
+
+      {/* Right Map Canvas Panel */}
+      <div 
+        className="flex-1 h-[400px] lg:h-full rounded-2xl overflow-hidden shadow-xl border relative"
+        style={{ borderColor: 'var(--border-primary)' }}
+      >
+        <div
+          ref={mapRef}
+          style={{ height: '100%', width: '100%', minHeight: 400 }}
+          role="application"
+          aria-label="Interactive map of nearby fuel stations"
+        />
+
+        {/* Floating Theme Switcher */}
+        <div 
+          ref={switcherRef}
+          className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end"
+        >
+          {isOpen && (
+            <div 
+              className="mb-2 p-1.5 rounded-xl border shadow-xl flex flex-col gap-1 min-w-[130px] animate-fadeIn transition-all"
+              style={{ 
+                background: 'var(--bg-primary)', 
+                borderColor: 'var(--border-primary)',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              {(Object.keys(THEMES) as MapTheme[]).map((theme) => {
+                const isActive = mapTheme === theme;
+                return (
+                  <button
+                    key={theme}
+                    onClick={() => {
+                      setMapTheme(theme);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                      isActive 
+                        ? 'text-white bg-gradient-to-r from-brand-500 to-brand-600 shadow-sm' 
+                        : 'hover:bg-black/5 dark:hover:bg-white/5'
+                    }`}
+                    style={!isActive ? { color: 'var(--text-secondary)' } : undefined}
+                  >
+                    <span className="text-base">{THEME_ICONS[theme]}</span>
+                    <span>{THEMES[theme].name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center justify-center w-11 h-11 rounded-full shadow-lg border transition-all duration-300 hover:scale-105 active:scale-95"
+            style={{ 
+              background: 'var(--bg-primary)', 
+              borderColor: 'var(--border-primary)',
+              color: 'var(--text-primary)'
+            }}
+            title="Switch Map Theme"
+            aria-label="Switch Map Theme"
+          >
+            <span className="text-xl">{THEME_ICONS[mapTheme]}</span>
+          </button>
+        </div>
+      </div>
+
       {/* Left Sidebar Panel (Bunks List & Reviews) */}
       <div 
         className="w-full lg:w-[380px] xl:w-[420px] shrink-0 flex flex-col h-[500px] lg:h-full rounded-2xl border shadow-lg overflow-hidden transition-all duration-300"
@@ -839,70 +905,6 @@ export function ExploreMapInner({
         )}
       </div>
 
-      {/* Right Map Canvas Panel */}
-      <div 
-        className="flex-1 h-[400px] lg:h-full rounded-2xl overflow-hidden shadow-xl border relative"
-        style={{ borderColor: 'var(--border-primary)' }}
-      >
-        <div
-          ref={mapRef}
-          style={{ height: '100%', width: '100%', minHeight: 400 }}
-          role="application"
-          aria-label="Interactive map of nearby fuel stations"
-        />
-
-        {/* Floating Theme Switcher */}
-        <div 
-          ref={switcherRef}
-          className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end"
-        >
-          {isOpen && (
-            <div 
-              className="mb-2 p-1.5 rounded-xl border shadow-xl flex flex-col gap-1 min-w-[130px] animate-fadeIn transition-all"
-              style={{ 
-                background: 'var(--bg-primary)', 
-                borderColor: 'var(--border-primary)',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
-              }}
-            >
-              {(Object.keys(THEMES) as MapTheme[]).map((theme) => {
-                const isActive = mapTheme === theme;
-                return (
-                  <button
-                    key={theme}
-                    onClick={() => {
-                      setMapTheme(theme);
-                      setIsOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                      isActive 
-                        ? 'text-white bg-gradient-to-r from-brand-500 to-brand-600 shadow-sm' 
-                        : 'hover:bg-black/5 dark:hover:bg-white/5'
-                    }`}
-                    style={!isActive ? { color: 'var(--text-secondary)' } : undefined}
-                  >
-                    <span className="text-base">{THEME_ICONS[theme]}</span>
-                    <span>{THEMES[theme].name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center justify-center w-11 h-11 rounded-full shadow-lg border transition-all duration-300 hover:scale-105 active:scale-95"
-            style={{ 
-              background: 'var(--bg-primary)', 
-              borderColor: 'var(--border-primary)',
-              color: 'var(--text-primary)'
-            }}
-            title="Switch Map Theme"
-            aria-label="Switch Map Theme"
-          >
-            <span className="text-xl">{THEME_ICONS[mapTheme]}</span>
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

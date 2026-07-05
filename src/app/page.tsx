@@ -21,7 +21,7 @@ export default function HomePage() {
     <>
       <Hero userLat={latitude} userLng={longitude} />
       
-      <NearbyStations />
+      {/* <NearbyStations /> */}
       <Statistics />
     </>
   );

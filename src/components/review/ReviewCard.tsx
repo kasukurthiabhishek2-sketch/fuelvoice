@@ -49,6 +49,7 @@ export function ReviewCard({ review, isLiked: initialIsLiked = false, stationId 
       await toggleLikeMutation.mutateAsync({
         reviewId: review.id,
         userId: user.uid,
+        userEmail: user.email || undefined,
       });
     } catch {
       // Revert on error

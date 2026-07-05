@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import {
   getReviews,
   createReview,
@@ -24,22 +24,36 @@ import { useState } from 'react';
 
 export function useReviews(stationId: string) {
   const [sortBy, setSortBy] = useState<ReviewSortOption>('newest');
-  const queryClient = useQueryClient();
 
-  const reviewsQuery = useQuery({
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+    refetch,
+  } = useInfiniteQuery({
     queryKey: ['reviews', stationId, sortBy],
-    queryFn: () => getReviews(stationId, sortBy, 20),
+    queryFn: ({ pageParam }) => getReviews(stationId, sortBy, 20, pageParam),
+    initialPageParam: undefined as any,
+    getNextPageParam: (lastPage) => lastPage.lastDoc || undefined,
     enabled: !!stationId,
+    placeholderData: keepPreviousData,
   });
 
+  const reviews = data ? data.pages.flatMap((page) => page.reviews) : [];
+
   return {
-    reviews: reviewsQuery.data?.reviews || [],
-    hasMore: reviewsQuery.data?.hasMore || false,
-    isLoading: reviewsQuery.isLoading,
-    error: reviewsQuery.error,
+    reviews,
+    hasMore: hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
     sortBy,
     setSortBy,
-    refetch: reviewsQuery.refetch,
+    refetch,
   };
 }
 
@@ -70,8 +84,8 @@ export function useToggleLike() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ reviewId, userId }: { reviewId: string; userId: string }) =>
-      toggleLike(reviewId, userId),
+    mutationFn: ({ reviewId, userId, userEmail }: { reviewId: string; userId: string; userEmail?: string }) =>
+      toggleLike(reviewId, userId, userEmail),
     onSuccess: (_, variables) => {
       // Invalidate to refetch updated like counts
       queryClient.invalidateQueries({ queryKey: ['reviews'] });

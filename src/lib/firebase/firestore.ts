@@ -295,36 +295,72 @@ export async function getReviews(
   lastDoc?: DocumentSnapshot
 ): Promise<{ reviews: Review[]; lastDoc: DocumentSnapshot | null; hasMore: boolean }> {
   if (isMockMode()) {
+    // Generate 45 mock reviews to test infinite scroll and sorting
+    const mockReviews: Review[] = Array.from({ length: 45 }, (_, index) => {
+      const idNum = index + 1;
+      const ratings = [5, 4, 3, 2, 1];
+      const rating = ratings[index % ratings.length];
+      const likeCount = (index * 7) % 15;
+      const createdAtMs = Date.now() - index * 24 * 60 * 60 * 1000; // 1 day apart
+      return {
+        id: `mock-review-${idNum}`,
+        stationId,
+        userId: `test-user-${idNum}`,
+        userName: `User ${idNum}`,
+        userPhoto: idNum === 1 ? 'https://lh3.googleusercontent.com/a/ACg8ocKD6k78CQfNv1nsWh1CVLzzRQusp8Cl7vuewBvCtcdfyeiVmFazwA=s96-c' : '',
+        rating,
+        fuelQuality: rating,
+        service: rating,
+        staffBehaviour: rating,
+        cleanliness: rating,
+        washroom: rating,
+        airFilling: rating,
+        title: `Mock Review #${idNum}`,
+        content: `This is the body content for mock review #${idNum}. The service was ${rating >= 4 ? 'exceptional' : 'average'}.`,
+        likeCount,
+        reportCount: 0,
+        isHidden: false,
+        isFeatured: false,
+        isAnonymous: false,
+        suggestions: '',
+        createdAt: Timestamp.fromMillis(createdAtMs),
+        updatedAt: Timestamp.fromMillis(createdAtMs),
+        tags: index % 2 === 0 ? ['good-quality'] : ['poor-service'],
+      };
+    });
+
+    // Sort mock reviews based on selected sortBy criteria
+    let sorted = [...mockReviews];
+    switch (sortBy) {
+      case 'newest':
+        sorted.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        break;
+      case 'oldest':
+        sorted.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+        break;
+      case 'highest':
+        sorted.sort((a, b) => b.rating - a.rating || b.createdAt.toMillis() - a.createdAt.toMillis());
+        break;
+      case 'lowest':
+        sorted.sort((a, b) => a.rating - b.rating || b.createdAt.toMillis() - a.createdAt.toMillis());
+        break;
+      case 'most-liked':
+        sorted.sort((a, b) => b.likeCount - a.likeCount || b.createdAt.toMillis() - a.createdAt.toMillis());
+        break;
+    }
+
+    // Paginate mock reviews based on lastDoc cursor (mocked as index)
+    const startIndex = lastDoc ? parseInt(lastDoc.id.replace('mock-doc-', ''), 10) : 0;
+    const pageDocs = sorted.slice(startIndex, startIndex + pageSize);
+    const hasMore = startIndex + pageSize < sorted.length;
+    const nextLastDoc = hasMore 
+      ? ({ id: `mock-doc-${startIndex + pageSize}` } as any as DocumentSnapshot)
+      : null;
+
     return {
-      reviews: [
-        {
-          id: 'mock-review-1',
-          stationId,
-          userId: 'test-user-123',
-          userName: 'Test User',
-          userPhoto: 'https://lh3.googleusercontent.com/a/ACg8ocKD6k78CQfNv1nsWh1CVLzzRQusp8Cl7vuewBvCtcdfyeiVmFazwA=s96-c',
-          rating: 5,
-          fuelQuality: 5,
-          service: 5,
-          staffBehaviour: 5,
-          cleanliness: 5,
-          washroom: 5,
-          airFilling: 5,
-          title: 'Great experience',
-          content: 'The fuel quality was excellent and the service was super fast. Highly recommended!',
-          likeCount: 2,
-          reportCount: 0,
-          isHidden: false,
-          isFeatured: false,
-          isAnonymous: false,
-          suggestions: '',
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now(),
-          tags: ['good-quality'],
-        }
-      ],
-      lastDoc: null,
-      hasMore: false,
+      reviews: pageDocs,
+      lastDoc: nextLastDoc,
+      hasMore,
     };
   }
 
@@ -419,9 +455,25 @@ async function recalculateStationScores(stationId: string): Promise<void> {
 // LIKES
 // ────────────────────────────────────────────────────────────────
 
-/** Toggle like on a review. Returns true if now liked, false if unliked. */
-export async function toggleLike(reviewId: string, userId: string): Promise<boolean> {
+export async function toggleLike(reviewId: string, userId: string, userEmail?: string): Promise<boolean> {
   if (isMockMode()) {
+    if (typeof window !== 'undefined') {
+      const mockLikesStr = localStorage.getItem('fuelvoice:mock_likes') || '[]';
+      const mockLikes: { reviewId: string; userId: string; userEmail?: string }[] = JSON.parse(mockLikesStr);
+      const index = mockLikes.findIndex(l => l.reviewId === reviewId && l.userId === userId);
+      
+      if (index > -1) {
+        // Unlike
+        mockLikes.splice(index, 1);
+        localStorage.setItem('fuelvoice:mock_likes', JSON.stringify(mockLikes));
+        return false;
+      } else {
+        // Like
+        mockLikes.push({ reviewId, userId, userEmail });
+        localStorage.setItem('fuelvoice:mock_likes', JSON.stringify(mockLikes));
+        return true;
+      }
+    }
     return true;
   }
 
@@ -443,6 +495,8 @@ export async function toggleLike(reviewId: string, userId: string): Promise<bool
     batch.set(likeRef, {
       reviewId,
       userId,
+      userEmail: userEmail || '',
+      userMail: userEmail || '',
       createdAt: serverTimestamp(),
     });
     batch.update(reviewRef, { likeCount: increment(1) });
@@ -454,6 +508,11 @@ export async function toggleLike(reviewId: string, userId: string): Promise<bool
 /** Check if user has liked a review */
 export async function hasUserLiked(reviewId: string, userId: string): Promise<boolean> {
   if (isMockMode()) {
+    if (typeof window !== 'undefined') {
+      const mockLikesStr = localStorage.getItem('fuelvoice:mock_likes') || '[]';
+      const mockLikes: { reviewId: string; userId: string }[] = JSON.parse(mockLikesStr);
+      return mockLikes.some(l => l.reviewId === reviewId && l.userId === userId);
+    }
     return false;
   }
 
@@ -466,7 +525,17 @@ export async function hasUserLiked(reviewId: string, userId: string): Promise<bo
 /** Batch check likes for multiple reviews */
 export async function getUserLikes(reviewIds: string[], userId: string): Promise<Set<string>> {
   if (isMockMode()) {
-    return new Set<string>();
+    const likedSet = new Set<string>();
+    if (typeof window !== 'undefined') {
+      const mockLikesStr = localStorage.getItem('fuelvoice:mock_likes') || '[]';
+      const mockLikes: { reviewId: string; userId: string }[] = JSON.parse(mockLikesStr);
+      mockLikes.forEach(l => {
+        if (l.userId === userId) {
+          likedSet.add(l.reviewId);
+        }
+      });
+    }
+    return likedSet;
   }
 
   const likedSet = new Set<string>();

@@ -14,7 +14,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
+/**
+ * Overpass API endpoints — primary + fallback mirrors.
+ * If the primary returns an error, we try the next one.
+ */
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+];
 
 /** Max request body size in bytes (4KB — ample for our queries) */
 const MAX_BODY_SIZE = 4096;
@@ -50,6 +57,28 @@ function isAllowedQuery(body: string): boolean {
   return true;
 }
 
+/**
+ * Attempt to fetch from an Overpass endpoint.
+ * Returns the Response or throws on network/abort errors.
+ */
+async function fetchFromEndpoint(
+  url: string,
+  body: string,
+  signal: AbortSignal,
+): Promise<Response> {
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      // Overpass API policy requires a User-Agent identifying the application.
+      // Without this, the API may reject requests with 406 Not Acceptable.
+      'User-Agent': 'FuelVoice/1.0 (https://fuelvoice.vercel.app; community fuel station reviews)',
+    },
+    body,
+    signal,
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Guard: reject oversized payloads
@@ -82,30 +111,45 @@ export async function POST(request: NextRequest) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15_000);
 
-    const response = await fetch(OVERPASS_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
-      signal: controller.signal,
-    });
+    // Try each endpoint until one succeeds
+    let lastError: Response | null = null;
+
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+      try {
+        const response = await fetchFromEndpoint(endpoint, body, controller.signal);
+
+        if (response.ok) {
+          clearTimeout(timeout);
+          const data = await response.json();
+
+          return NextResponse.json(data, {
+            headers: {
+              // Cache successful responses for 5 minutes at the edge
+              'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+            },
+          });
+        }
+
+        // If rate-limited (429) or client error (4xx), try next endpoint
+        lastError = response;
+        console.warn(`[API/overpass] ${endpoint} returned ${response.status}, trying next...`);
+      } catch (fetchErr) {
+        // Network error on this endpoint — try next (unless aborted)
+        if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
+          throw fetchErr; // propagate timeout
+        }
+        console.warn(`[API/overpass] ${endpoint} failed:`, fetchErr);
+      }
+    }
 
     clearTimeout(timeout);
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: `Overpass API returned ${response.status}` },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-
-    return NextResponse.json(data, {
-      headers: {
-        // Cache successful responses for 5 minutes at the edge
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-      },
-    });
+    // All endpoints failed — return the last error status
+    const status = lastError?.status || 502;
+    return NextResponse.json(
+      { error: `All Overpass endpoints failed (last status: ${status})` },
+      { status: Math.min(status, 502) } // don't forward weird status codes
+    );
   } catch (err: unknown) {
     if (err instanceof Error && err.name === 'AbortError') {
       return NextResponse.json(

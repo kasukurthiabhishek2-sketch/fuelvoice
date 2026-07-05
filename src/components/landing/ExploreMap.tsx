@@ -274,11 +274,8 @@ export function ExploreMapInner({
 
     mapInstanceRef.current = map;
 
-    // Immediately trigger station fetch for the default viewport center
-    // so sidebar populates even without user location
-    fetchStationsForArea(defaultLat, defaultLng);
-
     // Initial check after tiles load
+    // (stations come from parent via props — no need to fetch here)
     setTimeout(updateVisibleStations, 600);
 
     return () => {

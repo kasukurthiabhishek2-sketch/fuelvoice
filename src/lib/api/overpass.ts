@@ -22,10 +22,10 @@ function getOverpassUrl(): string {
 
 /**
  * Module-level rate limiter for Overpass API.
- * Overpass asks for ≤1 req/2s and no concurrent requests.
- * We enforce a 12s minimum gap between calls to be safe.
+ * We go through our own proxy now, so we can be less aggressive.
+ * 3s gap prevents rapid-fire calls while still allowing map interaction.
  */
-const MIN_INTERVAL_MS = 12_000;   // minimum ms between API calls
+const MIN_INTERVAL_MS = 3_000;    // minimum ms between API calls
 let lastCallAt = 0;               // timestamp of last successful call
 let inFlight = false;             // true while a request is in progress
 let rateLimitUntil = 0;           // backoff-until timestamp after a 429
@@ -96,9 +96,9 @@ export async function findNearbyStations(
       signal: controller.signal,
     });
 
-    if (response.status === 429) {
-      rateLimitUntil = Date.now() + 30_000;
-      console.warn('[Overpass] 429 — backing off 30s');
+    if (response.status === 429 || response.status === 406) {
+      rateLimitUntil = Date.now() + 15_000;
+      console.warn(`[Overpass] ${response.status} — backing off 15s`);
       return [];
     }
 

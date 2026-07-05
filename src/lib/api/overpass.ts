@@ -24,10 +24,8 @@ function getOverpassUrl(): string {
  * Module-level rate limiter for Overpass API.
  * We go through our own proxy now, so we can be less aggressive.
  * TanStack Query handles request deduplication by query key —
- * we only need gap enforcement and backoff here.
+ * we only need backoff here.
  */
-const MIN_INTERVAL_MS = 3_000;    // minimum ms between API calls
-let lastCallAt = 0;               // timestamp of last successful call
 let rateLimitUntil = 0;           // backoff-until timestamp after a 429/406
 
 export async function findNearbyStations(
@@ -59,15 +57,6 @@ export async function findNearbyStations(
     console.warn(`[Overpass] Rate-limited. Retry in ${wait}s`);
     return [];
   }
-
-  // Enforce minimum gap between requests (prevents rapid-fire from map drag)
-  const sinceLastCall = now - lastCallAt;
-  if (sinceLastCall < MIN_INTERVAL_MS && lastCallAt > 0) {
-    console.warn(`[Overpass] Too soon — ${Math.ceil((MIN_INTERVAL_MS - sinceLastCall) / 1000)}s cooldown remaining`);
-    return [];
-  }
-
-  lastCallAt = Date.now();
 
   const controller = new AbortController();
   // Client-side timeout: abort if proxy takes longer than 15s

@@ -38,9 +38,6 @@ function isAllowedQuery(body: string): boolean {
 
   const normalized = query.replace(/\s+/g, ' ').trim().toLowerCase();
 
-  // Must be querying for fuel amenities
-  if (!normalized.includes('"amenity"="fuel"')) return false;
-
   // Block dangerous Overpass features:
   // - `out meta` leaks contributor info
   // - `timeline` / `diff` are expensive operations
@@ -54,7 +51,18 @@ function isAllowedQuery(body: string): boolean {
   // Must use `out body` or `out center` — standard output modes
   if (!normalized.includes('out body') && !normalized.includes('out center')) return false;
 
-  return true;
+  // Pattern 1: Petrol pump query: nwr["amenity"="fuel"](around...)
+  if (normalized.includes('"amenity"="fuel"')) return true;
+
+  // Pattern 2: Single node/way/relation lookup by ID: node(12345678); out body center;
+  const queryBody = normalized
+    .replace(/^\[out:json\]\[timeout:\d+\];/, '')
+    .trim();
+
+  const singleElementRegex = /^(node|way|relation)\(\d+\)\s*;?\s*(out\s+(body|center|body\s+center|center\s+body))\s*;?$/;
+  if (singleElementRegex.test(queryBody)) return true;
+
+  return false;
 }
 
 /**

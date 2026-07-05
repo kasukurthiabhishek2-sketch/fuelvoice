@@ -23,12 +23,12 @@ function getOverpassUrl(): string {
 /**
  * Module-level rate limiter for Overpass API.
  * We go through our own proxy now, so we can be less aggressive.
- * 3s gap prevents rapid-fire calls while still allowing map interaction.
+ * TanStack Query handles request deduplication by query key —
+ * we only need gap enforcement and backoff here.
  */
 const MIN_INTERVAL_MS = 3_000;    // minimum ms between API calls
 let lastCallAt = 0;               // timestamp of last successful call
-let inFlight = false;             // true while a request is in progress
-let rateLimitUntil = 0;           // backoff-until timestamp after a 429
+let rateLimitUntil = 0;           // backoff-until timestamp after a 429/406
 
 export async function findNearbyStations(
   lat: number,
@@ -52,13 +52,7 @@ export async function findNearbyStations(
     ];
   }
 
-  // Skip if another request is already running
-  if (inFlight) {
-    console.warn('[Overpass] Request skipped — previous still in-flight');
-    return [];
-  }
-
-  // Respect rate-limit cooldown after a 429
+  // Respect rate-limit cooldown after a 429/406
   const now = Date.now();
   if (now < rateLimitUntil) {
     const wait = Math.ceil((rateLimitUntil - now) / 1000);
@@ -66,19 +60,18 @@ export async function findNearbyStations(
     return [];
   }
 
-  // Enforce minimum gap between requests
+  // Enforce minimum gap between requests (prevents rapid-fire from map drag)
   const sinceLastCall = now - lastCallAt;
   if (sinceLastCall < MIN_INTERVAL_MS && lastCallAt > 0) {
     console.warn(`[Overpass] Too soon — ${Math.ceil((MIN_INTERVAL_MS - sinceLastCall) / 1000)}s cooldown remaining`);
     return [];
   }
 
-  inFlight = true;
   lastCallAt = Date.now();
 
   const controller = new AbortController();
-  // Client-side timeout: abort if Overpass takes longer than 12s
-  const timeout = setTimeout(() => controller.abort(), 12_000);
+  // Client-side timeout: abort if proxy takes longer than 15s
+  const timeout = setTimeout(() => controller.abort(), 15_000);
 
   try {
     const overpassQuery = `
@@ -122,14 +115,13 @@ export async function findNearbyStations(
       .sort((a, b) => (a.distance || 0) - (b.distance || 0));
   } catch (err: unknown) {
     if (err instanceof Error && err.name === 'AbortError') {
-      console.warn('[Overpass] Request timed out after 12s — will retry on next move');
+      console.warn('[Overpass] Request timed out after 15s — will retry on next move');
     } else {
       console.warn('[Overpass] Fetch failed:', err);
     }
     return [];
   } finally {
     clearTimeout(timeout);
-    inFlight = false;
   }
 }
 

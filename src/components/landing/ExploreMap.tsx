@@ -114,6 +114,8 @@ export function ExploreMapInner({
   const allStationsRef = useRef<StationSummary[]>(allStations);
   // Last center we fetched stations for — avoid redundant API calls
   const lastFetchedCenterRef = useRef<{ lat: number; lng: number } | null>(null);
+  // Track whether we have already fitted the map bounds to the initial set of stations
+  const hasFittedBoundsRef = useRef(false);
   // Debounce timer ref
   const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Track whether we've already panned to user location
@@ -273,6 +275,9 @@ export function ExploreMapInner({
     map.on('zoomend', handleMapMoveEnd);
 
     mapInstanceRef.current = map;
+    
+    // Set the initial fetched center to avoid redundant initial fetch on map load
+    lastFetchedCenterRef.current = { lat: defaultLat, lng: defaultLng };
 
     // Initial check after tiles load
     // (stations come from parent via props — no need to fetch here)
@@ -427,18 +432,19 @@ export function ExploreMapInner({
       markerGroup.addLayer(marker);
     });
 
-    // On first load only: fitbounds to show all markers, then update sidebar after animation
+    // Always update the visible stations list immediately when allStations updates
+    updateVisibleStations();
+
+    // Fit bounds once on first load of stations to show all markers
     // On subsequent drags we don't re-fitbounds (user is exploring freely)
-    if (allStations.length > 0 && lastFetchedCenterRef.current === null) {
+    if (allStations.length > 0 && !hasFittedBoundsRef.current) {
+      hasFittedBoundsRef.current = true;
       const allPoints: [number, number][] = allStations.map((s) => [s.lat, s.lng] as [number, number]);
       if (lat !== null && lng !== null) {
         allPoints.push([lat, lng]);
       }
       const bounds = L.latLngBounds(allPoints);
-      map.once('moveend', updateVisibleStations);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-    } else {
-      updateVisibleStations();
     }
   }, [allStations, lat, lng, updateVisibleStations]);
 

@@ -39,6 +39,31 @@ const isMockMode = (): boolean => {
   return mockVal === 'true' || mockVal === 'admin';
 };
 
+/** Helper to identify plain JS objects (vs SDK classes like FieldValue or Timestamp) */
+function isPlainObject(val: any): boolean {
+  return val && (val.constructor === Object || val.constructor === undefined);
+}
+
+/** Recursively strips undefined fields from plain objects before writing to Firestore */
+function removeUndefined<T>(obj: T): T {
+  if (Array.isArray(obj)) {
+    return obj.map(removeUndefined) as any;
+  }
+  if (isPlainObject(obj)) {
+    const result: any = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const val = obj[key];
+        if (val !== undefined) {
+          result[key] = removeUndefined(val);
+        }
+      }
+    }
+    return result;
+  }
+  return obj;
+}
+
 // ────────────────────────────────────────────────────────────────
 // STATIONS
 // ────────────────────────────────────────────────────────────────
@@ -114,7 +139,7 @@ export async function getOrCreateStation(stationData: Partial<Station> & { id: s
   };
 
   try {
-    await setDoc(stationRef, station);
+    await setDoc(stationRef, removeUndefined(station));
   } catch (error) {
     console.warn('Failed to cache station in Firestore (user may be unauthenticated):', error);
   }
@@ -235,7 +260,7 @@ export async function createReview(
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
-  batch.set(reviewRef, review);
+  batch.set(reviewRef, removeUndefined(review));
 
   // Update station counters and scores
   batch.update(stationRef, {

@@ -39,7 +39,7 @@ export function StationMapInner({ lat, lng, name, userLat, userLng, className = 
 
     const map = L.map(mapRef.current).setView([lat, lng], 15);
 
-    const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_API_KEY || 'YS3Y7JqKCXASxG1okJI2';
+    const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
     L.tileLayer(`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${maptilerKey}`, {
       attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 20,

@@ -29,7 +29,8 @@ function escapeHtml(str: string): string {
 
 type MapTheme = 'default' | 'dark' | 'satellite' | 'terrain';
 
-const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY || 'YS3Y7JqKCXASxG1okJI2';
+const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY ;
+const MIN_ZOOM = 13;
 
 const THEMES = {
   default: {
@@ -103,6 +104,7 @@ export function ExploreMapInner({
   // Local merged set: prop stations + dynamically fetched on drag
   const [allStations, setAllStations] = useState<StationSummary[]>(stations);
   const [isFetchingArea, setIsFetchingArea] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(hasLocation ? 14 : 13);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -177,6 +179,11 @@ export function ExploreMapInner({
   const updateVisibleStations = useCallback(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
+    const currentZoom = map.getZoom();
+    if (currentZoom < MIN_ZOOM) {
+      setVisibleStations([]);
+      return;
+    }
     const bounds = map.getBounds();
     const visible = allStationsRef.current.filter((s) => bounds.contains([s.lat, s.lng]));
     setVisibleStations(visible);
@@ -186,13 +193,21 @@ export function ExploreMapInner({
   const handleMapMoveEnd = useCallback(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
+    
+    const newZoom = map.getZoom();
+    setZoomLevel(newZoom);
     updateVisibleStations();
+    
     // Debounce Overpass fetch by 2s — user must stop panning before we query
     if (fetchTimerRef.current) clearTimeout(fetchTimerRef.current);
-    fetchTimerRef.current = setTimeout(() => {
-      const center = map.getCenter();
-      fetchStationsForArea(center.lat, center.lng);
-    }, 2000);
+    
+    // Only fetch new stations if zoom is high enough to show them
+    if (newZoom >= MIN_ZOOM) {
+      fetchTimerRef.current = setTimeout(() => {
+        const center = map.getCenter();
+        fetchStationsForArea(center.lat, center.lng);
+      }, 2000);
+    }
   }, [updateVisibleStations, fetchStationsForArea]);
 
   // Handle message listener from custom popup links
@@ -355,7 +370,7 @@ export function ExploreMapInner({
     tileLayerRef.current = newTileLayer;
   }, [mapTheme]);
 
-  // Re-render markers whenever allStations changes
+  // Re-render markers whenever allStations or zoomLevel changes
   useEffect(() => {
     const L = require('leaflet') as typeof import('leaflet');
     const map = mapInstanceRef.current;
@@ -364,7 +379,8 @@ export function ExploreMapInner({
 
     markerGroup.clearLayers();
 
-    allStations.forEach((station) => {
+    if (zoomLevel >= MIN_ZOOM) {
+      allStations.forEach((station) => {
       const stationIcon = L.divIcon({
         html: `
           <div style="
@@ -431,6 +447,7 @@ export function ExploreMapInner({
 
       markerGroup.addLayer(marker);
     });
+    }
 
     // Always update the visible stations list immediately when allStations updates
     updateVisibleStations();
@@ -446,7 +463,7 @@ export function ExploreMapInner({
       const bounds = L.latLngBounds(allPoints);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
     }
-  }, [allStations, lat, lng, updateVisibleStations]);
+  }, [allStations, lat, lng, updateVisibleStations, zoomLevel]);
 
   // Load reviews when selectedStation changes
   useEffect(() => {
@@ -750,12 +767,20 @@ export function ExploreMapInner({
                   <span className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
                   <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Loading fuel stations…</span>
                 </div>
+              ) : zoomLevel < MIN_ZOOM ? (
+                <div className="flex flex-col items-center justify-center h-full text-center opacity-60 py-12 animate-fadeIn">
+                  <span className="text-4xl mb-3">🔍</span>
+                  <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Zoom in to see bunks</p>
+                  <p className="text-xs max-w-[220px] mt-1 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    Zoom in closer to view petrol bunk pins and prevent performance lag.
+                  </p>
+                </div>
               ) : visibleStations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center opacity-60 py-12 animate-fadeIn">
                   <span className="text-4xl mb-3 animate-float">🧭</span>
                   <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>No bunks in viewport</p>
                   <p className="text-xs max-w-[200px] mt-1 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    Swipe, drag or zoom out the map to find nearby stations.
+                    Swipe, drag or zoom the map to find nearby stations.
                   </p>
                 </div>
               ) : (

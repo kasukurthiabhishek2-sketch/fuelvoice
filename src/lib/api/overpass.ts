@@ -10,7 +10,15 @@
 
 import type { OverpassElement, StationSummary } from '@/types/station';
 
-const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_API_DIRECT = 'https://overpass-api.de/api/interpreter';
+
+/** Use our proxy route in-browser to avoid CORS; direct URL on server-side */
+function getOverpassUrl(): string {
+  if (typeof window !== 'undefined') {
+    return '/api/overpass';
+  }
+  return OVERPASS_API_DIRECT;
+}
 
 /**
  * Module-level rate limiter for Overpass API.
@@ -27,8 +35,8 @@ export async function findNearbyStations(
   lng: number,
   radiusMeters: number = 5000
 ): Promise<StationSummary[]> {
-  // Mock mode
-  if (typeof window !== 'undefined' && localStorage.getItem('fuelvoice:mock_user') === 'true') {
+  // Mock mode — development/test only
+  if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined' && localStorage.getItem('fuelvoice:mock_user') === 'true') {
     return [
       {
         id: 'node_6254336890',
@@ -81,7 +89,7 @@ export async function findNearbyStations(
       out body center;
     `;
 
-    const response = await fetch(OVERPASS_API, {
+    const response = await fetch(getOverpassUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `data=${encodeURIComponent(overpassQuery)}`,
@@ -130,7 +138,7 @@ export async function getStationByOsmId(
   osmId: number
 ): Promise<OverpassElement | null> {
   // If running in development or testing (mock session active)
-  if (osmId === 6254336890 && typeof window !== 'undefined' && localStorage.getItem('fuelvoice:mock_user') === 'true') {
+  if (process.env.NODE_ENV !== 'production' && osmId === 6254336890 && typeof window !== 'undefined' && localStorage.getItem('fuelvoice:mock_user') === 'true') {
     return {
       type: osmType as any,
       id: osmId,
@@ -160,7 +168,7 @@ export async function getStationByOsmId(
     out body center;
   `;
 
-  const response = await fetch(OVERPASS_API, {
+  const response = await fetch(getOverpassUrl(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: `data=${encodeURIComponent(overpassQuery)}`,

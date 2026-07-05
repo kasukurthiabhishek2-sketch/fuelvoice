@@ -45,7 +45,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check if we are running in Playwright E2E and want to mock auth
-    const mockVal = typeof window !== 'undefined' ? localStorage.getItem('fuelvoice:mock_user') : null;
+    // SECURITY: Only allow mock mode in development/test — never in production
+    const mockVal = (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined')
+      ? localStorage.getItem('fuelvoice:mock_user')
+      : null;
     const isMock = mockVal === 'true' || mockVal === 'admin';
     if (isMock) {
       setUser({

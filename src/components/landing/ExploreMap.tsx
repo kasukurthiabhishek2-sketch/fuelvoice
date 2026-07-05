@@ -17,6 +17,16 @@ import { getReviews } from '@/lib/firebase/firestore';
 import { findNearbyStations } from '@/lib/api/overpass';
 import type { Review } from '@/types/review';
 
+/** Escapes HTML special characters to prevent XSS in Leaflet popup HTML */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 type MapTheme = 'default' | 'dark' | 'satellite' | 'terrain';
 
 const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY || 'YS3Y7JqKCXASxG1okJI2';
@@ -98,12 +108,16 @@ export function ExploreMapInner({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  // User location marker — added dynamically when location is granted
+  const userMarkerRef = useRef<L.Marker | null>(null);
   // Always-current ref so map event listeners are never stale
   const allStationsRef = useRef<StationSummary[]>(allStations);
   // Last center we fetched stations for — avoid redundant API calls
   const lastFetchedCenterRef = useRef<{ lat: number; lng: number } | null>(null);
   // Debounce timer ref
   const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track whether we've already panned to user location
+  const hasPannedToUserRef = useRef(false);
 
   // Keep ref in sync on every render
   allStationsRef.current = allStations;
@@ -181,6 +195,9 @@ export function ExploreMapInner({
 
   // Handle message listener from custom popup links
   const handleMessage = useCallback((e: MessageEvent) => {
+    // Security: only accept messages from our own origin
+    if (e.origin !== window.location.origin) return;
+
     if (e.data?.type === 'fuelvoice:navigate' && e.data.stationId) {
       onStationSelect?.(e.data.stationId);
     } else if (e.data?.type === 'fuelvoice:select' && e.data.stationId) {
@@ -196,8 +213,9 @@ export function ExploreMapInner({
     return () => window.removeEventListener('message', handleMessage);
   }, [handleMessage]);
 
-  const defaultLat = lat || 28.6139;
-  const defaultLng = lng || 77.2090;
+  // Default to Hyderabad center at station-level zoom
+  const defaultLat = lat || 17.3887;
+  const defaultLng = lng || 78.4754;
 
   // Initialize Map
   useEffect(() => {
@@ -216,7 +234,7 @@ export function ExploreMapInner({
     const map = L.map(mapRef.current, {
       zoomControl: true,
       scrollWheelZoom: true,
-    }).setView([defaultLat, defaultLng], hasLocation ? 14 : 5);
+    }).setView([defaultLat, defaultLng], hasLocation ? 14 : 13);
 
     const initialTileLayer = L.tileLayer(THEMES[mapTheme].url, {
       attribution: THEMES[mapTheme].attribution,
@@ -228,7 +246,7 @@ export function ExploreMapInner({
     }).addTo(map);
     tileLayerRef.current = initialTileLayer;
 
-    // Pulse dot for user location
+    // Pulse dot for user location (if already available at mount time)
     if (lat !== null && lng !== null) {
       const userIcon = L.divIcon({
         html: `
@@ -241,9 +259,11 @@ export function ExploreMapInner({
         iconSize: [18, 18],
         iconAnchor: [9, 9],
       });
-      L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 })
+      const marker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 })
         .addTo(map)
         .bindPopup('<strong style="font-size:13px;">📍 Your Location</strong>');
+      userMarkerRef.current = marker;
+      hasPannedToUserRef.current = true;
     }
 
     markersRef.current = L.layerGroup().addTo(map);
@@ -253,6 +273,10 @@ export function ExploreMapInner({
     map.on('zoomend', handleMapMoveEnd);
 
     mapInstanceRef.current = map;
+
+    // Immediately trigger station fetch for the default viewport center
+    // so sidebar populates even without user location
+    fetchStationsForArea(defaultLat, defaultLng);
 
     // Initial check after tiles load
     setTimeout(updateVisibleStations, 600);
@@ -267,6 +291,42 @@ export function ExploreMapInner({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Pan to user location when it becomes available AFTER mount
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || lat === null || lng === null || hasPannedToUserRef.current) return;
+
+    const L = require('leaflet') as typeof import('leaflet');
+
+    // Add pulsing user location marker
+    if (userMarkerRef.current) {
+      map.removeLayer(userMarkerRef.current);
+    }
+    const userIcon = L.divIcon({
+      html: `
+        <div style="position:relative;width:18px;height:18px;">
+          <div style="position:absolute;inset:0;background:#3B82F6;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(59,130,246,0.6);z-index:2;"></div>
+          <div style="position:absolute;inset:-6px;background:rgba(59,130,246,0.15);border-radius:50%;animation:pulse 2s ease-out infinite;z-index:1;"></div>
+        </div>
+      `,
+      className: 'custom-marker',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+    });
+    const marker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 })
+      .addTo(map)
+      .bindPopup('<strong style="font-size:13px;">📍 Your Location</strong>');
+    userMarkerRef.current = marker;
+    hasPannedToUserRef.current = true;
+
+    // Smoothly fly to user's location
+    map.flyTo([lat, lng], 14, { duration: 1.5 });
+
+    // Fetch stations for user's area
+    lastFetchedCenterRef.current = null; // reset so it fetches for user area
+    fetchStationsForArea(lat, lng);
+  }, [lat, lng, fetchStationsForArea]);
 
   // Update map tile theme layers
   useEffect(() => {
@@ -337,16 +397,20 @@ export function ExploreMapInner({
         ? `${station.reviewCount} review${station.reviewCount > 1 ? 's' : ''}`
         : '';
 
+      const safeName = escapeHtml(station.name);
+      const safeBrand = escapeHtml(station.brand || '');
+      const safeId = escapeHtml(station.id);
+
       const popupHtml = `
         <div style="min-width:200px;max-width:260px;font-family:system-ui,sans-serif;">
-          <div style="font-size:14px;font-weight:700;color:#0F172A;line-height:1.3;">${station.name}</div>
-          ${station.brand ? `<div style="font-size:11px;color:#64748B;margin-top:2px;">${station.brand}</div>` : ''}
+          <div style="font-size:14px;font-weight:700;color:#0F172A;line-height:1.3;">${safeName}</div>
+          ${safeBrand ? `<div style="font-size:11px;color:#64748B;margin-top:2px;">${safeBrand}</div>` : ''}
           ${ratingStars}
           <div style="display:flex;gap:8px;align-items:center;margin-top:2px;">
             ${distanceText ? `<span style="font-size:11px;color:#94A3B8;">📍 ${distanceText}</span>` : ''}
             ${reviewText ? `<span style="font-size:11px;color:#94A3B8;">💬 ${reviewText}</span>` : ''}
           </div>
-          <button onclick="window.postMessage({type: 'fuelvoice:select', stationId: '${station.id}'}, '*')"
+          <button onclick="window.postMessage({type: 'fuelvoice:select', stationId: '${safeId}'}, window.location.origin)"
              style="display:block;width:100%;margin-top:8px;padding:6px 12px;border:none;background:linear-gradient(135deg,#F97316,#EA580C);color:white;border-radius:8px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;transition:opacity 0.2s;"
              onmouseover="this.style.opacity='0.9'"
              onmouseout="this.style.opacity='1'">
@@ -473,36 +537,7 @@ export function ExploreMapInner({
           borderColor: 'var(--border-primary)',
         }}
       >
-        {!hasLocation ? (
-          /* Permission Prompt State */
-          <div className="flex flex-col items-center justify-center p-8 h-full text-center">
-            <div className="text-5xl mb-4 animate-float">🗺️</div>
-            <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-              Discover Stations Near You
-            </h3>
-            <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              {permissionState === 'denied'
-                ? 'Location access was denied. Please enable it in your browser settings to locate nearby fuel stations.'
-                : 'Allow location access to view active fuel stations and live bunks in your immediate area.'}
-            </p>
-            {permissionState !== 'denied' && requestLocation && (
-              <button
-                onClick={requestLocation}
-                disabled={geoLoading}
-                className="w-full py-3 px-6 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {geoLoading ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Detecting Location…
-                  </>
-                ) : (
-                  '📍 Enable Location'
-                )}
-              </button>
-            )}
-          </div>
-        ) : selectedStation ? (
+        {selectedStation ? (
           /* Selected Bunk Reviews View (PRIORITY) */
           <div className="flex flex-col h-full">
             {/* Header */}
@@ -663,6 +698,47 @@ export function ExploreMapInner({
                 {visibleStations.length} Active
               </span>
             </div>
+
+            {/* Non-blocking location prompt banner */}
+            {!hasLocation && permissionState !== 'denied' && requestLocation && (
+              <div className="mx-4 mt-3 mb-1">
+                <button
+                  onClick={requestLocation}
+                  disabled={geoLoading}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all border hover:shadow-md"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(59,130,246,0.06), rgba(249,115,22,0.06))',
+                    borderColor: 'var(--border-primary)',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  {geoLoading ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                      <span>Detecting your location…</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-base">📍</span>
+                      <span className="flex-1 text-left">Enable location for nearby bunks</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-brand-500/10 text-brand-500 font-bold">Optional</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+            {!hasLocation && permissionState === 'denied' && (
+              <div className="mx-4 mt-3 mb-1 px-3.5 py-2 rounded-xl text-[11px] border flex items-center gap-2"
+                style={{
+                  background: 'var(--bg-secondary)',
+                  borderColor: 'var(--border-primary)',
+                  color: 'var(--text-tertiary)',
+                }}
+              >
+                <span>🔒</span>
+                <span>Location denied — showing default area. Use search or pan the map to explore.</span>
+              </div>
+            )}
 
             {/* List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">

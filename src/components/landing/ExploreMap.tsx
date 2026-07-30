@@ -149,13 +149,16 @@ export function ExploreMapInner({
     return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
   }, []);
 
+  const isFetchingAreaRef = useRef(false);
+
   // Fetch stations for the new map center, merge with existing (dedup by id)
   const fetchStationsForArea = useCallback(async (centerLat: number, centerLng: number) => {
     const last = lastFetchedCenterRef.current;
     if (last && haversineKm(last, { lat: centerLat, lng: centerLng }) < 8) return;
-    if (isFetchingArea) return;
+    if (isFetchingAreaRef.current) return;
 
     lastFetchedCenterRef.current = { lat: centerLat, lng: centerLng };
+    isFetchingAreaRef.current = true;
     setIsFetchingArea(true);
     try {
       const newStations = await findNearbyStations(centerLat, centerLng, 5000);
@@ -169,9 +172,10 @@ export function ExploreMapInner({
     } catch (err) {
       console.error('[FuelVoice] Failed to fetch stations for area:', err);
     } finally {
+      isFetchingAreaRef.current = false;
       setIsFetchingArea(false);
     }
-  }, [haversineKm, isFetchingArea]);
+  }, [haversineKm]);
 
   // Stable callback — reads from ref, never stale
   const updateVisibleStations = useCallback(() => {
@@ -318,7 +322,10 @@ export function ExploreMapInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pan to user location when it becomes available or changes (e.g. IP location -> precise location)
+  // Track whether we've already panned to initial location & whether previous location was IP
+  const prevIsIpLocationRef = useRef<boolean | null>(null);
+
+  // Pan to user location ONLY on initial location load or when location upgrades from IP to precise GPS
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || lat === null || lng === null) return;
@@ -346,12 +353,16 @@ export function ExploreMapInner({
       .bindPopup(`<strong style="font-size:13px;">${popupText}</strong>`);
     userMarkerRef.current = marker;
 
-    if (!hasPannedToUserRef.current || !isIpLocation) {
+    // Pan ONLY if we haven't panned to user yet OR location upgraded from IP to precise GPS
+    const upgradedFromIp = prevIsIpLocationRef.current === true && !isIpLocation;
+    if (!hasPannedToUserRef.current || upgradedFromIp) {
       hasPannedToUserRef.current = true;
       map.flyTo([lat, lng], 14, { duration: 1.5 });
       lastFetchedCenterRef.current = null;
       fetchStationsForArea(lat, lng);
     }
+
+    prevIsIpLocationRef.current = isIpLocation;
   }, [lat, lng, isIpLocation, fetchStationsForArea]);
 
   // Update map tile theme layers

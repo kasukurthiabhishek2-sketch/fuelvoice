@@ -22,6 +22,7 @@ export function ExploreMapSection() {
     latitude,
     longitude,
     hasLocation,
+    isIpLocation,
     loading: geoLoading,
     requestLocation,
     permissionState,
@@ -74,6 +75,7 @@ export function ExploreMapSection() {
             lat={latitude}
             lng={longitude}
             hasLocation={hasLocation}
+            isIpLocation={isIpLocation}
             stations={stations || []}
             onStationSelect={handleStationSelect}
             requestLocation={requestLocation}

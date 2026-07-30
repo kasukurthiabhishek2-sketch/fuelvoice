@@ -74,6 +74,7 @@ interface ExploreMapInnerProps {
   lat: number | null;
   lng: number | null;
   hasLocation: boolean;
+  isIpLocation?: boolean;
   stations: StationSummary[];
   onStationSelect?: (stationId: string) => void;
   requestLocation?: () => void;
@@ -86,6 +87,7 @@ export function ExploreMapInner({
   lat,
   lng,
   hasLocation,
+  isIpLocation = false,
   stations,
   onStationSelect,
   requestLocation,
@@ -150,11 +152,7 @@ export function ExploreMapInner({
   // Fetch stations for the new map center, merge with existing (dedup by id)
   const fetchStationsForArea = useCallback(async (centerLat: number, centerLng: number) => {
     const last = lastFetchedCenterRef.current;
-    // Only re-fetch if we've moved more than 8km from last fetch
-    // (matches our 5km search radius so there's meaningful new coverage)
     if (last && haversineKm(last, { lat: centerLat, lng: centerLng }) < 8) return;
-
-    // Don't queue another request while one is still running
     if (isFetchingArea) return;
 
     lastFetchedCenterRef.current = { lat: centerLat, lng: centerLng };
@@ -187,7 +185,18 @@ export function ExploreMapInner({
     const bounds = map.getBounds();
     const visible = allStationsRef.current.filter((s) => bounds.contains([s.lat, s.lng]));
     setVisibleStations(visible);
-  }, []); // no deps — intentionally stable
+  }, []);
+
+  const handleRecenter = useCallback(() => {
+    const map = mapInstanceRef.current;
+    if (lat !== null && lng !== null && map) {
+      map.flyTo([lat, lng], 15, { duration: 1.2 });
+      setTimeout(updateVisibleStations, 400);
+    }
+    if (isIpLocation || permissionState !== 'granted') {
+      requestLocation?.();
+    }
+  }, [lat, lng, isIpLocation, permissionState, requestLocation, updateVisibleStations]);
 
   // On drag/zoom: debounced fetch for the new center + update sidebar
   const handleMapMoveEnd = useCallback(() => {
@@ -309,41 +318,41 @@ export function ExploreMapInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pan to user location when it becomes available AFTER mount
+  // Pan to user location when it becomes available or changes (e.g. IP location -> precise location)
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || lat === null || lng === null || hasPannedToUserRef.current) return;
+    if (!map || lat === null || lng === null) return;
 
     const L = require('leaflet') as typeof import('leaflet');
 
-    // Add pulsing user location marker
+    // Add pulsing user location marker (amber for IP, blue for GPS)
     if (userMarkerRef.current) {
       map.removeLayer(userMarkerRef.current);
     }
     const userIcon = L.divIcon({
       html: `
         <div style="position:relative;width:18px;height:18px;">
-          <div style="position:absolute;inset:0;background:#3B82F6;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(59,130,246,0.6);z-index:2;"></div>
-          <div style="position:absolute;inset:-6px;background:rgba(59,130,246,0.15);border-radius:50%;animation:pulse 2s ease-out infinite;z-index:1;"></div>
+          <div style="position:absolute;inset:0;background:${isIpLocation ? '#F59E0B' : '#3B82F6'};border:3px solid white;border-radius:50%;box-shadow:0 0 8px ${isIpLocation ? 'rgba(245,158,11,0.6)' : 'rgba(59,130,246,0.6)'};z-index:2;"></div>
+          <div style="position:absolute;inset:-6px;background:${isIpLocation ? 'rgba(245,158,11,0.15)' : 'rgba(59,130,246,0.15)'};border-radius:50%;animation:pulse 2s ease-out infinite;z-index:1;"></div>
         </div>
       `,
       className: 'custom-marker',
       iconSize: [18, 18],
       iconAnchor: [9, 9],
     });
+    const popupText = isIpLocation ? '📍 Approx Location (IP-based)' : '📍 Your Location';
     const marker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 })
       .addTo(map)
-      .bindPopup('<strong style="font-size:13px;">📍 Your Location</strong>');
+      .bindPopup(`<strong style="font-size:13px;">${popupText}</strong>`);
     userMarkerRef.current = marker;
-    hasPannedToUserRef.current = true;
 
-    // Smoothly fly to user's location
-    map.flyTo([lat, lng], 14, { duration: 1.5 });
-
-    // Fetch stations for user's area
-    lastFetchedCenterRef.current = null; // reset so it fetches for user area
-    fetchStationsForArea(lat, lng);
-  }, [lat, lng, fetchStationsForArea]);
+    if (!hasPannedToUserRef.current || !isIpLocation) {
+      hasPannedToUserRef.current = true;
+      map.flyTo([lat, lng], 14, { duration: 1.5 });
+      lastFetchedCenterRef.current = null;
+      fetchStationsForArea(lat, lng);
+    }
+  }, [lat, lng, isIpLocation, fetchStationsForArea]);
 
   // Update map tile theme layers
   useEffect(() => {
@@ -562,56 +571,75 @@ export function ExploreMapInner({
           aria-label="Interactive map of nearby fuel stations"
         />
 
-        {/* Floating Theme Switcher */}
-        <div 
-          ref={switcherRef}
-          className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end"
-        >
-          {isOpen && (
-            <div 
-              className="mb-2 p-1.5 rounded-xl border shadow-xl flex flex-col gap-1 min-w-[130px] animate-fadeIn transition-all"
-              style={{ 
-                background: 'var(--bg-primary)', 
-                borderColor: 'var(--border-primary)',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
-              }}
-            >
-              {(Object.keys(THEMES) as MapTheme[]).map((theme) => {
-                const isActive = mapTheme === theme;
-                return (
-                  <button
-                    key={theme}
-                    onClick={() => {
-                      setMapTheme(theme);
-                      setIsOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                      isActive 
-                        ? 'text-white bg-gradient-to-r from-brand-500 to-brand-600 shadow-sm' 
-                        : 'hover:bg-black/5 dark:hover:bg-white/5'
-                    }`}
-                    style={!isActive ? { color: 'var(--text-secondary)' } : undefined}
-                  >
-                    <span className="text-base">{THEME_ICONS[theme]}</span>
-                    <span>{THEMES[theme].name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+        {/* Floating Map Controls Container */}
+        <div className="absolute bottom-6 right-4 z-[1000] flex flex-col items-end gap-2">
+          {/* Current Location Recenter Button */}
           <button
-            onClick={() => setIsOpen(!isOpen)}
+            id="recenter-location-btn"
+            onClick={handleRecenter}
             className="flex items-center justify-center w-11 h-11 rounded-full shadow-lg border transition-all duration-300 hover:scale-105 active:scale-95"
             style={{ 
               background: 'var(--bg-primary)', 
               borderColor: 'var(--border-primary)',
               color: 'var(--text-primary)'
             }}
-            title="Switch Map Theme"
-            aria-label="Switch Map Theme"
+            title={isIpLocation ? "Enable precise location / Center on me" : "Center on My Location"}
+            aria-label="Center on My Location"
           >
-            <span className="text-xl">{THEME_ICONS[mapTheme]}</span>
+            <span className="text-xl">🎯</span>
           </button>
+
+          {/* Floating Theme Switcher */}
+          <div 
+            ref={switcherRef}
+            className="flex flex-col items-end"
+          >
+            {isOpen && (
+              <div 
+                className="mb-2 p-1.5 rounded-xl border shadow-xl flex flex-col gap-1 min-w-[130px] animate-fadeIn transition-all"
+                style={{ 
+                  background: 'var(--bg-primary)', 
+                  borderColor: 'var(--border-primary)',
+                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                {(Object.keys(THEMES) as MapTheme[]).map((theme) => {
+                  const isActive = mapTheme === theme;
+                  return (
+                    <button
+                      key={theme}
+                      onClick={() => {
+                        setMapTheme(theme);
+                        setIsOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                        isActive 
+                          ? 'text-white bg-gradient-to-r from-brand-500 to-brand-600 shadow-sm' 
+                          : 'hover:bg-black/5 dark:hover:bg-white/5'
+                      }`}
+                      style={!isActive ? { color: 'var(--text-secondary)' } : undefined}
+                    >
+                      <span className="text-base">{THEME_ICONS[theme]}</span>
+                      <span>{THEMES[theme].name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="flex items-center justify-center w-11 h-11 rounded-full shadow-lg border transition-all duration-300 hover:scale-105 active:scale-95"
+              style={{ 
+                background: 'var(--bg-primary)', 
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-primary)'
+              }}
+              title="Switch Map Theme"
+              aria-label="Switch Map Theme"
+            >
+              <span className="text-xl">{THEME_ICONS[mapTheme]}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -786,9 +814,10 @@ export function ExploreMapInner({
             </div>
 
             {/* Non-blocking location prompt banner */}
-            {!hasLocation && permissionState !== 'denied' && requestLocation && (
+            {(isIpLocation || (!hasLocation && permissionState !== 'denied')) && requestLocation && (
               <div className="mx-4 mt-3 mb-1">
                 <button
+                  id="enable-location-btn"
                   onClick={requestLocation}
                   disabled={geoLoading}
                   className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all border hover:shadow-md"
@@ -806,8 +835,12 @@ export function ExploreMapInner({
                   ) : (
                     <>
                       <span className="text-base">📍</span>
-                      <span className="flex-1 text-left">Enable location for nearby bunks</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-brand-500/10 text-brand-500 font-bold">Optional</span>
+                      <span className="flex-1 text-left">
+                        {isIpLocation ? 'Using IP Location — Enable Precise GPS' : 'Enable location for nearby bunks'}
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-brand-500/10 text-brand-500 font-bold">
+                        {isIpLocation ? 'Enhance' : 'Optional'}
+                      </span>
                     </>
                   )}
                 </button>
@@ -822,7 +855,7 @@ export function ExploreMapInner({
                 }}
               >
                 <span>🔒</span>
-                <span>Location denied — showing default area. Use search or pan the map to explore.</span>
+                <span>Location denied — showing IP area. Use search or pan the map to explore.</span>
               </div>
             )}
 

@@ -196,6 +196,39 @@ export async function createReview(
 ): Promise<string> {
   if (isMockMode()) {
     console.log('MOCK: createReview called', { stationId, userId, userName, formData });
+    if (typeof window !== 'undefined') {
+      const key = `fuelvoice:mock_user_reviews:${stationId}`;
+      const mockReviewsStr = localStorage.getItem(key) || '[]';
+      const userReviews = JSON.parse(mockReviewsStr);
+      const nowMs = Date.now() + 100000;
+      const newReview: Review = {
+        id: `mock-user-review-${Date.now()}`,
+        stationId,
+        userId,
+        userName: formData.isAnonymous ? 'Anonymous' : userName,
+        userPhoto: formData.isAnonymous ? '' : userPhoto,
+        rating: formData.rating,
+        fuelQuality: formData.fuelQuality,
+        service: formData.service,
+        staffBehaviour: formData.staffBehaviour,
+        cleanliness: formData.cleanliness,
+        washroom: formData.washroom,
+        airFilling: formData.airFilling,
+        title: formData.title,
+        content: formData.content,
+        likeCount: 0,
+        reportCount: 0,
+        isHidden: false,
+        isFeatured: false,
+        isAnonymous: formData.isAnonymous,
+        suggestions: formData.suggestions,
+        createdAt: Timestamp.fromMillis(nowMs),
+        updatedAt: Timestamp.fromMillis(nowMs),
+        tags: formData.tags,
+      };
+      userReviews.unshift(newReview);
+      localStorage.setItem(key, JSON.stringify(userReviews));
+    }
     return 'mock-review-id-123';
   }
   // Ensure the station exists in Firestore before running updates on it
@@ -295,8 +328,19 @@ export async function getReviews(
   lastDoc?: DocumentSnapshot
 ): Promise<{ reviews: Review[]; lastDoc: DocumentSnapshot | null; hasMore: boolean }> {
   if (isMockMode()) {
+    let mockUserReviews: Review[] = [];
+    if (typeof window !== 'undefined') {
+      const key = `fuelvoice:mock_user_reviews:${stationId}`;
+      const mockReviewsStr = localStorage.getItem(key) || '[]';
+      mockUserReviews = JSON.parse(mockReviewsStr).map((r: any) => ({
+        ...r,
+        createdAt: Timestamp.fromMillis(r.createdAt?.seconds ? r.createdAt.seconds * 1000 : Date.now()),
+        updatedAt: Timestamp.fromMillis(r.updatedAt?.seconds ? r.updatedAt.seconds * 1000 : Date.now()),
+      }));
+    }
+
     // Generate 45 mock reviews to test infinite scroll and sorting
-    const mockReviews: Review[] = Array.from({ length: 45 }, (_, index) => {
+    const generatedReviews: Review[] = Array.from({ length: 45 }, (_, index) => {
       const idNum = index + 1;
       const ratings = [5, 4, 3, 2, 1];
       const rating = ratings[index % ratings.length];
@@ -328,6 +372,8 @@ export async function getReviews(
         tags: index % 2 === 0 ? ['good-quality'] : ['poor-service'],
       };
     });
+
+    const mockReviews = [...mockUserReviews, ...generatedReviews];
 
     // Sort mock reviews based on selected sortBy criteria
     let sorted = [...mockReviews];

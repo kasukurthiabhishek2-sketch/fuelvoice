@@ -159,7 +159,7 @@ test.describe('Homepage visual stability and map performance', () => {
         brand: styles.getPropertyValue('--color-brand-500').trim(),
       };
     });
-    expect(lightColors.bg.toUpperCase()).toBe('#F8F9F8');
+    expect(lightColors.bg.toUpperCase()).toBe('#F5F5F1');
     expect(lightColors.brand.toUpperCase()).toBe('#67897D');
 
     await page.screenshot({
@@ -177,7 +177,7 @@ test.describe('Homepage visual stability and map performance', () => {
     const darkBg = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim()
     );
-    expect(darkBg.toUpperCase()).toBe('#111614');
+    expect(darkBg.toUpperCase()).toBe('#101512');
 
     const signIn = page.getByRole('button', { name: /sign in with google/i });
     if (await signIn.count()) {
@@ -273,5 +273,54 @@ test.describe('Homepage visual stability and map performance', () => {
       caret: 'initial',
     });
   });
+  test('phase 7: premium UI primitives render as designed', async ({ page }, testInfo) => {
+    await page.addInitScript(() => localStorage.setItem('fuelvoice-theme', 'light'));
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const hero = page.locator('.command-surface');
+    const workspace = page.locator('#explore-map .map-workspace');
+    const footer = page.locator('.footer-shell');
+
+    await expect(hero).toBeVisible();
+    await expect(workspace).toBeVisible();
+    await footer.scrollIntoViewIfNeeded();
+    await expect(footer).toBeVisible();
+
+    const radii = await Promise.all([
+      hero.evaluate((el) => getComputedStyle(el).borderRadius),
+      workspace.evaluate((el) => getComputedStyle(el).borderRadius),
+      footer.evaluate((el) => getComputedStyle(el).borderRadius),
+    ]);
+    for (const radius of radii) {
+      expect(parseFloat(radius)).toBeGreaterThanOrEqual(24);
+    }
+
+    await page.screenshot({
+      path: screenshotPath(testInfo, 'phase-7-premium-full-page'),
+      fullPage: true,
+      caret: 'initial',
+    });
+  });
+
+  test('phase 8: search workspace matches the premium system', async ({ page }, testInfo) => {
+    await page.addInitScript(() => localStorage.setItem('fuelvoice-theme', 'light'));
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Search less');
+    await expect(page.locator('.command-surface')).toBeVisible();
+
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+
+    await page.screenshot({
+      path: screenshotPath(testInfo, 'phase-8-search-workspace'),
+      fullPage: false,
+      caret: 'initial',
+    });
+  });
+
 
 });

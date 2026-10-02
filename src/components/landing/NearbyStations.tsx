@@ -165,17 +165,6 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
                           {station.address || 'Address details are not available for this mapped station.'}
                         </p>
 
-                        {station.fuelTypes?.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1.5">
-                            {station.fuelTypes.slice(0, 3).map((fuel) => (
-                              <span key={fuel} className="rounded-md bg-surface-100 px-2 py-1 text-[10px] font-bold dark:bg-surface-800"
-                                style={{ color: 'var(--text-secondary)' }}>
-                                {fuel}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
                         <div className="mt-5 flex items-end justify-between gap-3 border-t pt-4" style={{ borderColor: 'var(--border-secondary)' }}>
                           <div>
                             {station.reviewCount > 0 ? (

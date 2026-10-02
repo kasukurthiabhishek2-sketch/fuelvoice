@@ -45,7 +45,7 @@ export function LoginButton({ variant = 'default', className = '' }: LoginButton
         aria-label="Sign in with Google"
       >
         <GoogleIcon />
-        <span className="hidden sm:inline">{loading ? 'Signing in…' : 'Sign in'}</span>
+        <span>{loading ? 'Signing in…' : 'Sign in'}</span>
       </motion.button>
     );
   }

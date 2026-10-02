@@ -55,7 +55,7 @@ export function Header() {
             aria-label="Primary navigation"
           >
             {navItems.map((item) => {
-              const active = item.match === 'search' ? pathname === '/search' : pathname === '/';
+              const active = item.match === 'search' ? pathname === '/search' : item.match === 'map' && pathname === '/';
               return (
                 <Link
                   key={item.href}

@@ -1,34 +1,76 @@
-/** Product/data-source facts without unverifiable vanity metrics. */
+/** Product and data-source facts without unverifiable vanity metrics. */
 
 'use client';
 
 import { motion } from 'framer-motion';
 
-const stats = [
-  { icon: '🗺️', label: 'Map Data', value: 'OpenStreetMap', description: 'Community-maintained station locations and metadata' },
-  { icon: '⭐', label: 'Reviews', value: 'Community-led', description: 'Experiences shared by FuelVoice users' },
-  { icon: '🌍', label: 'Coverage', value: 'Global', description: 'Where OpenStreetMap has mapped fuel stations' },
-  { icon: '🔎', label: 'Discovery', value: 'Open access', description: 'Browse and search without a subscription' },
+const principles = [
+  {
+    number: '01',
+    label: 'Mapped source',
+    value: 'OpenStreetMap',
+    description: 'Station locations and public metadata come from community-maintained map data.',
+  },
+  {
+    number: '02',
+    label: 'Review signal',
+    value: 'Community-led',
+    description: 'FuelVoice ratings come from user-submitted experiences, not fabricated fallback scores.',
+  },
+  {
+    number: '03',
+    label: 'Coverage',
+    value: 'Global',
+    description: 'Discovery works wherever OpenStreetMap has mapped fuel stations and usable metadata.',
+  },
+  {
+    number: '04',
+    label: 'Access',
+    value: 'Open',
+    description: 'Search and browse mapped stations without putting basic discovery behind a subscription.',
+  },
 ];
 
 export function Statistics() {
   return (
-    <section className="py-16 sm:py-20" style={{ background: 'var(--bg-secondary)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Powered by Community</h2>
-          <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Open map data paired with community reviews</p>
-        </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat, index) => (
-            <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }} transition={{ delay: index * 0.08, duration: 0.35 }} className="card p-6 text-center">
-              <div className="text-3xl mb-3" aria-hidden="true">{stat.icon}</div>
-              <p className="text-xl font-bold bg-gradient-to-r from-brand-500 to-accent-500 bg-clip-text text-transparent">{stat.value}</p>
-              <p className="text-sm font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>{stat.label}</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{stat.description}</p>
-            </motion.div>
-          ))}
+    <section className="py-16 sm:py-20 lg:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:items-end">
+          <div className="max-w-xl">
+            <p className="section-kicker">Trust model</p>
+            <h2 className="mt-3 text-3xl font-black tracking-[-0.045em] sm:text-4xl" style={{ color: 'var(--text-primary)' }}>
+              Useful because the source is clear.
+            </h2>
+            <p className="mt-4 text-sm leading-6 sm:text-base" style={{ color: 'var(--text-secondary)' }}>
+              FuelVoice separates mapped facts from community opinions. That distinction is less glamorous than a giant “AI verified” badge, and considerably more useful.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {principles.map((principle, index) => (
+              <motion.article
+                key={principle.label}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
+                className="card relative overflow-hidden p-5 sm:p-6"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <span className="text-[11px] font-black tracking-[0.12em] text-brand-500">{principle.number}</span>
+                  <span className="rounded-lg bg-[var(--bg-tertiary)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-tertiary)' }}>
+                    {principle.label}
+                  </span>
+                </div>
+                <p className="mt-6 text-xl font-extrabold tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>
+                  {principle.value}
+                </p>
+                <p className="mt-2 text-xs leading-5 sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  {principle.description}
+                </p>
+              </motion.article>
+            ))}
+          </div>
         </div>
       </div>
     </section>

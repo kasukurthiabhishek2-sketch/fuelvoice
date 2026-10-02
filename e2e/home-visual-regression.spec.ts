@@ -118,6 +118,26 @@ test.describe('Homepage visual stability and map performance', () => {
     expect(hydrationWarnings).toEqual([]);
   });
 
+  test('phase 1b: mobile initial paint keeps offscreen Leaflet unmounted', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'Mobile compositor guard');
+
+    await page.addInitScript(() => localStorage.setItem('fuelvoice-theme', 'light'));
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(900);
+
+    // The bundle may be preloaded, but no Leaflet DOM should exist until the
+    // map workspace reaches the viewport. This guards the Chromium layer-bleed
+    // regression that painted map content over the hero.
+    await expect(page.locator('.leaflet-container')).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    await page.screenshot({
+      path: screenshotPath(testInfo, 'phase-1b-mobile-no-offscreen-map'),
+      fullPage: false,
+      caret: 'initial',
+    });
+  });
+
   test('phase 2: map initializes promptly inside a stable shell', async ({ page }, testInfo) => {
     await page.addInitScript(() => localStorage.setItem('fuelvoice-theme', 'light'));
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -159,7 +179,7 @@ test.describe('Homepage visual stability and map performance', () => {
         brand: styles.getPropertyValue('--color-brand-500').trim(),
       };
     });
-    expect(lightColors.bg.toUpperCase()).toBe('#F8F9F8');
+    expect(lightColors.bg.toUpperCase()).toBe('#F5F5F1');
     expect(lightColors.brand.toUpperCase()).toBe('#67897D');
 
     await page.screenshot({
@@ -177,7 +197,7 @@ test.describe('Homepage visual stability and map performance', () => {
     const darkBg = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim()
     );
-    expect(darkBg.toUpperCase()).toBe('#111614');
+    expect(darkBg.toUpperCase()).toBe('#101512');
 
     const signIn = page.getByRole('button', { name: /sign in with google/i });
     if (await signIn.count()) {
@@ -186,7 +206,7 @@ test.describe('Homepage visual stability and map performance', () => {
         return { background: styles.backgroundColor, color: styles.color };
       })).toEqual({
         background: 'rgb(30, 38, 34)',
-        color: 'rgb(237, 241, 239)',
+        color: 'rgb(238, 242, 239)',
       });
     }
 
@@ -227,16 +247,14 @@ test.describe('Homepage visual stability and map performance', () => {
     await page.getByRole('link', { name: 'Explore map', exact: true }).first().click();
     await expect(page.locator('#explore-map')).toBeInViewport();
 
-    const geometry = await page.evaluate(() => {
-      const header = document.querySelector('header')?.getBoundingClientRect();
-      const section = document.querySelector('#explore-map')?.getBoundingClientRect();
-      return {
-        headerBottom: header?.bottom ?? 0,
-        sectionTop: section?.top ?? -1,
-      };
-    });
-
-    expect(geometry.sectionTop).toBeGreaterThanOrEqual(geometry.headerBottom - 1);
+    await expect.poll(async () => {
+      return page.evaluate(() => {
+        const header = document.querySelector('header')?.getBoundingClientRect();
+        const section = document.querySelector('#explore-map')?.getBoundingClientRect();
+        if (!header || !section) return false;
+        return section.top >= header.bottom - 1;
+      });
+    }, { timeout: 5000 }).toBe(true);
 
     await page.screenshot({
       path: screenshotPath(testInfo, 'phase-5-anchor-offset'),
@@ -273,5 +291,54 @@ test.describe('Homepage visual stability and map performance', () => {
       caret: 'initial',
     });
   });
+  test('phase 7: premium UI primitives render as designed', async ({ page }, testInfo) => {
+    await page.addInitScript(() => localStorage.setItem('fuelvoice-theme', 'light'));
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const hero = page.locator('.command-surface');
+    const workspace = page.locator('#explore-map .map-workspace');
+    const footer = page.locator('.footer-shell');
+
+    await expect(hero).toBeVisible();
+    await expect(workspace).toBeVisible();
+    await footer.scrollIntoViewIfNeeded();
+    await expect(footer).toBeVisible();
+
+    const radii = await Promise.all([
+      hero.evaluate((el) => getComputedStyle(el).borderRadius),
+      workspace.evaluate((el) => getComputedStyle(el).borderRadius),
+      footer.evaluate((el) => getComputedStyle(el).borderRadius),
+    ]);
+    for (const radius of radii) {
+      expect(parseFloat(radius)).toBeGreaterThanOrEqual(24);
+    }
+
+    await page.screenshot({
+      path: screenshotPath(testInfo, 'phase-7-premium-full-page'),
+      fullPage: true,
+      caret: 'initial',
+    });
+  });
+
+  test('phase 8: search workspace matches the premium system', async ({ page }, testInfo) => {
+    await page.addInitScript(() => localStorage.setItem('fuelvoice-theme', 'light'));
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Search less');
+    await expect(page.locator('.command-surface')).toBeVisible();
+
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+
+    await page.screenshot({
+      path: screenshotPath(testInfo, 'phase-8-search-workspace'),
+      fullPage: false,
+      caret: 'initial',
+    });
+  });
+
 
 });

@@ -1,75 +1,82 @@
-/** Product and data-source facts without unverifiable vanity metrics. */
+/** Transparent product principles without vanity metrics. */
 
 'use client';
-
-import { motion } from 'framer-motion';
 
 const principles = [
   {
     number: '01',
     label: 'Mapped source',
     value: 'OpenStreetMap',
-    description: 'Station locations and public metadata come from community-maintained map data.',
+    description: 'Station identity and public metadata stay connected to a source users can verify.',
   },
   {
     number: '02',
     label: 'Review signal',
     value: 'Community-led',
-    description: 'FuelVoice ratings come from user-submitted experiences, not fabricated fallback scores.',
+    description: 'Ratings are submitted experiences, not generated filler when source data is missing.',
   },
   {
     number: '03',
     label: 'Coverage',
     value: 'Global',
-    description: 'Discovery works wherever OpenStreetMap has mapped fuel stations and usable metadata.',
+    description: 'Discovery works wherever OpenStreetMap has usable mapped fuel-station data.',
   },
   {
     number: '04',
     label: 'Access',
     value: 'Open',
-    description: 'Search and browse mapped stations without putting basic discovery behind a subscription.',
+    description: 'Basic discovery remains available without forcing users through a subscription wall.',
   },
 ];
 
 export function Statistics() {
   return (
-    <section className="py-16 sm:py-20 lg:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:items-end">
-          <div className="max-w-xl">
-            <p className="section-kicker">Powered by Community</p>
-            <h2 className="mt-3 text-3xl font-black tracking-[-0.045em] sm:text-4xl" style={{ color: 'var(--text-primary)' }}>
-              Useful because the source is clear.
-            </h2>
-            <p className="mt-4 text-sm leading-6 sm:text-base" style={{ color: 'var(--text-secondary)' }}>
-              FuelVoice keeps mapped facts and community opinions distinct so users can understand what each signal represents.
-            </p>
-          </div>
+    <section className="pb-20 pt-4 sm:pb-24 lg:pb-28">
+      <div className="app-frame">
+        <div className="premium-shell overflow-hidden">
+          <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12 lg:p-10">
+            <div className="max-w-xl">
+              <p className="section-kicker">Powered by Community</p>
+              <h2 className="mt-4 text-3xl font-black tracking-[-0.05em] sm:text-4xl lg:text-[2.8rem]" style={{ color: 'var(--text-primary)' }}>
+                Trust starts with knowing what each signal means.
+              </h2>
+              <p className="mt-4 text-sm leading-7 sm:text-base" style={{ color: 'var(--text-secondary)' }}>
+                FuelVoice separates mapped facts from driver opinions, so the interface can be useful without pretending every data point has the same authority.
+              </p>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {principles.map((principle, index) => (
-              <motion.article
-                key={principle.label}
-                initial={{ opacity: 0, y: 14 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ delay: index * 0.05, duration: 0.3 }}
-                className="card relative overflow-hidden p-5 sm:p-6"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <span className="text-[11px] font-black tracking-[0.12em] text-brand-500">{principle.number}</span>
-                  <span className="rounded-lg bg-[var(--bg-tertiary)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-tertiary)' }}>
-                    {principle.label}
+              <div className="mt-8 flex items-center gap-3 border-t border-[var(--border-primary)] pt-5">
+                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-300">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M12 3.5 19 6v5.3c0 4.4-2.7 7.6-7 9.2-4.3-1.6-7-4.8-7-9.2V6l7-2.5Z" strokeLinejoin="round" />
+                    <path d="m9.3 12 1.7 1.7 3.8-4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <p className="max-w-sm text-xs leading-5" style={{ color: 'var(--text-tertiary)' }}>
+                  Source outages remain visible instead of being masked with invented station or review data.
+                </p>
+              </div>
+            </div>
+
+            <div className="principle-strip divide-y divide-[var(--border-primary)]">
+              {principles.map((principle) => (
+                <article key={principle.label} className="grid gap-3 py-5 sm:grid-cols-[54px_1fr_auto] sm:items-center sm:gap-5">
+                  <span className="text-[10px] font-black tracking-[0.15em] text-brand-600 dark:text-brand-300">
+                    {principle.number}
                   </span>
-                </div>
-                <p className="mt-6 text-xl font-extrabold tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>
-                  {principle.value}
-                </p>
-                <p className="mt-2 text-xs leading-5 sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  {principle.description}
-                </p>
-              </motion.article>
-            ))}
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.11em]" style={{ color: 'var(--text-tertiary)' }}>
+                      {principle.label}
+                    </p>
+                    <p className="mt-1 text-base font-black tracking-[-0.025em]" style={{ color: 'var(--text-primary)' }}>
+                      {principle.value}
+                    </p>
+                  </div>
+                  <p className="max-w-sm text-xs leading-5 sm:text-right" style={{ color: 'var(--text-secondary)' }}>
+                    {principle.description}
+                  </p>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </div>

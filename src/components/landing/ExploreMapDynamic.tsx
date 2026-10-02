@@ -1,13 +1,16 @@
 /**
- * Dynamic import wrapper for ExploreMap (Leaflet requires window).
+ * Dynamic + proximity-aware wrapper for ExploreMap.
  *
- * The loading state mirrors the final desktop/mobile geometry so the map chunk
- * can arrive without causing a large layout shift.
+ * Leaflet creates GPU-transformed panes. Mounting those panes far below the
+ * mobile viewport can cause Chromium compositing artifacts to bleed over the
+ * hero. The map now prewarms shortly before it is needed and stays inside a
+ * paint-containment boundary.
  */
 
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useEffect, useRef, useState, type ComponentProps } from 'react';
 
 function MapLoadingShell() {
   return (
@@ -45,10 +48,61 @@ function MapLoadingShell() {
   );
 }
 
-export const ExploreMap = dynamic(
+const LazyExploreMap = dynamic(
   () => import('./ExploreMap').then((mod) => mod.ExploreMapInner),
   {
     ssr: false,
     loading: MapLoadingShell,
   }
 );
+
+type ExploreMapProps = ComponentProps<typeof LazyExploreMap>;
+
+export function ExploreMap(props: ExploreMapProps) {
+  const boundaryRef = useRef<HTMLDivElement>(null);
+  const [shouldMount, setShouldMount] = useState(false);
+
+  useEffect(() => {
+    // Warm the Leaflet bundle after the critical hero paint without creating
+    // any Leaflet DOM/compositor layers yet. The dynamic import cache makes
+    // the real mount fast once the workspace actually enters the viewport.
+    const preloadTimer = setTimeout(() => {
+      void import('./ExploreMap');
+    }, 700);
+
+    return () => clearTimeout(preloadTimer);
+  }, []);
+
+  useEffect(() => {
+    const boundary = boundaryRef.current;
+    if (!boundary || shouldMount) return;
+
+    if (!('IntersectionObserver' in window)) {
+      const timer = setTimeout(() => setShouldMount(true), 0);
+      return () => clearTimeout(timer);
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldMount(true);
+          observer.disconnect();
+        }
+      },
+      {
+        // Do not create Leaflet GPU panes until the workspace itself reaches
+        // the viewport. Its JavaScript bundle is already preloaded above.
+        rootMargin: '0px',
+      },
+    );
+
+    observer.observe(boundary);
+    return () => observer.disconnect();
+  }, [shouldMount]);
+
+  return (
+    <div ref={boundaryRef} className="leaflet-viewport-guard">
+      {shouldMount ? <LazyExploreMap {...props} /> : <MapLoadingShell />}
+    </div>
+  );
+}

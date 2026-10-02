@@ -13,6 +13,7 @@ import type { User } from 'firebase/auth';
 import { onAuthChange, signInWithGoogle, signOut, getUserProfile, getOrCreateUserProfile } from '@/lib/firebase/auth';
 import type { UserProfile } from '@/types/user';
 import { Timestamp } from 'firebase/firestore';
+import { canUseE2EMocks } from '@/lib/testing/e2e';
 
 interface AuthContextValue {
   /** Firebase user object (null if not logged in) */
@@ -44,9 +45,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if we are running in Playwright E2E and want to mock auth
-    // SECURITY: Only allow mock mode in development/test — never in production
-    const mockVal = (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined')
+    // Local mocks are always available in development and are available in the
+    // optimized Playwright build only when the explicit CI build flag is set.
+    const mockVal = canUseE2EMocks()
       ? localStorage.getItem('fuelvoice:mock_user')
       : null;
     const isMock = mockVal === 'true' || mockVal === 'admin';

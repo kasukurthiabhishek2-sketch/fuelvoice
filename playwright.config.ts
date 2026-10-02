@@ -24,11 +24,11 @@ export default defineConfig({
       use: { ...devices['iPhone 14'] },
     },
   ],
-  /* Start the dev server before running tests */
+  /* Test the optimized production build so framework dev UI cannot contaminate visual evidence. */
   webServer: {
-    command: 'npm run dev',
+    command: 'NEXT_PUBLIC_FUELVOICE_E2E_MOCKS=true npm run build && NEXT_PUBLIC_FUELVOICE_E2E_MOCKS=true npm run start',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
-    timeout: 30000,
+    timeout: 120000,
   },
 });

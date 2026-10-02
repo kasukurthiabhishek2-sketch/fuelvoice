@@ -1,7 +1,5 @@
 /**
- * Explore Map Section
- *
- * Interactive map presented as the primary discovery workspace.
+ * Interactive map discovery workspace.
  */
 
 'use client';
@@ -50,60 +48,56 @@ export function ExploreMapSection({ geolocation }: ExploreMapSectionProps) {
       : 'Default map area';
 
   return (
-    <section className="relative scroll-mt-24 py-10 sm:py-14 lg:py-16" id="explore-map">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-2xl">
-            <p className="section-kicker">Map discovery</p>
-            <h2 className="mt-3 text-3xl font-black tracking-[-0.045em] sm:text-4xl" style={{ color: 'var(--text-primary)' }}>
-              Explore <span className="text-brand-500">Mapped Stations</span>
-            </h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 sm:text-base" style={{ color: 'var(--text-secondary)' }}>
-              Browse stations spatially, then open the ones worth comparing. Pan or zoom the map to inspect a different area.
-            </p>
-          </div>
+    <section className="relative scroll-mt-24 pb-14 pt-4 sm:pb-20 sm:pt-8 lg:pb-24" id="explore-map">
+      <div className="app-frame">
+        <div className="map-shell map-workspace p-3 sm:p-4 lg:p-5">
+          <div className="flex flex-col gap-6 px-3 pb-5 pt-3 sm:px-4 sm:pb-6 sm:pt-4 lg:flex-row lg:items-end lg:justify-between lg:px-5">
+            <div className="max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="workspace-chip">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  Live discovery workspace
+                </span>
+                <span className="workspace-chip">
+                  <span className={`h-1.5 w-1.5 rounded-full ${hasLocation && !isIpLocation ? 'bg-emerald-400' : 'bg-amber-300'}`} />
+                  {locationLabel}
+                </span>
+              </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="info-chip">
-              <span className={`h-2 w-2 rounded-full ${hasLocation && !isIpLocation ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
-              {locationLabel}
-            </span>
-            <Link href="/search" className="secondary-action">
-              Search by name
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-
-        <div className="map-shell p-2 sm:p-3">
-          <div className="mb-2.5 flex flex-wrap items-center justify-between gap-3 px-2 py-1 sm:px-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--text-tertiary)' }}>
-                Live area explorer
-              </p>
-              <p className="mt-0.5 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {stationsLoading
-                  ? 'Loading mapped stations…'
-                  : stations?.length
-                    ? `${stations.length} mapped station${stations.length === 1 ? '' : 's'} in the active area`
-                    : 'Move around the map to discover stations'}
+              <p className="mt-6 text-[10px] font-black uppercase tracking-[0.16em] text-brand-300">Map discovery</p>
+              <h2 className="workspace-title mt-2 text-3xl font-black tracking-[-0.05em] sm:text-4xl lg:text-[2.8rem]">
+                Explore what is actually around you.
+              </h2>
+              <p className="workspace-copy mt-3 max-w-xl text-sm leading-6 sm:text-base">
+                Pan, zoom, compare, then open a station only when it looks worth the stop. The list stays tied to the active viewport.
               </p>
             </div>
-            <div className="hidden items-center gap-4 text-xs sm:flex" style={{ color: 'var(--text-secondary)' }}>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-brand-500" />
-                Station
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full border-2 border-sky-500 bg-sky-500/20" />
-                Your area
-              </span>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3 backdrop-blur">
+                <p className="text-[10px] font-bold uppercase tracking-[0.11em] text-white/45">Active area</p>
+                <p className="mt-1 text-sm font-extrabold text-white">
+                  {stationsLoading
+                    ? 'Loading stations…'
+                    : stations?.length
+                      ? `${stations.length} mapped station${stations.length === 1 ? '' : 's'}`
+                      : 'Pan to discover'}
+                </p>
+              </div>
+
+              <Link
+                href="/search"
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white px-4 text-sm font-extrabold text-[#17211D] transition hover:-translate-y-0.5 hover:bg-[#F4F7F4]"
+              >
+                Search by name
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M14 7l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[20px] border border-[var(--border-secondary)] bg-[var(--bg-secondary)]">
+          <div className="overflow-hidden rounded-[25px] border border-white/10 bg-[var(--bg-secondary)] shadow-[0_20px_55px_rgba(0,0,0,0.22)]">
             <ExploreMap
               lat={latitude}
               lng={longitude}
@@ -116,6 +110,11 @@ export function ExploreMapSection({ geolocation }: ExploreMapSectionProps) {
               permissionState={permissionState}
               stationsLoading={stationsLoading}
             />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 px-3 pb-1 pt-4 text-[10px] font-semibold text-white/45 sm:px-4">
+            <span>Station data from OpenStreetMap · community reviews from FuelVoice</span>
+            <span className="hidden sm:inline">Drag map · scroll to zoom · tap a station to compare</span>
           </div>
         </div>
       </div>

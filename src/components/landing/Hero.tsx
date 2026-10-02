@@ -1,9 +1,8 @@
 /**
- * Hero Section
+ * Homepage discovery hero.
  *
- * Stable, server-visible value proposition. Above-the-fold content deliberately
- * avoids entrance animations so slow JavaScript or a delayed map bundle can
- * never push the primary content below the viewport.
+ * Primary search is immediately available; supporting trust signals stay
+ * compact so the map remains the next obvious action.
  */
 
 'use client';
@@ -17,36 +16,21 @@ interface HeroProps {
   geolocation: GeolocationResult;
 }
 
-const decisionSignals = [
+const signals = [
   {
-    title: 'Fuel quality',
-    description: 'Compare first-hand ratings before you stop.',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M12 3.5c3.4 4.1 5.1 7.2 5.1 9.6A5.1 5.1 0 1 1 6.9 13c0-2.4 1.7-5.5 5.1-9.5Z" strokeLinejoin="round" />
-        <path d="M9.3 14.2c.4 1.3 1.3 2 2.7 2.2" strokeLinecap="round" />
-      </svg>
-    ),
+    index: '01',
+    title: 'Mapped facts',
+    copy: 'Station identity and public metadata stay tied to OpenStreetMap.',
   },
   {
-    title: 'Service & cleanliness',
-    description: 'See the details a generic map rating hides.',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M7 4.5h10v15H7z" strokeLinejoin="round" />
-        <path d="M9.5 8.5h5M9.5 12h5M9.5 15.5h3" strokeLinecap="round" />
-      </svg>
-    ),
+    index: '02',
+    title: 'Driver context',
+    copy: 'Community reviews add the experience a map pin cannot show.',
   },
   {
+    index: '03',
     title: 'Consumer recourse',
-    description: 'Find complaint guidance when something goes wrong.',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M12 3.5 19 6v5.3c0 4.4-2.7 7.6-7 9.2-4.3-1.6-7-4.8-7-9.2V6l7-2.5Z" strokeLinejoin="round" />
-        <path d="m9.3 12 1.7 1.7 3.8-4" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
+    copy: 'Complaint guidance stays close when something goes wrong.',
   },
 ];
 
@@ -55,36 +39,41 @@ export function Hero({ geolocation }: HeroProps) {
 
   return (
     <section className="hero-surface overflow-hidden">
-      <div className="hero-grid pointer-events-none absolute inset-x-0 top-0 h-[520px] opacity-45" aria-hidden="true" />
+      <div className="quiet-grid pointer-events-none absolute inset-x-0 top-0 h-[650px] opacity-70" aria-hidden="true" />
 
-      <div className="relative mx-auto grid max-w-7xl gap-10 px-4 pb-10 pt-10 sm:px-6 sm:pt-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] lg:items-center lg:gap-14 lg:px-8 lg:pb-12 lg:pt-16">
-        <div className="min-w-0">
-          <div className="mb-5">
-            <span className="info-chip">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
-              Community reviews + OpenStreetMap station data
-            </span>
-          </div>
+      <div className="app-frame relative pb-12 pt-10 sm:pt-14 lg:pb-16 lg:pt-16">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)] lg:items-stretch lg:gap-10">
+          <div className="flex min-w-0 flex-col justify-center py-2 lg:py-8">
+            <div className="mb-5">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border-primary)] bg-[var(--bg-elevated)] px-3 py-2 text-[11px] font-bold shadow-[var(--shadow-xs)]" style={{ color: 'var(--text-secondary)' }}>
+                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.10)]" />
+                Driver-first station intelligence
+              </span>
+            </div>
 
-          <h1
-            className="max-w-4xl text-[2.45rem] font-black leading-[1.02] tracking-[-0.05em] sm:text-5xl lg:text-[4rem]"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            Know the stop before
-            <span className="block text-brand-600 dark:text-brand-300">
-              you pull into a Fuel Station.
-            </span>
-          </h1>
+            <h1
+              className="hero-wordmark max-w-[780px] text-[2.7rem] font-black leading-[0.98] sm:text-[3.6rem] lg:text-[4.7rem]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              Know the stop before
+              <span className="block text-brand-600 dark:text-brand-300">
+                you pull into a Fuel Station.
+              </span>
+            </h1>
 
-          <p
-            className="mt-5 max-w-2xl text-base leading-7 sm:text-lg"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            Find mapped fuel stations, compare community experiences, inspect the details that matter, and share what actually happened.
-          </p>
+            <p className="mt-6 max-w-2xl text-[15px] leading-7 sm:text-lg sm:leading-8" style={{ color: 'var(--text-secondary)' }}>
+              Search mapped fuel stations, compare what drivers actually experienced, and make the next stop with more context than a star rating.
+            </p>
 
-          <div className="mt-7 max-w-2xl">
-            <div className="surface-panel p-2.5 sm:p-3">
+            <div className="command-surface mt-8 max-w-3xl p-2.5 sm:p-3">
+              <div className="mb-2 flex items-center justify-between px-2.5 pt-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.13em]" style={{ color: 'var(--text-tertiary)' }}>
+                  Find a station
+                </span>
+                <span className="hidden text-[10px] font-semibold sm:inline" style={{ color: 'var(--text-tertiary)' }}>
+                  Name · brand · locality · city
+                </span>
+              </div>
               <SearchBar
                 variant="hero"
                 userLat={latitude}
@@ -92,59 +81,65 @@ export function Hero({ geolocation }: HeroProps) {
                 placeholder="Search station name, brand, or city…"
               />
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold" style={{ color: 'var(--text-tertiary)' }}>Jump to:</span>
-              <Link href="#explore-map" className="info-chip transition hover:border-brand-500/30 hover:text-brand-600 dark:hover:text-brand-300">
-                Explore map
-              </Link>
-              <Link href="#nearby-stations" className="info-chip transition hover:border-brand-500/30 hover:text-brand-600 dark:hover:text-brand-300">
-                Nearby stations
-              </Link>
-            </div>
-          </div>
-        </div>
 
-        <aside
-          className="surface-panel relative overflow-hidden p-5 sm:p-6 lg:p-7"
-          aria-label="What FuelVoice helps you evaluate"
-        >
-          <div className="absolute inset-x-0 top-0 h-px bg-[var(--border-strong)]" aria-hidden="true" />
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="section-kicker">Decision support</p>
-              <h2 className="mt-3 text-2xl font-extrabold tracking-[-0.035em]" style={{ color: 'var(--text-primary)' }}>
-                More context than a pin on a map
-              </h2>
-            </div>
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-300">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M4 18.5V10l8-5 8 5v8.5" strokeLinejoin="round" />
-                <path d="M8 18.5v-5h8v5M3 19.5h18" strokeLinecap="round" />
-              </svg>
+            <div className="mt-4 flex flex-wrap items-center gap-2.5">
+              <Link href="#explore-map" className="primary-action">
+                Explore the map
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M14 7l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+              <Link href="#nearby-stations" className="secondary-action">See nearby stations</Link>
+              <span className="ml-1 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                OpenStreetMap + community reviews
+              </span>
             </div>
           </div>
 
-          <div className="mt-6 space-y-3">
-            {decisionSignals.map((signal) => (
-              <div
-                key={signal.title}
-                className="flex gap-4 rounded-2xl border border-[var(--border-secondary)] bg-[var(--bg-secondary)] p-4"
-              >
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--bg-card)] text-brand-600 shadow-[var(--shadow-xs)] dark:text-brand-300">
-                  {signal.icon}
-                </div>
+          <aside className="relative overflow-hidden rounded-[32px] bg-[var(--surface-contrast)] p-6 text-[var(--surface-contrast-text)] shadow-[0_32px_80px_rgba(23,32,28,0.20)] sm:p-7 lg:p-8" aria-label="How FuelVoice supports a decision">
+            <div className="pointer-events-none absolute -right-20 -top-20 hidden h-56 w-56 rounded-full bg-brand-400/15 blur-3xl sm:block" aria-hidden="true" />
+            <div className="pointer-events-none absolute -bottom-24 -left-16 hidden h-52 w-52 rounded-full bg-accent-400/10 blur-3xl sm:block" aria-hidden="true" />
+
+            <div className="relative">
+              <div className="flex items-start justify-between gap-5">
                 <div>
-                  <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{signal.title}</h3>
-                  <p className="mt-1 text-xs leading-5" style={{ color: 'var(--text-secondary)' }}>{signal.description}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] opacity-55">Before you stop</p>
+                  <h2 className="mt-3 max-w-xs text-2xl font-black tracking-[-0.04em] sm:text-[1.7rem]">
+                    One decision. Three useful signals.
+                  </h2>
                 </div>
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-current/10 bg-current/[0.06]">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M4 18.5V10l8-5 8 5v8.5" strokeLinejoin="round" />
+                    <path d="M8 18.5v-5h8v5M3 19.5h18" strokeLinecap="round" />
+                  </svg>
+                </span>
               </div>
-            ))}
-          </div>
 
-          <p className="mt-5 border-t border-[var(--border-primary)] pt-4 text-xs leading-5" style={{ color: 'var(--text-tertiary)' }}>
-            If the map provider is unavailable, FuelVoice shows an unavailable state instead of substitute station data.
-          </p>
-        </aside>
+              <div className="mt-8 divide-y divide-current/10 border-y border-current/10">
+                {signals.map((signal) => (
+                  <div key={signal.index} className="grid grid-cols-[42px_1fr] gap-3 py-5">
+                    <span className="pt-0.5 text-[10px] font-black tracking-[0.14em] opacity-40">{signal.index}</span>
+                    <div>
+                      <h3 className="text-sm font-extrabold">{signal.title}</h3>
+                      <p className="mt-1.5 text-xs leading-5 opacity-65">{signal.copy}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 flex items-start gap-3 rounded-2xl border border-current/10 bg-current/[0.045] p-4">
+                <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 opacity-70" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M12 3.5 19 6v5.3c0 4.4-2.7 7.6-7 9.2-4.3-1.6-7-4.8-7-9.2V6l7-2.5Z" strokeLinejoin="round" />
+                  <path d="m9.3 12 1.7 1.7 3.8-4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <p className="text-[11px] leading-5 opacity-65">
+                  Provider outages stay visible. FuelVoice does not invent substitute stations to make an empty map look busy.
+                </p>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
 
       <ExploreMapSection geolocation={geolocation} />

@@ -112,6 +112,11 @@ test.describe('Homepage visual stability and map performance', () => {
     const mapSection = page.locator('#explore-map');
     await mapSection.scrollIntoViewIfNeeded();
 
+    const mapShell = mapSection.locator('.map-shell');
+    await expect(mapShell).toBeVisible();
+    const shellOpacity = await mapShell.evaluate((element) => getComputedStyle(element).opacity);
+    expect(shellOpacity).toBe('1');
+
     const start = Date.now();
     const map = page.getByRole('application', { name: /interactive map of nearby fuel stations/i });
     await expect(map).toBeVisible({ timeout: 5000 });

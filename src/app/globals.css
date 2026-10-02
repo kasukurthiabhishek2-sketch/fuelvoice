@@ -546,10 +546,29 @@ body {
   border-radius: 6px;
 }
 
+.leaflet-viewport-guard {
+  position: relative;
+  isolation: isolate;
+  contain: layout paint style;
+  overflow: hidden;
+  border-radius: 24px;
+  clip-path: inset(0 round 24px);
+}
+
 .leaflet-container {
+  position: relative;
+  isolation: isolate;
+  contain: layout paint style;
+  overflow: hidden !important;
   border-radius: 18px;
+  clip-path: inset(0 round 18px);
   z-index: 0;
   background: var(--bg-tertiary);
+}
+
+.leaflet-pane,
+.leaflet-control-container {
+  isolation: isolate;
 }
 
 @media (max-width: 640px) {

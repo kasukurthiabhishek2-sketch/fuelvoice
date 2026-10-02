@@ -470,6 +470,7 @@ export async function hasUserReviewed(stationId: string, userId: string): Promis
     collection(db, 'reviews'),
     where('stationId', '==', stationId),
     where('userId', '==', userId),
+    where('isHidden', '==', false),
     limit(1)
   );
   const legacySnapshot = await getDocs(legacyQuery);

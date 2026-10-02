@@ -11,7 +11,8 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import { NearbyStations } from '@/components/landing/NearbyStations';
 
 export default function SearchPage() {
-  const { latitude, longitude } = useGeolocation();
+  const geolocation = useGeolocation();
+  const { latitude, longitude } = geolocation;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -31,7 +32,7 @@ export default function SearchPage() {
       </div>
 
       {/* Nearby Stations */}
-      <NearbyStations />
+      <NearbyStations geolocation={geolocation} />
     </div>
   );
 }

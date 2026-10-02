@@ -13,10 +13,14 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ExploreMap } from './ExploreMapDynamic';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import type { GeolocationResult } from '@/hooks/useGeolocation';
 import { useNearbyStations } from '@/hooks/useNearbyStations';
 
-export function ExploreMapSection() {
+interface ExploreMapSectionProps {
+  geolocation: GeolocationResult;
+}
+
+export function ExploreMapSection({ geolocation }: ExploreMapSectionProps) {
   const router = useRouter();
   const {
     latitude,
@@ -26,7 +30,7 @@ export function ExploreMapSection() {
     loading: geoLoading,
     requestLocation,
     permissionState,
-  } = useGeolocation();
+  } = geolocation;
 
   // Fallback to default coordinates (Hyderabad) when user location is not yet available
   const queryLat = hasLocation && latitude !== null ? latitude : 17.3887027;

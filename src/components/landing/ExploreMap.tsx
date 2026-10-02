@@ -31,6 +31,13 @@ type MapTheme = 'default' | 'dark' | 'satellite' | 'terrain';
 
 const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY ;
 const MIN_ZOOM = 13;
+const MAX_CACHED_STATIONS = 300;
+
+function mergeStations(current: StationSummary[], incoming: StationSummary[]): StationSummary[] {
+  const byId = new Map(current.map(station => [station.id, station]));
+  incoming.forEach(station => byId.set(station.id, station));
+  return Array.from(byId.values()).slice(-MAX_CACHED_STATIONS);
+}
 
 const THEMES = {
   default: {
@@ -131,11 +138,7 @@ export function ExploreMapInner({
   // Sync prop stations into allStations when they first arrive / change
   useEffect(() => {
     if (stations.length > 0) {
-      setAllStations(prev => {
-        const ids = new Set(prev.map(s => s.id));
-        const merged = [...prev, ...stations.filter(s => !ids.has(s.id))];
-        return merged;
-      });
+      setAllStations(prev => mergeStations(prev, stations));
     }
   }, [stations]);
 
@@ -154,7 +157,7 @@ export function ExploreMapInner({
   // Fetch stations for the new map center, merge with existing (dedup by id)
   const fetchStationsForArea = useCallback(async (centerLat: number, centerLng: number) => {
     const last = lastFetchedCenterRef.current;
-    if (last && haversineKm(last, { lat: centerLat, lng: centerLng }) < 8) return;
+    if (last && haversineKm(last, { lat: centerLat, lng: centerLng }) < 2.5) return;
     if (isFetchingAreaRef.current) return;
 
     lastFetchedCenterRef.current = { lat: centerLat, lng: centerLng };
@@ -163,11 +166,7 @@ export function ExploreMapInner({
     try {
       const newStations = await findNearbyStations(centerLat, centerLng, 5000);
       if (newStations.length > 0) {
-        setAllStations(prev => {
-          const ids = new Set(prev.map(s => s.id));
-          const merged = [...prev, ...newStations.filter(s => !ids.has(s.id))];
-          return merged;
-        });
+        setAllStations(prev => mergeStations(prev, newStations));
       }
     } catch (err) {
       console.error('[FuelVoice] Failed to fetch stations for area:', err);
@@ -231,12 +230,12 @@ export function ExploreMapInner({
     if (e.data?.type === 'fuelvoice:navigate' && e.data.stationId) {
       onStationSelect?.(e.data.stationId);
     } else if (e.data?.type === 'fuelvoice:select' && e.data.stationId) {
-      const selected = stations.find((s) => s.id === e.data.stationId);
+      const selected = allStationsRef.current.find((s) => s.id === e.data.stationId);
       if (selected) {
         setSelectedStation(selected);
       }
     }
-  }, [onStationSelect, stations]);
+  }, [onStationSelect]);
 
   useEffect(() => {
     window.addEventListener('message', handleMessage);
@@ -244,8 +243,8 @@ export function ExploreMapInner({
   }, [handleMessage]);
 
   // Default to Hyderabad center at station-level zoom
-  const defaultLat = lat || 17.3887;
-  const defaultLng = lng || 78.4754;
+  const defaultLat = lat ?? 17.3887;
+  const defaultLng = lng ?? 78.4754;
 
   // Initialize Map
   useEffect(() => {
@@ -300,7 +299,6 @@ export function ExploreMapInner({
 
     // Event hooks for map view transitions — use single handler for both
     map.on('moveend', handleMapMoveEnd);
-    map.on('zoomend', handleMapMoveEnd);
 
     mapInstanceRef.current = map;
     
@@ -313,7 +311,6 @@ export function ExploreMapInner({
 
     return () => {
       map.off('moveend', handleMapMoveEnd);
-      map.off('zoomend', handleMapMoveEnd);
       if (fetchTimerRef.current) clearTimeout(fetchTimerRef.current);
       map.remove();
       mapInstanceRef.current = null;
@@ -428,7 +425,7 @@ export function ExploreMapInner({
         : '';
 
       const ratingStars = station.avgRating > 0
-        ? `<div style="color:#F59E0B;font-size:12px;margin:2px 0;">${'★'.repeat(Math.round(station.avgRating))}${'☆'.repeat(5 - Math.round(station.avgRating))} <span style="color:#64748B;">${station.avgRating.toFixed(1)}</span></div>`
+        ? `<div style="color:#F59E0B;font-size:12px;margin:2px 0;">${'★'.repeat(Math.round(station.avgRating))}{'☆'.repeat(5 - Math.round(station.avgRating))} <span style="color:#64748B;">${station.avgRating.toFixed(1)}</span></div>`
         : '<div style="font-size:11px;color:#94A3B8;margin:2px 0;">No reviews yet</div>';
 
       const reviewText = station.reviewCount > 0
@@ -701,7 +698,7 @@ export function ExploreMapInner({
                   <div className="flex items-center gap-0.5 text-xs text-amber-500 mt-1.5">
                     {selectedStation.avgRating > 0 ? (
                       <>
-                        {'★'.repeat(Math.round(selectedStation.avgRating))}${'☆'.repeat(5 - Math.round(selectedStation.avgRating))}
+                        {'★'.repeat(Math.round(selectedStation.avgRating))}{'☆'.repeat(5 - Math.round(selectedStation.avgRating))}
                       </>
                     ) : (
                       '☆☆☆☆☆'
@@ -770,7 +767,7 @@ export function ExploreMapInner({
                           </span>
                         </div>
                         <div className="flex items-center gap-0.5 text-[9px] text-amber-500">
-                          {'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                          {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
                         </div>
                       </div>
                       
@@ -816,11 +813,11 @@ export function ExploreMapInner({
                   )}
                 </h3>
                 <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  {isFetchingArea ? 'Searching new area…' : 'Showing active stations inside current area'}
+                  {isFetchingArea ? 'Searching new area…' : 'Showing mapped stations inside the current area'}
                 </p>
               </div>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-600 dark:bg-brand-950/20 dark:text-brand-400">
-                {visibleStations.length} Active
+                {visibleStations.length} Visible
               </span>
             </div>
 

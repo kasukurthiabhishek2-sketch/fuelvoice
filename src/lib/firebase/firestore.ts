@@ -40,28 +40,26 @@ const isMockMode = (): boolean => {
 };
 
 /** Helper to identify plain JS objects (vs SDK classes like FieldValue or Timestamp) */
-function isPlainObject(val: any): boolean {
-  return val && (val.constructor === Object || val.constructor === undefined);
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 /** Recursively strips undefined fields from plain objects before writing to Firestore */
-function removeUndefined<T>(obj: T): T {
-  if (Array.isArray(obj)) {
-    return obj.map(removeUndefined) as any;
+function removeUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => removeUndefined(item)) as T;
   }
-  if (isPlainObject(obj)) {
-    const result: any = {};
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        const val = obj[key];
-        if (val !== undefined) {
-          result[key] = removeUndefined(val);
-        }
-      }
-    }
-    return result;
+  if (isPlainObject(value)) {
+    const cleaned = Object.fromEntries(
+      Object.entries(value)
+        .filter(([, item]) => item !== undefined)
+        .map(([key, item]) => [key, removeUndefined(item)]),
+    );
+    return cleaned as T;
   }
-  return obj;
+  return value;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -331,10 +329,15 @@ export async function getReviews(
     if (typeof window !== 'undefined') {
       const key = `fuelvoice:mock_user_reviews:${stationId}`;
       const mockReviewsStr = localStorage.getItem(key) || '[]';
-      mockUserReviews = JSON.parse(mockReviewsStr).map((r: any) => ({
-        ...r,
-        createdAt: Timestamp.fromMillis(r.createdAt?.seconds ? r.createdAt.seconds * 1000 : Date.now()),
-        updatedAt: Timestamp.fromMillis(r.updatedAt?.seconds ? r.updatedAt.seconds * 1000 : Date.now()),
+      type StoredMockReview = Omit<Review, 'createdAt' | 'updatedAt'> & {
+        createdAt?: { seconds?: number };
+        updatedAt?: { seconds?: number };
+      };
+      const storedReviews = JSON.parse(mockReviewsStr) as StoredMockReview[];
+      mockUserReviews = storedReviews.map((review) => ({
+        ...review,
+        createdAt: Timestamp.fromMillis(review.createdAt?.seconds ? review.createdAt.seconds * 1000 : Date.now()),
+        updatedAt: Timestamp.fromMillis(review.updatedAt?.seconds ? review.updatedAt.seconds * 1000 : Date.now()),
       }));
     }
 
@@ -375,7 +378,7 @@ export async function getReviews(
     const mockReviews = [...mockUserReviews, ...generatedReviews];
 
     // Sort mock reviews based on selected sortBy criteria
-    let sorted = [...mockReviews];
+    const sorted = [...mockReviews];
     switch (sortBy) {
       case 'newest':
         sorted.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
@@ -399,7 +402,7 @@ export async function getReviews(
     const pageDocs = sorted.slice(startIndex, startIndex + pageSize);
     const hasMore = startIndex + pageSize < sorted.length;
     const nextLastDoc = hasMore 
-      ? ({ id: `mock-doc-${startIndex + pageSize}` } as any as DocumentSnapshot)
+      ? ({ id: `mock-doc-${startIndex + pageSize}` } as unknown as DocumentSnapshot)
       : null;
 
     return {

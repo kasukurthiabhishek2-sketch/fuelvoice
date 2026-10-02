@@ -42,7 +42,7 @@ export function Statistics() {
               Useful because the source is clear.
             </h2>
             <p className="mt-4 text-sm leading-6 sm:text-base" style={{ color: 'var(--text-secondary)' }}>
-              FuelVoice separates mapped facts from community opinions. That distinction is less glamorous than a giant “AI verified” badge, and considerably more useful.
+              FuelVoice keeps mapped facts and community opinions distinct so users can understand what each signal represents.
             </p>
           </div>
 

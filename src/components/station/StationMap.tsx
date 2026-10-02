@@ -4,6 +4,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
+import * as L from 'leaflet';
 
 interface StationMapProps {
   lat: number;
@@ -29,8 +30,6 @@ export function StationMapInner({ lat, lng, name, userLat, userLng, className = 
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
-    const L = require('leaflet') as typeof import('leaflet');
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({

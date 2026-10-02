@@ -1,16 +1,8 @@
-/**
- * useGeolocation Hook
- * 
- * Wraps the Browser Geolocation API with:
- * - Permission state management
- * - Session storage caching (avoids repeated prompts)
- * - Error handling
- * - Loading states
- */
+/** Browser geolocation with short-lived session caching and optional IP fallback. */
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface GeolocationState {
   latitude: number | null;
@@ -21,35 +13,55 @@ interface GeolocationState {
   isIpLocation: boolean;
 }
 
+interface CachedLocation {
+  latitude: number;
+  longitude: number;
+  isIpLocation: boolean;
+  timestamp: number;
+}
+
 const CACHE_KEY = 'fuelvoice-geolocation';
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+const CACHE_DURATION = 10 * 60 * 1000;
+let ipLocationPromise: Promise<{ latitude: number; longitude: number } | null> | null = null;
+
+function readCache(): CachedLocation | null {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null') as CachedLocation | null;
+    if (!parsed || Date.now() - parsed.timestamp >= CACHE_DURATION) return null;
+    if (!Number.isFinite(parsed.latitude) || !Number.isFinite(parsed.longitude)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(location: Omit<CachedLocation, 'timestamp'>) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ...location, timestamp: Date.now() }));
+  } catch {
+    // Session storage may be unavailable in hardened/private browsing contexts.
+  }
+}
 
 async function fetchIpLocation(): Promise<{ latitude: number; longitude: number } | null> {
-  try {
-    const res = await fetch('https://ipwho.is/', { signal: AbortSignal.timeout(4000) });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
-        return { latitude: data.latitude, longitude: data.longitude };
+  if (!ipLocationPromise) {
+    ipLocationPromise = (async () => {
+      try {
+        const response = await fetch('https://ipwho.is/', { signal: AbortSignal.timeout(4000) });
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (data.success && Number.isFinite(data.latitude) && Number.isFinite(data.longitude)) {
+          return { latitude: data.latitude, longitude: data.longitude };
+        }
+      } catch {
+        // Approximate location is optional; search and manual map navigation still work.
       }
-    }
-  } catch {
-    // Ignore and try fallback
+      return null;
+    })().finally(() => {
+      ipLocationPromise = null;
+    });
   }
-
-  try {
-    const res = await fetch('http://ip-api.com/json/', { signal: AbortSignal.timeout(4000) });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.status === 'success' && typeof data.lat === 'number' && typeof data.lon === 'number') {
-        return { latitude: data.lat, longitude: data.lon };
-      }
-    }
-  } catch {
-    // Ignore error
-  }
-
-  return null;
+  return ipLocationPromise;
 }
 
 export function useGeolocation() {
@@ -62,116 +74,73 @@ export function useGeolocation() {
     isIpLocation: false,
   });
 
-  // Check permission state on mount
   useEffect(() => {
-    if (typeof navigator === 'undefined' || !navigator.permissions) return;
+    if (!navigator.permissions) return;
 
-    navigator.permissions
-      .query({ name: 'geolocation' })
-      .then((result) => {
-        setState((prev) => ({ ...prev, permissionState: result.state }));
-
-        result.addEventListener('change', () => {
-          setState((prev) => ({ ...prev, permissionState: result.state }));
-        });
-      })
-      .catch(() => {
-        // Permissions API not supported
-      });
-  }, []);
-
-  // Try to load from cache on mount
-  useEffect(() => {
-    try {
-      const cached = sessionStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const { latitude, longitude, isIpLocation, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < CACHE_DURATION) {
-          setState((prev) => ({ ...prev, latitude, longitude, isIpLocation: !!isIpLocation }));
-          return;
-        }
-      }
-    } catch {
-      // Session storage not available
-    }
-  }, []);
-
-  // Fetch IP-based location if no precise location exists
-  useEffect(() => {
-    let active = true;
-    if (state.latitude !== null && state.longitude !== null && !state.isIpLocation) return;
-
-    fetchIpLocation().then((ipCoords) => {
-      if (!active) return;
-      if (ipCoords) {
-        setState((prev) => {
-          // If we already have a precise location, don't overwrite with IP location
-          if (prev.latitude !== null && prev.longitude !== null && !prev.isIpLocation) return prev;
-          return {
-            ...prev,
-            latitude: ipCoords.latitude,
-            longitude: ipCoords.longitude,
-            isIpLocation: true,
-          };
-        });
-      }
-    });
-
-    return () => {
-      active = false;
+    let permission: PermissionStatus | null = null;
+    const onChange = () => {
+      if (permission) setState((prev) => ({ ...prev, permissionState: permission!.state }));
     };
-  }, [state.latitude, state.longitude, state.isIpLocation]);
 
-  const requestLocation = useCallback(() => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+      permission = result;
+      setState((prev) => ({ ...prev, permissionState: result.state }));
+      result.addEventListener('change', onChange);
+    }).catch(() => undefined);
+
+    return () => permission?.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    const cached = readCache();
+    if (cached) {
       setState((prev) => ({
         ...prev,
-        error: 'Geolocation is not supported by your browser',
+        latitude: cached.latitude,
+        longitude: cached.longitude,
+        isIpLocation: cached.isIpLocation,
       }));
       return;
     }
 
+    let active = true;
+    fetchIpLocation().then((location) => {
+      if (!active || !location) return;
+      writeCache({ ...location, isIpLocation: true });
+      setState((prev) => {
+        if (prev.latitude !== null && prev.longitude !== null && !prev.isIpLocation) return prev;
+        return { ...prev, ...location, isIpLocation: true };
+      });
+    });
+    return () => { active = false; };
+  }, []);
+
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setState((prev) => ({ ...prev, error: 'Geolocation is not supported by your browser' }));
+      return;
+    }
+
     setState((prev) => ({ ...prev, loading: true, error: null }));
-
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-
-        // Cache in session storage
-        try {
-          sessionStorage.setItem(
-            CACHE_KEY,
-            JSON.stringify({ latitude, longitude, isIpLocation: false, timestamp: Date.now() })
-          );
-        } catch {
-          // Ignore storage errors
-        }
-
+      ({ coords }) => {
+        const precise = { latitude: coords.latitude, longitude: coords.longitude, isIpLocation: false };
+        writeCache(precise);
         setState({
-          latitude,
-          longitude,
+          ...precise,
           loading: false,
           error: null,
           permissionState: 'granted',
-          isIpLocation: false,
         });
       },
       (error) => {
-        let errorMessage: string;
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Location permission was denied';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Location request timed out';
-            break;
-          default:
-            errorMessage = 'An unknown error occurred';
-        }
-
+        const errorMessage = error.code === error.PERMISSION_DENIED
+          ? 'Location permission was denied'
+          : error.code === error.POSITION_UNAVAILABLE
+            ? 'Location information is unavailable'
+            : error.code === error.TIMEOUT
+              ? 'Location request timed out'
+              : 'Unable to determine your location';
         setState((prev) => ({
           ...prev,
           loading: false,
@@ -179,20 +148,19 @@ export function useGeolocation() {
           permissionState: error.code === error.PERMISSION_DENIED ? 'denied' : prev.permissionState,
         }));
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 1 * 60 * 1000,
-      }
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
     );
   }, []);
 
-  // Auto-request location if permission is already granted
   useEffect(() => {
-    if (state.permissionState === 'granted' && state.isIpLocation && !state.loading) {
+    if (
+      state.permissionState === 'granted' &&
+      !state.loading &&
+      (state.latitude === null || state.longitude === null || state.isIpLocation)
+    ) {
       requestLocation();
     }
-  }, [state.permissionState, state.isIpLocation, state.loading, requestLocation]);
+  }, [state.permissionState, state.latitude, state.longitude, state.isIpLocation, state.loading, requestLocation]);
 
   return {
     ...state,

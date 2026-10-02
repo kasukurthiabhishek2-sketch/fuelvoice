@@ -67,8 +67,8 @@ export function ExploreMap(props: ExploreMapProps) {
     if (!boundary || shouldMount) return;
 
     if (!('IntersectionObserver' in window)) {
-      setShouldMount(true);
-      return;
+      const frame = window.requestAnimationFrame(() => setShouldMount(true));
+      return () => window.cancelAnimationFrame(frame);
     }
 
     const observer = new IntersectionObserver(

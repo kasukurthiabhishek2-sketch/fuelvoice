@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { StarRating } from '@/components/ui/StarRating';
@@ -18,7 +18,7 @@ import { createReport } from '@/lib/firebase/firestore';
 import { timeAgo } from '@/lib/utils/format';
 import { REVIEW_TAGS, type ReviewTag } from '@/types/review';
 import type { Review } from '@/types/review';
-import type { ReportReason } from '@/types/user';
+import { REPORT_REASONS, type ReportReason } from '@/types/user';
 
 interface ReviewCardProps {
   review: Review;
@@ -35,26 +35,32 @@ export function ReviewCard({ review, isLiked: initialIsLiked = false, stationId 
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
+  useEffect(() => {
+    if (!toggleLikeMutation.isPending) setIsLiked(initialIsLiked);
+  }, [initialIsLiked, toggleLikeMutation.isPending]);
+
+  useEffect(() => {
+    if (!toggleLikeMutation.isPending) setLikeCount(Math.max(0, review.likeCount || 0));
+  }, [review.likeCount, toggleLikeMutation.isPending]);
+
   const handleLike = async () => {
     if (!user) {
       toast('Please sign in to like reviews', 'info');
       return;
     }
 
-    // Optimistic update
-    setIsLiked(!isLiked);
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
+    if (toggleLikeMutation.isPending) return;
+    const previousLiked = isLiked;
+    const previousCount = likeCount;
+    setIsLiked(!previousLiked);
+    setLikeCount(Math.max(0, previousCount + (previousLiked ? -1 : 1)));
 
     try {
-      await toggleLikeMutation.mutateAsync({
-        reviewId: review.id,
-        userId: user.uid,
-        userEmail: user.email || undefined,
-      });
+      const nextLiked = await toggleLikeMutation.mutateAsync({ reviewId: review.id, userId: user.uid });
+      setIsLiked(nextLiked);
     } catch {
-      // Revert on error
-      setIsLiked(isLiked);
-      setLikeCount((prev) => (isLiked ? prev + 1 : prev - 1));
+      setIsLiked(previousLiked);
+      setLikeCount(previousCount);
       toast('Failed to update like', 'error');
     }
   };
@@ -66,8 +72,8 @@ export function ReviewCard({ review, isLiked: initialIsLiked = false, stationId 
       await createReport(review.id, stationId, user.uid, reason, '');
       toast('Report submitted. Thank you for keeping FuelVoice safe.', 'success');
       setShowReportDialog(false);
-    } catch {
-      toast('Failed to submit report', 'error');
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Failed to submit report', 'error');
     }
   };
 
@@ -201,6 +207,7 @@ export function ReviewCard({ review, isLiked: initialIsLiked = false, stationId 
           }`}
           style={!isLiked ? { color: 'var(--text-secondary)' } : undefined}
           aria-label={isLiked ? 'Unlike review' : 'Like review'}
+          disabled={toggleLikeMutation.isPending}
         >
           <svg className="w-4 h-4" fill={isLiked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
@@ -250,14 +257,14 @@ export function ReviewCard({ review, isLiked: initialIsLiked = false, stationId 
             Why are you reporting this review?
           </p>
           <div className="flex flex-wrap gap-2">
-            {(['spam', 'abuse', 'misinformation', 'harassment'] as ReportReason[]).map((reason) => (
+            {REPORT_REASONS.map(({ value, label }) => (
               <button
-                key={reason}
-                onClick={() => handleReport(reason)}
+                key={value}
+                onClick={() => handleReport(value as ReportReason)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30"
                 style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-primary)' }}
               >
-                {reason.charAt(0).toUpperCase() + reason.slice(1)}
+                {label}
               </button>
             ))}
             <button

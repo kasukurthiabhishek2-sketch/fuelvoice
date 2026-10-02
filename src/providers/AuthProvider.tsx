@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         displayName: mockVal === 'admin' ? 'Test Admin' : 'Test User',
         photoURL: 'https://lh3.googleusercontent.com/a/ACg8ocKD6k78CQfNv1nsWh1CVLzzRQusp8Cl7vuewBvCtcdfyeiVmFazwA=s96-c',
         email: mockVal === 'admin' ? 'admin@example.com' : 'test@example.com',
-      } as any);
+      } as unknown as User);
       setProfile({
         uid: 'test-user-123',
         displayName: mockVal === 'admin' ? 'Test Admin' : 'Test User',
@@ -75,18 +75,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthChange(async (firebaseUser) => {
       setUser(firebaseUser);
 
-      if (firebaseUser) {
-        // Fetch Firestore profile for role, etc.
-        let userProfile = await getUserProfile(firebaseUser.uid);
-        if (!userProfile) {
-          userProfile = await getOrCreateUserProfile(firebaseUser);
+      try {
+        if (firebaseUser) {
+          let userProfile = await getUserProfile(firebaseUser.uid);
+          if (!userProfile) {
+            userProfile = await getOrCreateUserProfile(firebaseUser);
+          }
+          setProfile(userProfile);
+        } else {
+          setProfile(null);
         }
-        setProfile(userProfile);
-      } else {
+      } catch (error) {
+        console.error('Failed to load user profile:', error);
         setProfile(null);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -113,10 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const isAdmin =
-    profile?.role === 'admin' ||
-    (user?.email &&
-      process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').includes(user.email)) === true;
+  const isAdmin = profile?.role === 'admin';
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, isAdmin, signIn, logOut }}>

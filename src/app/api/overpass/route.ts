@@ -10,30 +10,36 @@ import { NextRequest, NextResponse } from 'next/server';
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
-  'https://overpass.nchc.org.tw/api/interpreter',
-  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
   'https://overpass.privatevoid.net/api/interpreter',
 ];
 
 const MAX_BODY_SIZE = 4096;
-const ENDPOINT_TIMEOUT_MS = 5_000;
+const ENDPOINT_TIMEOUT_MS = 4_000;
+const MAX_RADIUS_METERS = 10_000;
+const MAX_QUERY_TIMEOUT_SECONDS = 15;
 
 function isAllowedQuery(body: string): boolean {
-  const params = new URLSearchParams(body);
-  const query = params.get('data');
+  const query = new URLSearchParams(body).get('data');
   if (!query) return false;
 
   const normalized = query.replace(/\s+/g, ' ').trim().toLowerCase();
-  const blocklist = ['out meta', 'timeline', '[adiff:', '[diff:', 'make ', 'convert '];
-  if (blocklist.some((blocked) => normalized.includes(blocked))) return false;
+  const timeoutMatch = /^\[out:json\]\[timeout:(\d+)\];\s*/.exec(normalized);
+  if (!timeoutMatch || Number(timeoutMatch[1]) > MAX_QUERY_TIMEOUT_SECONDS) return false;
 
-  if (!normalized.includes('out body') && !normalized.includes('out center')) return false;
-  if (normalized.includes('"amenity"="fuel"')) return true;
+  const queryBody = normalized.slice(timeoutMatch[0].length).trim();
 
-  const queryBody = normalized
-    .replace(/^\[out:json\]\[timeout:\d+\];/, '')
-    .trim();
-  return /^(node|way|relation)\(\d+\)\s*;?\s*out\s+(body|center|body\s+center|center\s+body)\s*;?$/.test(queryBody);
+  const areaMatch = /^\(\s*nwr\["amenity"="fuel"\]\(around:(\d+),(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\);\s*\);\s*out body center;?$/.exec(queryBody);
+  if (areaMatch) {
+    const radius = Number(areaMatch[1]);
+    const lat = Number(areaMatch[2]);
+    const lng = Number(areaMatch[3]);
+    return Number.isFinite(radius) &&
+      radius > 0 && radius <= MAX_RADIUS_METERS &&
+      Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+      Number.isFinite(lng) && lng >= -180 && lng <= 180;
+  }
+
+  return /^(node|way|relation)\([1-9]\d*\);\s*out body center;?$/.test(queryBody);
 }
 
 async function fetchFromEndpoint(url: string, body: string): Promise<Response> {

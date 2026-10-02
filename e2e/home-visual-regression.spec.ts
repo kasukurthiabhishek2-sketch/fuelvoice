@@ -100,6 +100,7 @@ test.describe('Homepage visual stability and map performance', () => {
     await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-1-first-paint'),
       fullPage: false,
+      caret: 'initial',
     });
 
     await page.waitForTimeout(1200);
@@ -110,6 +111,7 @@ test.describe('Homepage visual stability and map performance', () => {
     await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-1-settled'),
       fullPage: false,
+      caret: 'initial',
     });
 
     await page.waitForTimeout(250);
@@ -142,6 +144,7 @@ test.describe('Homepage visual stability and map performance', () => {
     await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-2-map-ready'),
       fullPage: false,
+      caret: 'initial',
     });
   });
 
@@ -162,6 +165,7 @@ test.describe('Homepage visual stability and map performance', () => {
     await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-3-neutral-light'),
       fullPage: false,
+      caret: 'initial',
     });
 
     const toggle = page.getByRole('button', { name: /switch to dark mode/i });
@@ -189,6 +193,7 @@ test.describe('Homepage visual stability and map performance', () => {
     await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-3-neutral-dark'),
       fullPage: false,
+      caret: 'initial',
     });
   });
 
@@ -212,6 +217,7 @@ test.describe('Homepage visual stability and map performance', () => {
     await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-4-responsive-viewport'),
       fullPage: false,
+      caret: 'initial',
     });
   });
   test('phase 5: anchor navigation clears the sticky header', async ({ page }, testInfo) => {
@@ -235,6 +241,7 @@ test.describe('Homepage visual stability and map performance', () => {
     await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-5-anchor-offset'),
       fullPage: false,
+      caret: 'initial',
     });
   });
 
@@ -263,6 +270,7 @@ test.describe('Homepage visual stability and map performance', () => {
     await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-6-nearby-visible'),
       fullPage: false,
+      caret: 'initial',
     });
   });
 

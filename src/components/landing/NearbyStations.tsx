@@ -18,8 +18,8 @@ import { formatDistance } from '@/lib/utils/format';
 import { getBrand } from '@/lib/constants/brands';
 
 export function NearbyStations() {
-  const { latitude, longitude, loading: geoLoading, error: geoError, requestLocation, hasLocation, permissionState } = useGeolocation();
-  const { data: stations, isLoading: stationsLoading, error: stationsError } = useNearbyStations({
+  const { latitude, longitude, loading: geoLoading, requestLocation, hasLocation, permissionState, isIpLocation } = useGeolocation();
+  const { data: stations, isLoading: stationsLoading, error: stationsError, refetch } = useNearbyStations({
     lat: latitude,
     lng: longitude,
   });
@@ -37,7 +37,7 @@ export function NearbyStations() {
               Nearby Fuel Stations
             </h2>
             <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-              {hasLocation ? 'Fuel stations within 5km of your location' : 'Enable location to discover stations near you'}
+              {hasLocation ? (isIpLocation ? 'Fuel stations near your approximate IP-based area' : 'Fuel stations within 5km of your location') : 'Enable location to discover stations near you'}
             </p>
           </div>
         </div>
@@ -189,7 +189,7 @@ export function NearbyStations() {
               Failed to load nearby stations. Please try again.
             </p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => refetch()}
               className="px-4 py-2 rounded-xl text-sm font-medium bg-brand-500 text-white hover:bg-brand-600 transition-colors"
             >
               Retry

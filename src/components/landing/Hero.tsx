@@ -46,10 +46,7 @@ export function Hero({ geolocation }: HeroProps) {
           <div className="flex min-w-0 flex-col justify-center py-2 lg:py-8">
             <div className="mb-5">
               <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border-primary)] bg-[var(--bg-elevated)] px-3 py-2 text-[11px] font-bold shadow-[var(--shadow-xs)]" style={{ color: 'var(--text-secondary)' }}>
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-40" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                </span>
+                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.10)]" />
                 Driver-first station intelligence
               </span>
             </div>
@@ -100,8 +97,8 @@ export function Hero({ geolocation }: HeroProps) {
           </div>
 
           <aside className="relative overflow-hidden rounded-[32px] bg-[var(--surface-contrast)] p-6 text-[var(--surface-contrast-text)] shadow-[0_32px_80px_rgba(23,32,28,0.20)] sm:p-7 lg:p-8" aria-label="How FuelVoice supports a decision">
-            <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-brand-400/15 blur-3xl" aria-hidden="true" />
-            <div className="pointer-events-none absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-accent-400/10 blur-3xl" aria-hidden="true" />
+            <div className="pointer-events-none absolute -right-20 -top-20 hidden h-56 w-56 rounded-full bg-brand-400/15 blur-3xl sm:block" aria-hidden="true" />
+            <div className="pointer-events-none absolute -bottom-24 -left-16 hidden h-52 w-52 rounded-full bg-accent-400/10 blur-3xl sm:block" aria-hidden="true" />
 
             <div className="relative">
               <div className="flex items-start justify-between gap-5">

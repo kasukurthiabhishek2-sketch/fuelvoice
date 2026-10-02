@@ -135,7 +135,7 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.035, duration: 0.25 }}
                   >
-                    <Link href={\`/station/\${station.id}\`} className="group block h-full" aria-label={\`View \${station.name}\`}>
+                    <Link href={`/station/${station.id}`} className="group block h-full" aria-label={`View ${station.name}`}>
                       <article className="interactive-card flex h-full flex-col p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">

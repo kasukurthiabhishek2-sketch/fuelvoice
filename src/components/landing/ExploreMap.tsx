@@ -30,7 +30,9 @@ function escapeHtml(str: string): string {
 
 type MapTheme = 'default' | 'dark' | 'satellite' | 'terrain';
 
-const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY ;
+const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
+const MAP_ATTRIBUTION = '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const MIN_ZOOM = 13;
 const MAX_CACHED_STATIONS = 300;
 
@@ -43,31 +45,41 @@ function mergeStations(current: StationSummary[], incoming: StationSummary[]): S
 const THEMES = {
   default: {
     name: 'Road Map',
-    url: `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
-    attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    subdomains: '',
+    url: MAPTILER_KEY
+      ? `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`
+      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: MAPTILER_KEY ? MAP_ATTRIBUTION : OSM_ATTRIBUTION,
+    subdomains: MAPTILER_KEY ? '' : 'abc',
     maxZoom: 20,
+    tileSize: MAPTILER_KEY ? 512 : 256,
+    zoomOffset: MAPTILER_KEY ? -1 : 0,
   },
   dark: {
     name: 'Dark Map',
     url: `https://api.maptiler.com/maps/dark-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
-    attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: MAP_ATTRIBUTION,
     subdomains: '',
     maxZoom: 20,
+    tileSize: 512,
+    zoomOffset: -1,
   },
   satellite: {
     name: 'Satellite',
     url: `https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
-    attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: MAP_ATTRIBUTION,
     subdomains: '',
     maxZoom: 20,
+    tileSize: 512,
+    zoomOffset: -1,
   },
   terrain: {
     name: 'Terrain',
     url: `https://api.maptiler.com/maps/topo-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
-    attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: MAP_ATTRIBUTION,
     subdomains: '',
     maxZoom: 20,
+    tileSize: 512,
+    zoomOffset: -1,
   },
 };
 
@@ -263,12 +275,13 @@ export function ExploreMapInner({
       scrollWheelZoom: true,
     }).setView([defaultLat, defaultLng], hasLocation ? 14 : 13);
 
-    const initialTileLayer = L.tileLayer(THEMES[mapTheme].url, {
-      attribution: THEMES[mapTheme].attribution,
-      subdomains: THEMES[mapTheme].subdomains || 'abcd',
-      maxZoom: THEMES[mapTheme].maxZoom || 20,
-      tileSize: 512,
-      zoomOffset: -1,
+    const initialTheme = THEMES[mapTheme];
+    const initialTileLayer = L.tileLayer(initialTheme.url, {
+      attribution: initialTheme.attribution,
+      subdomains: initialTheme.subdomains || 'abcd',
+      maxZoom: initialTheme.maxZoom || 20,
+      tileSize: initialTheme.tileSize,
+      zoomOffset: initialTheme.zoomOffset,
       crossOrigin: true,
     }).addTo(map);
     tileLayerRef.current = initialTileLayer;
@@ -373,8 +386,8 @@ export function ExploreMapInner({
       attribution: themeConfig.attribution,
       subdomains: themeConfig.subdomains || 'abcd',
       maxZoom: themeConfig.maxZoom || 20,
-      tileSize: 512,
-      zoomOffset: -1,
+      tileSize: themeConfig.tileSize,
+      zoomOffset: themeConfig.zoomOffset,
       crossOrigin: true,
     }).addTo(map);
 
@@ -588,8 +601,8 @@ export function ExploreMapInner({
             <span className="text-xl">🎯</span>
           </button>
 
-          {/* Floating Theme Switcher */}
-          <div 
+          {/* Floating Theme Switcher (MapTiler-specific themes) */}
+          {MAPTILER_KEY && <div 
             ref={switcherRef}
             className="flex flex-col items-end"
           >
@@ -638,7 +651,7 @@ export function ExploreMapInner({
             >
               <span className="text-xl">{THEME_ICONS[mapTheme]}</span>
             </button>
-          </div>
+          </div>}
         </div>
       </div>
 

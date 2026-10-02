@@ -15,7 +15,6 @@ import {
   getReviews,
   createReview,
   toggleLike,
-  hasUserLiked,
   hasUserReviewed,
   getUserLikes,
 } from '@/lib/firebase/firestore';
@@ -84,9 +83,9 @@ export function useToggleLike() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ reviewId, userId, userEmail }: { reviewId: string; userId: string; userEmail?: string }) =>
-      toggleLike(reviewId, userId, userEmail),
-    onSuccess: (_, variables) => {
+    mutationFn: ({ reviewId, userId }: { reviewId: string; userId: string }) =>
+      toggleLike(reviewId, userId),
+    onSuccess: () => {
       // Invalidate to refetch updated like counts
       queryClient.invalidateQueries({ queryKey: ['reviews'] });
       queryClient.invalidateQueries({ queryKey: ['user-likes'] });

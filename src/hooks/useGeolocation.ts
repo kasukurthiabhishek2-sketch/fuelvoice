@@ -64,15 +64,31 @@ async function fetchIpLocation(): Promise<{ latitude: number; longitude: number 
   return ipLocationPromise;
 }
 
-export function useGeolocation() {
-  const [state, setState] = useState<GeolocationState>({
-    latitude: null,
-    longitude: null,
+function getInitialState(): GeolocationState {
+  if (typeof window === 'undefined') {
+    return {
+      latitude: null,
+      longitude: null,
+      loading: false,
+      error: null,
+      permissionState: 'unknown',
+      isIpLocation: false,
+    };
+  }
+
+  const cached = readCache();
+  return {
+    latitude: cached?.latitude ?? null,
+    longitude: cached?.longitude ?? null,
     loading: false,
     error: null,
     permissionState: 'unknown',
-    isIpLocation: false,
-  });
+    isIpLocation: cached?.isIpLocation ?? false,
+  };
+}
+
+export function useGeolocation() {
+  const [state, setState] = useState<GeolocationState>(getInitialState);
 
   useEffect(() => {
     if (!navigator.permissions) return;
@@ -92,16 +108,7 @@ export function useGeolocation() {
   }, []);
 
   useEffect(() => {
-    const cached = readCache();
-    if (cached) {
-      setState((prev) => ({
-        ...prev,
-        latitude: cached.latitude,
-        longitude: cached.longitude,
-        isIpLocation: cached.isIpLocation,
-      }));
-      return;
-    }
+    if (state.latitude !== null && state.longitude !== null) return;
 
     let active = true;
     fetchIpLocation().then((location) => {
@@ -113,7 +120,7 @@ export function useGeolocation() {
       });
     });
     return () => { active = false; };
-  }, []);
+  }, [state.latitude, state.longitude]);
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -154,12 +161,13 @@ export function useGeolocation() {
 
   useEffect(() => {
     if (
-      state.permissionState === 'granted' &&
-      !state.loading &&
-      (state.latitude === null || state.longitude === null || state.isIpLocation)
-    ) {
-      requestLocation();
-    }
+      state.permissionState !== 'granted' ||
+      state.loading ||
+      (state.latitude !== null && state.longitude !== null && !state.isIpLocation)
+    ) return;
+
+    const timer = window.setTimeout(requestLocation, 0);
+    return () => window.clearTimeout(timer);
   }, [state.permissionState, state.latitude, state.longitude, state.isIpLocation, state.loading, requestLocation]);
 
   return {

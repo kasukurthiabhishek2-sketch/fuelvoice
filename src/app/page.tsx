@@ -8,12 +8,12 @@ import { Statistics } from '@/components/landing/Statistics';
 import { useGeolocation } from '@/hooks/useGeolocation';
 
 export default function HomePage() {
-  const { latitude, longitude } = useGeolocation();
+  const geolocation = useGeolocation();
 
   return (
     <>
-      <Hero userLat={latitude} userLng={longitude} />
-      <NearbyStations />
+      <Hero geolocation={geolocation} />
+      <NearbyStations geolocation={geolocation} />
       <Statistics />
     </>
   );

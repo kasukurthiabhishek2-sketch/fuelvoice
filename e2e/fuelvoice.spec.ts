@@ -764,10 +764,21 @@ test.describe('Map Viewport Dashboard', () => {
     // Click Back to list
     const backBtn = page.getByRole('button', { name: '← Back to Bunks List' });
     await expect(backBtn).toBeVisible();
+
+    // The station-detail header must not be hidden behind the sticky app header.
+    await expect.poll(async () => {
+      const [appHeaderBox, backButtonBox] = await Promise.all([
+        page.locator('header').boundingBox(),
+        backBtn.boundingBox(),
+      ]);
+      if (!appHeaderBox || !backButtonBox) return false;
+      return backButtonBox.y >= appHeaderBox.y + appHeaderBox.height - 1;
+    }).toBe(true);
+
     await backBtn.click();
 
-    // Header should go back to default state
-    await expect(visibleBunksHeader).toBeVisible();
+    // Header should go back to default state and remain stable on slower mobile rendering.
+    await expect(visibleBunksHeader).toBeVisible({ timeout: 10000 });
 
     await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/20-map-viewport-dashboard.png', fullPage: false });
   });

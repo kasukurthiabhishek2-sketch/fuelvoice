@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* ThemeProvider toggles the .dark class; make Tailwind v4 dark utilities follow it. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;

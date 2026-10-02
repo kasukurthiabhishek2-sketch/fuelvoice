@@ -37,7 +37,7 @@ export function Statistics() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:items-end">
           <div className="max-w-xl">
-            <p className="section-kicker">Trust model</p>
+            <p className="section-kicker">Powered by Community</p>
             <h2 className="mt-3 text-3xl font-black tracking-[-0.045em] sm:text-4xl" style={{ color: 'var(--text-primary)' }}>
               Useful because the source is clear.
             </h2>

@@ -54,8 +54,9 @@ export default function RootLayout({
             __html: `
               try {
                 const t = localStorage.getItem('fuelvoice-theme');
-                const isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                if (isDark) document.documentElement.classList.add('dark');
+                const followsSystem = !t || t === 'system';
+                const isDark = t === 'dark' || (followsSystem && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                document.documentElement.classList.toggle('dark', isDark);
               } catch {}
             `,
           }}

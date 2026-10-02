@@ -227,6 +227,28 @@ test.describe('Search', () => {
 });
 
 // ────────────────────────────────────────────────
+// Hydration Tests
+// ────────────────────────────────────────────────
+
+test.describe('Hydration', () => {
+  test('should hydrate the homepage without React mismatch warnings', async ({ page }) => {
+    const hydrationWarnings: string[] = [];
+    page.on('console', (message) => {
+      const text = message.text();
+      if (text.includes('hydrated but some attributes') || text.includes('Hydration failed')) {
+        hydrationWarnings.push(text);
+      }
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(750);
+
+    expect(hydrationWarnings).toEqual([]);
+  });
+});
+
+// ────────────────────────────────────────────────
 // Dark Mode Tests
 // ────────────────────────────────────────────────
 
@@ -239,23 +261,32 @@ test.describe('Dark Mode', () => {
     const themeToggle = page.getByRole('button', { name: /switch to/i });
     await expect(themeToggle).toBeVisible();
 
-    // Check initial state
     const htmlElement = page.locator('html');
+
+    // Wait until the hydrated provider agrees with the class set by the
+    // pre-hydration theme script, then verify the user action itself.
+    await expect.poll(async () => {
+      const hasDark = await htmlElement.evaluate(el => el.classList.contains('dark'));
+      const label = await themeToggle.getAttribute('aria-label');
+      return label === (hasDark ? 'Switch to light mode' : 'Switch to dark mode');
+    }).toBe(true);
+
     const initialHasDark = await htmlElement.evaluate(el => el.classList.contains('dark'));
-
-    // Click toggle
     await themeToggle.click();
-    await page.waitForTimeout(500);
 
-    // Check it changed
+    await expect.poll(async () =>
+      htmlElement.evaluate(el => el.classList.contains('dark'))
+    ).toBe(!initialHasDark);
+
     const afterHasDark = await htmlElement.evaluate(el => el.classList.contains('dark'));
-    expect(afterHasDark).not.toBe(initialHasDark);
 
     await page.screenshot({ path: 'e2e/screenshots/07-dark-mode-toggled.png', fullPage: false });
 
     // Toggle back
     await themeToggle.click();
-    await page.waitForTimeout(500);
+    await expect.poll(async () =>
+      htmlElement.evaluate(el => el.classList.contains('dark'))
+    ).toBe(initialHasDark);
 
     const finalHasDark = await htmlElement.evaluate(el => el.classList.contains('dark'));
     expect(finalHasDark).toBe(initialHasDark);

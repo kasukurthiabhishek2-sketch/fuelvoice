@@ -121,7 +121,7 @@ export function SearchBar({
               : 'pl-10 pr-4 py-2.5 text-sm rounded-full shadow-md border focus:border-brand-500'
             }`}
           style={{
-            background: 'var(--bg-card)',
+            backgroundColor: 'var(--bg-card)',
             color: 'var(--text-primary)',
             borderColor: 'var(--border-primary)',
           }}

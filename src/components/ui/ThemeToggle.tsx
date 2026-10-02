@@ -17,8 +17,8 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       className="relative flex h-11 w-11 items-center justify-center rounded-xl border transition-colors hover:bg-surface-100 dark:hover:bg-surface-800"
       style={{ borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}
-      aria-label={\`Switch to \${isDark ? 'light' : 'dark'} mode\`}
-      title={\`Switch to \${isDark ? 'light' : 'dark'} mode\`}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+      title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
     >
       <motion.div
         initial={false}

@@ -79,17 +79,104 @@ service cloud.firestore {
       allow read: if resource.data.isHidden == false || isAdmin();
 
       allow create: if signedIn() && isNotBanned() &&
+        request.resource.data.keys().hasOnly([
+          'id', 'stationId', 'userName', 'userPhoto', 'title', 'content',
+          'rating', 'fuelQuality', 'service', 'staffBehaviour', 'cleanliness',
+          'washroom', 'airFilling', 'tags', 'isAnonymous', 'suggestions',
+          'likeCount', 'reportCount', 'isHidden', 'isFeatured',
+          'createdAt', 'updatedAt'
+        ]) &&
         request.resource.data.stationId is string &&
+        request.resource.data.stationId.matches('^(node|way|relation)_[0-9]+
+      allow update: if signedIn() && changedOnly(['likeCount']) && (
+        (!exists(/databases/$(database)/documents/likes/$(reviewId + '__' + request.auth.uid)) &&
+          existsAfter(/databases/$(database)/documents/likes/$(reviewId + '__' + request.auth.uid)) &&
+          request.resource.data.likeCount == resource.data.likeCount + 1) ||
+        (exists(/databases/$(database)/documents/likes/$(reviewId + '__' + request.auth.uid)) &&
+          !existsAfter(/databases/$(database)/documents/likes/$(reviewId + '__' + request.auth.uid)) &&
+          request.resource.data.likeCount == resource.data.likeCount - 1)
+      );
+
+      allow update: if signedIn() && changedOnly(['reportCount']) &&
+        !exists(/databases/$(database)/documents/reports/$(reviewId + '__' + request.auth.uid)) &&
+        existsAfter(/databases/$(database)/documents/reports/$(reviewId + '__' + request.auth.uid)) &&
+        request.resource.data.reportCount == resource.data.reportCount + 1;
+
+      allow update, delete: if isAdmin();
+    }
+
+    match /likes/{likeId} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+      allow create: if signedIn() && isNotBanned() &&
+        likeId == request.resource.data.reviewId + '__' + request.auth.uid &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.keys().hasOnly(['reviewId', 'userId', 'createdAt']);
+
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /reports/{reportId} {
+      allow read: if signedIn() && (resource.data.reporterId == request.auth.uid || isAdmin());
+
+      allow create: if signedIn() && isNotBanned() &&
+        reportId == request.resource.data.reviewId + '__' + request.auth.uid &&
+        request.resource.data.reporterId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.reviewedAt == null &&
+        request.resource.data.reviewedBy == null &&
+        request.resource.data.reason in ['spam', 'abuse', 'misinformation', 'harassment', 'other'];
+
+      allow update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+) &&
         reviewId == request.resource.data.stationId + '__' + request.auth.uid &&
-        !request.resource.data.keys().hasAny(['userId']) &&
+        request.resource.data.id == reviewId &&
+        existsAfter(/databases/$(database)/documents/stations/$(request.resource.data.stationId)) &&
+        request.resource.data.userName is string &&
+        request.resource.data.userName.size() >= 1 &&
+        request.resource.data.userName.size() <= 100 &&
+        request.resource.data.userPhoto is string &&
+        request.resource.data.userPhoto.size() <= 2048 &&
         request.resource.data.title is string &&
         request.resource.data.title.size() >= 3 &&
         request.resource.data.title.size() <= 100 &&
         request.resource.data.content is string &&
         request.resource.data.content.size() >= 10 &&
         request.resource.data.content.size() <= 2000 &&
+        request.resource.data.suggestions is string &&
+        request.resource.data.suggestions.size() <= 2000 &&
         request.resource.data.rating is number &&
         request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
+        request.resource.data.fuelQuality is number &&
+        request.resource.data.fuelQuality >= 0 && request.resource.data.fuelQuality <= 5 &&
+        request.resource.data.service is number &&
+        request.resource.data.service >= 0 && request.resource.data.service <= 5 &&
+        request.resource.data.staffBehaviour is number &&
+        request.resource.data.staffBehaviour >= 0 && request.resource.data.staffBehaviour <= 5 &&
+        request.resource.data.cleanliness is number &&
+        request.resource.data.cleanliness >= 0 && request.resource.data.cleanliness <= 5 &&
+        request.resource.data.washroom is number &&
+        request.resource.data.washroom >= 0 && request.resource.data.washroom <= 5 &&
+        request.resource.data.airFilling is number &&
+        request.resource.data.airFilling >= 0 && request.resource.data.airFilling <= 5 &&
+        request.resource.data.tags is list &&
+        request.resource.data.tags.size() <= 10 &&
+        request.resource.data.tags.hasOnly([
+          'fraud', 'overcharging', 'short-measure', 'adulteration',
+          'poor-service', 'rude-staff', 'clean', 'well-maintained',
+          'fast-service', 'good-quality'
+        ]) &&
+        request.resource.data.isAnonymous is bool &&
         request.resource.data.likeCount == 0 &&
         request.resource.data.reportCount == 0 &&
         request.resource.data.isHidden == false &&

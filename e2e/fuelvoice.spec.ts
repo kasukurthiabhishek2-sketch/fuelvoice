@@ -685,28 +685,23 @@ test.describe('Admin Dashboard', () => {
 
 test.describe('Map Theme Switcher', () => {
   test('should open theme switcher and switch themes', async ({ page }) => {
-    // Grant geolocation permissions and set coordinates
     const context = page.context();
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: 17.3887027, longitude: 78.4753829 });
+    await page.addInitScript(() => localStorage.setItem('fuelvoice:mock_user', 'true'));
 
-    await page.goto('/');
-    await page.evaluate(() => {
-      localStorage.setItem('fuelvoice:mock_user', 'true');
-    });
-    
-    // Refresh to apply mock user and geolocation settings
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-    // Bring the deferred map workspace near the viewport before testing
-    // Leaflet-specific controls.
+    // Follow the user-visible path into the deferred map workspace. This
+    // avoids racing a geolocation rerender with direct programmatic scrolling.
+    await expect(page.getByText('Precise location', { exact: true })).toBeVisible({ timeout: 10000 });
+    await page.getByRole('link', { name: 'Explore the map', exact: true }).click();
+
     const map = page.locator('#explore-map');
-    await expect(map).toBeVisible();
-    await map.scrollIntoViewIfNeeded();
-    await expect(map).toBeInViewport();
+    await expect(map).toBeInViewport({ timeout: 10000 });
 
-    // Locate the switcher button by title/aria-label
+    // Wait for Leaflet and its controls to mount after the workspace enters
+    // the viewport, then exercise the real theme switcher.
     const switcherBtn = page.getByRole('button', { name: 'Switch Map Theme' });
     await expect(switcherBtn).toBeVisible({ timeout: 10000 });
     

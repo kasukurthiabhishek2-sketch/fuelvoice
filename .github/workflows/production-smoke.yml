@@ -1,0 +1,66 @@
+name: Production Smoke
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-smoke
+  cancel-in-progress: true
+
+jobs:
+  verify-production:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    env:
+      PRODUCTION_URL: https://fuelvoice.vercel.app
+      EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+
+    steps:
+      - name: Wait for exact main commit in production
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for attempt in {1..40}; do
+            response="$(curl               --silent               --show-error               --location               --max-time 15               --write-out $'\n%{http_code}'               "$PRODUCTION_URL/api/health" || true)"
+
+            status_code="${response##*$'\n'}"
+            body="${response%$'\n'*}"
+
+            if [ "$status_code" = "200" ] && printf '%s' "$body" | jq -e               --arg sha "$EXPECTED_SHA"               '.status == "ok" and .service == "fuelvoice" and .environment == "production" and .gitSha == $sha'               >/dev/null 2>&1; then
+              echo "Production is serving expected commit $EXPECTED_SHA"
+              printf '%s\n' "$body" | jq .
+              break
+            fi
+
+            if [ "$attempt" -eq 40 ]; then
+              echo "Production did not converge to expected commit $EXPECTED_SHA"
+              echo "Last HTTP status: $status_code"
+              echo "Last response: $body"
+              exit 1
+            fi
+
+            echo "Attempt $attempt/40: production not on expected commit yet; retrying in 15s"
+            sleep 15
+          done
+
+      - name: Smoke test production homepage
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          headers="$(mktemp)"
+          html="$(curl             --fail             --silent             --show-error             --location             --max-time 20             --dump-header "$headers"             "$PRODUCTION_URL/")"
+
+          grep -Fq 'FuelVoice' <<<"$html"
+          grep -Fq 'OpenStreetMap' <<<"$html"
+          grep -Eq '^HTTP/[0-9.]+ 200' "$headers"
+
+          echo "Production homepage returned HTTP 200 with expected FuelVoice markers."

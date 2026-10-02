@@ -14,7 +14,7 @@ export function Footer() {
         <div className="grid gap-10 lg:grid-cols-[1.25fr_0.75fr_0.75fr]">
           <div className="max-w-xl">
             <Link href="/" className="inline-flex items-center gap-3" aria-label="FuelVoice footer">
-              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 text-white shadow-[0_10px_24px_rgba(249,115,22,0.2)]">
+              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 text-white shadow-[0_10px_24px_rgba(85,114,104,0.18)]">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
                   <path d="M6.5 4.5h7.5v15H6.5z" strokeLinejoin="round" />
                   <path d="M8.5 7h3.5M14 8.5h2.2l1.8 2.1V17a1.5 1.5 0 0 0 3 0v-5.7l-1.8-2.1" strokeLinecap="round" strokeLinejoin="round" />
@@ -59,7 +59,7 @@ export function Footer() {
               href="https://www.openstreetmap.org/copyright"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold underline decoration-[var(--border-strong)] underline-offset-4 transition-colors hover:text-brand-500"
+              className="font-semibold underline decoration-[var(--border-strong)] underline-offset-4 transition-colors hover:text-brand-600 dark:hover:text-brand-300"
             >
               OpenStreetMap contributors
             </a>
@@ -87,7 +87,7 @@ function FooterLink({ href, label, external }: { href: string; label: string; ex
     <li>
       <Component
         href={href}
-        className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-brand-500"
+        className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-brand-600 dark:hover:text-brand-300"
         style={{ color: 'var(--text-secondary)' }}
         {...linkProps}
       >

@@ -63,6 +63,17 @@ export function ExploreMap(props: ExploreMapProps) {
   const [shouldMount, setShouldMount] = useState(false);
 
   useEffect(() => {
+    // Warm the Leaflet bundle after the critical hero paint without creating
+    // any Leaflet DOM/compositor layers yet. The dynamic import cache makes
+    // the real mount fast once the workspace actually enters the viewport.
+    const preloadTimer = setTimeout(() => {
+      void import('./ExploreMap');
+    }, 700);
+
+    return () => clearTimeout(preloadTimer);
+  }, []);
+
+  useEffect(() => {
     const boundary = boundaryRef.current;
     if (!boundary || shouldMount) return;
 
@@ -79,9 +90,9 @@ export function ExploreMap(props: ExploreMapProps) {
         }
       },
       {
-        // Begin loading before the workspace enters view, without creating
-        // offscreen Leaflet compositor layers during the initial mobile paint.
-        rootMargin: '650px 0px',
+        // Do not create Leaflet GPU panes until the workspace itself reaches
+        // the viewport. Its JavaScript bundle is already preloaded above.
+        rootMargin: '0px',
       },
     );
 

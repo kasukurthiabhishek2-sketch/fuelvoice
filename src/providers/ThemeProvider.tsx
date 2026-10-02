@@ -1,14 +1,19 @@
 /**
  * Theme Provider
  *
- * Keeps the server render and the browser's first render identical, then
- * hydrates the persisted/system preference after mount. The inline layout
- * script owns the pre-hydration <html>.dark class so there is no theme flash.
+ * Theme preference is exposed through useSyncExternalStore so SSR hydration
+ * starts from a deterministic server snapshot and then reconciles with
+ * localStorage/system preference without an effect-driven state race.
  */
 
 'use client';
 
-import React, { createContext, useEffect, useState, useCallback } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useEffect,
+  useSyncExternalStore,
+} from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -27,50 +32,88 @@ export const ThemeContext = createContext<ThemeContextValue>({
 });
 
 const STORAGE_KEY = 'fuelvoice-theme';
+const THEME_EVENT = 'fuelvoice:theme-change';
+const SERVER_SNAPSHOT = 'system:dark';
 
 function isTheme(value: string | null): value is Theme {
   return value === 'light' || value === 'dark' || value === 'system';
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Deterministic SSR + first client render. Reading window/localStorage here
-  // would make hydration depend on browser-only state.
-  const [theme, setThemeState] = useState<Theme>('system');
-  const [systemDark, setSystemDark] = useState(true);
-  const resolvedTheme: 'light' | 'dark' =
-    theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+function readTheme(): Theme {
+  try {
     const stored = localStorage.getItem(STORAGE_KEY);
+    return isTheme(stored) ? stored : 'system';
+  } catch {
+    return 'system';
+  }
+}
 
-    // Defer state hydration until after React has attached to the server HTML.
-    const frame = window.requestAnimationFrame(() => {
-      setThemeState(isTheme(stored) ? stored : 'system');
-      setSystemDark(mediaQuery.matches);
-    });
+function getSnapshot(): string {
+  const theme = readTheme();
+  const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return `${theme}:${system}`;
+}
 
-    const handleChange = (event: MediaQueryListEvent) => setSystemDark(event.matches);
-    mediaQuery.addEventListener('change', handleChange);
+function getServerSnapshot(): string {
+  return SERVER_SNAPSHOT;
+}
 
-    return () => {
-      window.cancelAnimationFrame(frame);
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, []);
+function subscribe(onStoreChange: () => void): () => void {
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const handleChange = () => onStoreChange();
+
+  mediaQuery.addEventListener('change', handleChange);
+  window.addEventListener('storage', handleChange);
+  window.addEventListener(THEME_EVENT, handleChange);
+
+  return () => {
+    mediaQuery.removeEventListener('change', handleChange);
+    window.removeEventListener('storage', handleChange);
+    window.removeEventListener(THEME_EVENT, handleChange);
+  };
+}
+
+function resolveSnapshot(snapshot: string): {
+  theme: Theme;
+  resolvedTheme: 'light' | 'dark';
+} {
+  const [rawTheme, systemTheme] = snapshot.split(':');
+  const theme: Theme = isTheme(rawTheme) ? rawTheme : 'system';
+  const resolvedTheme: 'light' | 'dark' =
+    theme === 'system'
+      ? (systemTheme === 'light' ? 'light' : 'dark')
+      : theme;
+
+  return { theme, resolvedTheme };
+}
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const { theme, resolvedTheme } = resolveSnapshot(snapshot);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', resolvedTheme === 'dark');
   }, [resolvedTheme]);
 
   const setTheme = useCallback((newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem(STORAGE_KEY, newTheme);
+    try {
+      localStorage.setItem(STORAGE_KEY, newTheme);
+    } catch {
+      // The visual theme can still change when storage is unavailable.
+    }
+
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const nextDark = newTheme === 'dark' || (newTheme === 'system' && systemDark);
+    document.documentElement.classList.toggle('dark', nextDark);
+    window.dispatchEvent(new Event(THEME_EVENT));
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
-  }, [resolvedTheme, setTheme]);
+    // Read the currently visible DOM theme so an interaction that happens
+    // immediately after hydration can never be overwritten by stale state.
+    const currentlyDark = document.documentElement.classList.contains('dark');
+    setTheme(currentlyDark ? 'light' : 'dark');
+  }, [setTheme]);
 
   return (
     <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>

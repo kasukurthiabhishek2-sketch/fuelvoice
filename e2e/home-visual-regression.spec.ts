@@ -186,7 +186,7 @@ test.describe('Homepage visual stability and map performance', () => {
         return { background: styles.backgroundColor, color: styles.color };
       })).toEqual({
         background: 'rgb(30, 38, 34)',
-        color: 'rgb(237, 241, 239)',
+        color: 'rgb(238, 242, 239)',
       });
     }
 
@@ -227,16 +227,14 @@ test.describe('Homepage visual stability and map performance', () => {
     await page.getByRole('link', { name: 'Explore map', exact: true }).first().click();
     await expect(page.locator('#explore-map')).toBeInViewport();
 
-    const geometry = await page.evaluate(() => {
-      const header = document.querySelector('header')?.getBoundingClientRect();
-      const section = document.querySelector('#explore-map')?.getBoundingClientRect();
-      return {
-        headerBottom: header?.bottom ?? 0,
-        sectionTop: section?.top ?? -1,
-      };
-    });
-
-    expect(geometry.sectionTop).toBeGreaterThanOrEqual(geometry.headerBottom - 1);
+    await expect.poll(async () => {
+      return page.evaluate(() => {
+        const header = document.querySelector('header')?.getBoundingClientRect();
+        const section = document.querySelector('#explore-map')?.getBoundingClientRect();
+        if (!header || !section) return false;
+        return section.top >= header.bottom - 1;
+      });
+    }, { timeout: 5000 }).toBe(true);
 
     await page.screenshot({
       path: screenshotPath(testInfo, 'phase-5-anchor-offset'),

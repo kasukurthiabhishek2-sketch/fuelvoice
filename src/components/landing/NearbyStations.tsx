@@ -138,7 +138,7 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
                   href={`/station/${station.id}`}
                   className={`group min-w-0 ${featured ? 'lg:col-span-2' : ''}`}
                 >
-                  <article className={`bento-card flex h-full flex-col ${featured ? 'min-h-[270px] p-6 sm:p-7' : 'min-h-[230px] p-5'}`}>
+                  <article className={`bento-card card flex h-full flex-col ${featured ? 'min-h-[270px] p-6 sm:p-7' : 'min-h-[230px] p-5'}`}>
                     <div className="relative z-10 flex items-start justify-between gap-4">
                       <div className="flex min-w-0 items-start gap-3">
                         <div className={`grid shrink-0 place-items-center rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-300 ${featured ? 'h-12 w-12' : 'h-10 w-10'}`}>

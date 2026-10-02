@@ -30,11 +30,10 @@ import { db } from './config';
 import type { Station, StationScores } from '@/types/station';
 import type { Review, ReviewFormData, ReviewSortOption } from '@/types/review';
 import type { UserProfile, Report, ReportReason } from '@/types/user';
+import { canUseE2EMocks } from '@/lib/testing/e2e';
 
 const isMockMode = (): boolean => {
-  // Only allow mock mode in development/test — never in production
-  if (process.env.NODE_ENV === 'production') return false;
-  if (typeof window === 'undefined') return false;
+  if (!canUseE2EMocks()) return false;
   const mockVal = localStorage.getItem('fuelvoice:mock_user');
   return mockVal === 'true' || mockVal === 'admin';
 };

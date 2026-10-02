@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { StarRating } from '@/components/ui/StarRating';
@@ -30,18 +30,11 @@ export function ReviewCard({ review, isLiked: initialIsLiked = false, stationId 
   const { user } = useAuth();
   const { toast } = useToast();
   const toggleLikeMutation = useToggleLike();
-  const [isLiked, setIsLiked] = useState(initialIsLiked);
-  const [likeCount, setLikeCount] = useState(review.likeCount || 0);
+  const [likeOverride, setLikeOverride] = useState<{ liked: boolean; count: number } | null>(null);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    if (!toggleLikeMutation.isPending) setIsLiked(initialIsLiked);
-  }, [initialIsLiked, toggleLikeMutation.isPending]);
-
-  useEffect(() => {
-    if (!toggleLikeMutation.isPending) setLikeCount(Math.max(0, review.likeCount || 0));
-  }, [review.likeCount, toggleLikeMutation.isPending]);
+  const isLiked = likeOverride?.liked ?? initialIsLiked;
+  const likeCount = likeOverride?.count ?? Math.max(0, review.likeCount || 0);
 
   const handleLike = async () => {
     if (!user) {
@@ -52,15 +45,14 @@ export function ReviewCard({ review, isLiked: initialIsLiked = false, stationId 
     if (toggleLikeMutation.isPending) return;
     const previousLiked = isLiked;
     const previousCount = likeCount;
-    setIsLiked(!previousLiked);
-    setLikeCount(Math.max(0, previousCount + (previousLiked ? -1 : 1)));
+    const optimisticCount = Math.max(0, previousCount + (previousLiked ? -1 : 1));
+    setLikeOverride({ liked: !previousLiked, count: optimisticCount });
 
     try {
       const nextLiked = await toggleLikeMutation.mutateAsync({ reviewId: review.id, userId: user.uid });
-      setIsLiked(nextLiked);
+      setLikeOverride({ liked: nextLiked, count: optimisticCount });
     } catch {
-      setIsLiked(previousLiked);
-      setLikeCount(previousCount);
+      setLikeOverride({ liked: previousLiked, count: previousCount });
       toast('Failed to update like', 'error');
     }
   };

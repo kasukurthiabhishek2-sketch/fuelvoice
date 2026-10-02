@@ -408,11 +408,11 @@ export function ExploreMapInner({
         html: `
           <div style="
             width:36px;height:36px;
-            background:linear-gradient(135deg,#F97316,#EA580C);
+            background:linear-gradient(135deg,#67897D,#557268);
             border-radius:50% 50% 50% 4px;
             transform:rotate(-45deg);
             display:flex;align-items:center;justify-content:center;
-            box-shadow:0 2px 8px rgba(249,115,22,0.4);
+            box-shadow:0 2px 8px rgba(85,114,104,0.38);
             border:2px solid white;
           ">
             <span style="transform:rotate(45deg);font-size:16px;line-height:1;">⛽</span>
@@ -452,7 +452,7 @@ export function ExploreMapInner({
             ${reviewText ? `<span style="font-size:11px;color:#94A3B8;">💬 ${reviewText}</span>` : ''}
           </div>
           <button onclick="window.postMessage({type: 'fuelvoice:select', stationId: '${safeId}'}, window.location.origin)"
-             style="display:block;width:100%;margin-top:8px;padding:6px 12px;border:none;background:linear-gradient(135deg,#F97316,#EA580C);color:white;border-radius:8px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;transition:opacity 0.2s;"
+             style="display:block;width:100%;margin-top:8px;padding:6px 12px;border:none;background:linear-gradient(135deg,#67897D,#557268);color:white;border-radius:8px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;transition:opacity 0.2s;"
              onmouseover="this.style.opacity='0.9'"
              onmouseout="this.style.opacity='1'">
             View Reviews
@@ -837,7 +837,7 @@ export function ExploreMapInner({
                   disabled={geoLoading}
                   className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all border hover:shadow-md"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(59,130,246,0.06), rgba(249,115,22,0.06))',
+                    background: 'linear-gradient(135deg, rgba(125,143,165,0.06), rgba(103,137,125,0.08))',
                     borderColor: 'var(--border-primary)',
                     color: 'var(--text-primary)',
                   }}

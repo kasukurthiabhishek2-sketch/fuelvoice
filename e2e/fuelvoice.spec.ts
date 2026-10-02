@@ -89,7 +89,7 @@ test.describe('Landing Page', () => {
     await expect(searchInput).toBeVisible();
 
     // Screenshot
-    await page.screenshot({ path: 'e2e/screenshots/01-landing-hero.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/01-landing-hero.png', fullPage: false });
   });
 
   test('should display FuelVoice logo in header', async ({ page }) => {
@@ -109,7 +109,7 @@ test.describe('Landing Page', () => {
     await statsSection.scrollIntoViewIfNeeded();
     await expect(statsSection).toBeVisible();
 
-    await page.screenshot({ path: 'e2e/screenshots/02-statistics.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/02-statistics.png', fullPage: false });
   });
 
   test('should display footer with attribution', async ({ page }) => {
@@ -119,7 +119,7 @@ test.describe('Landing Page', () => {
     await footer.scrollIntoViewIfNeeded();
     await expect(footer).toBeVisible();
 
-    await page.screenshot({ path: 'e2e/screenshots/03-footer.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/03-footer.png', fullPage: false });
   });
 
   test('should show nearby stations section', async ({ page }) => {
@@ -129,7 +129,7 @@ test.describe('Landing Page', () => {
     await nearbyHeading.scrollIntoViewIfNeeded();
     await expect(nearbyHeading).toBeVisible();
 
-    await page.screenshot({ path: 'e2e/screenshots/04-nearby-stations.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/04-nearby-stations.png', fullPage: false });
   });
 
   test('full page screenshot', async ({ page }) => {
@@ -137,7 +137,7 @@ test.describe('Landing Page', () => {
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000); // Let animations settle
 
-    await page.screenshot({ path: 'e2e/screenshots/05-full-landing.png', fullPage: true });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/05-full-landing.png', fullPage: true });
   });
 });
 
@@ -195,7 +195,7 @@ test.describe('Search', () => {
     // Either results or "no results" message should appear — both mean search worked
     expect(hasResults || hasNoResultsMsg).toBeTruthy();
 
-    await page.screenshot({ path: 'e2e/screenshots/06-search-results.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/06-search-results.png', fullPage: false });
   });
 
   test('search input should be focusable and accept text', async ({ page }) => {
@@ -280,7 +280,7 @@ test.describe('Dark Mode', () => {
 
     const afterHasDark = await htmlElement.evaluate(el => el.classList.contains('dark'));
 
-    await page.screenshot({ path: 'e2e/screenshots/07-dark-mode-toggled.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/07-dark-mode-toggled.png', fullPage: false });
 
     // Toggle back
     await themeToggle.click();
@@ -305,7 +305,7 @@ test.describe('Auth UI', () => {
     const signInButton = page.getByRole('button', { name: /sign in/i });
     await expect(signInButton).toBeVisible();
 
-    await page.screenshot({ path: 'e2e/screenshots/08-sign-in-button.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/08-sign-in-button.png', fullPage: false });
   });
 });
 
@@ -322,7 +322,7 @@ test.describe('Station Page', () => {
     const notFound = page.getByText(/station not found|something went wrong/i);
     await expect(notFound.first()).toBeVisible({ timeout: 20000 });
 
-    await page.screenshot({ path: 'e2e/screenshots/09-station-not-found.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/09-station-not-found.png', fullPage: false });
   });
 });
 
@@ -341,7 +341,7 @@ test.describe('404 Page', () => {
     const backLink = page.getByRole('link', { name: /back to home/i });
     await expect(backLink).toBeVisible();
 
-    await page.screenshot({ path: 'e2e/screenshots/10-404-page.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/10-404-page.png', fullPage: false });
   });
 });
 
@@ -358,7 +358,7 @@ test.describe('Admin Page', () => {
     const accessDenied = page.getByText(/access denied|sign in/i);
     await expect(accessDenied.first()).toBeVisible();
 
-    await page.screenshot({ path: 'e2e/screenshots/11-admin-blocked.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/11-admin-blocked.png', fullPage: false });
   });
 });
 
@@ -415,7 +415,7 @@ test.describe('Geolocation & Map', () => {
     const nearbyCard = page.locator('.grid >> .card').first();
     await expect(nearbyCard).toBeVisible();
 
-    await page.screenshot({ path: 'e2e/screenshots/12-map-loaded-with-location.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/12-map-loaded-with-location.png', fullPage: false });
   });
 });
 
@@ -463,7 +463,7 @@ test.describe('Authenticated Actions', () => {
     const toast = page.getByText(/review submitted/i);
     await expect(toast).toBeVisible({ timeout: 10000 });
 
-    await page.screenshot({ path: 'e2e/screenshots/13-review-submitted.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/13-review-submitted.png', fullPage: false });
   });
 });
 
@@ -519,7 +519,7 @@ test.describe('Search Autocomplete & Keyboard Navigation', () => {
     await expect(dropdown).toBeVisible();
 
     // Take screenshot to verify dropdown sits above map/content (no overlap)
-    await page.screenshot({ path: 'e2e/screenshots/14-search-results-visible-above-map.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/14-search-results-visible-above-map.png', fullPage: false });
 
     // Press ArrowDown to select the first element
     await searchInput.press('ArrowDown');
@@ -535,7 +535,7 @@ test.describe('Search Autocomplete & Keyboard Navigation', () => {
     await expect(page).toHaveURL(/\/station\//);
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible({ timeout: 15000 });
 
-    await page.screenshot({ path: 'e2e/screenshots/15-navigation-success.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/15-navigation-success.png', fullPage: false });
   });
 });
 
@@ -581,7 +581,7 @@ test.describe('Review Interactions', () => {
     const toast = page.getByText(/report submitted/i);
     await expect(toast).toBeVisible({ timeout: 10000 });
 
-    await page.screenshot({ path: 'e2e/screenshots/16-review-liked-and-reported.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/16-review-liked-and-reported.png', fullPage: false });
   });
 });
 
@@ -613,7 +613,7 @@ test.describe('Consumer Complaints Widget', () => {
     const indiaPortal = page.getByText(/National Consumer Helpline/i);
     await expect(indiaPortal).toBeVisible();
 
-    await page.screenshot({ path: 'e2e/screenshots/17-complaints-widget.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/17-complaints-widget.png', fullPage: false });
   });
 });
 
@@ -674,7 +674,7 @@ test.describe('Admin Dashboard', () => {
     await banBtn.click();
     await expect(page.getByText(/user banned/i).first()).toBeVisible({ timeout: 10000 });
 
-    await page.screenshot({ path: 'e2e/screenshots/18-admin-dashboard.png', fullPage: true });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/18-admin-dashboard.png', fullPage: true });
   });
 });
 
@@ -722,7 +722,7 @@ test.describe('Map Theme Switcher', () => {
     // The switcher button should show Esri/Satellite icon
     await expect(page.getByRole('button', { name: 'Switch Map Theme' })).toHaveText('🛰️');
 
-    await page.screenshot({ path: 'e2e/screenshots/19-map-theme-switched.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/19-map-theme-switched.png', fullPage: false });
   });
 });
 
@@ -769,7 +769,7 @@ test.describe('Map Viewport Dashboard', () => {
     // Header should go back to default state
     await expect(visibleBunksHeader).toBeVisible();
 
-    await page.screenshot({ path: 'e2e/screenshots/20-map-viewport-dashboard.png', fullPage: false });
+    await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/20-map-viewport-dashboard.png', fullPage: false });
   });
 });
 

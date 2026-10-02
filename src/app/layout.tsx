@@ -46,8 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
-      {/* Inline script to prevent dark mode flash */}
+    <html lang="en" className={`${inter.variable} h-full`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -61,6 +60,12 @@ export default function RootLayout({
             `,
           }}
         />
+        <link rel="preconnect" href="https://api.maptiler.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://api.maptiler.com" />
+        <link rel="preconnect" href="https://a.tile.openstreetmap.org" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://b.tile.openstreetmap.org" />
+        <link rel="dns-prefetch" href="https://c.tile.openstreetmap.org" />
+        <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossOrigin="" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛽</text></svg>" />
       </head>
       <body className="min-h-full flex flex-col antialiased" style={{ fontFamily: 'var(--font-inter, Inter, system-ui, sans-serif)' }}>

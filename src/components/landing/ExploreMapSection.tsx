@@ -9,7 +9,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import { ExploreMap } from './ExploreMapDynamic';
 import type { GeolocationResult } from '@/hooks/useGeolocation';
 import { useNearbyStations } from '@/hooks/useNearbyStations';
@@ -51,14 +50,9 @@ export function ExploreMapSection({ geolocation }: ExploreMapSectionProps) {
       : 'Default map area';
 
   return (
-    <section className="relative py-10 sm:py-14 lg:py-16" id="explore-map">
+    <section className="relative scroll-mt-24 py-10 sm:py-14 lg:py-16" id="explore-map">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          className="mb-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between"
-        >
+        <div className="mb-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
             <p className="section-kicker">Map discovery</p>
             <h2 className="mt-3 text-3xl font-black tracking-[-0.045em] sm:text-4xl" style={{ color: 'var(--text-primary)' }}>
@@ -81,15 +75,9 @@ export function ExploreMapSection({ geolocation }: ExploreMapSectionProps) {
               </svg>
             </Link>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 22 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.45, delay: 0.05 }}
-          className="map-shell p-2 sm:p-3"
-        >
+        <div className="map-shell p-2 sm:p-3">
           <div className="mb-2.5 flex flex-wrap items-center justify-between gap-3 px-2 py-1 sm:px-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--text-tertiary)' }}>
@@ -129,7 +117,7 @@ export function ExploreMapSection({ geolocation }: ExploreMapSectionProps) {
               stationsLoading={stationsLoading}
             />
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

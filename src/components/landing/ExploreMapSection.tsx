@@ -50,7 +50,7 @@ export function ExploreMapSection({ geolocation }: ExploreMapSectionProps) {
       : 'Default map area';
 
   return (
-    <section className="relative py-10 sm:py-14 lg:py-16" id="explore-map">
+    <section className="relative scroll-mt-24 py-10 sm:py-14 lg:py-16" id="explore-map">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">

@@ -227,4 +227,32 @@ test.describe('Homepage visual stability and map performance', () => {
     });
   });
 
+  test('phase 6: nearby station data is visible when the section is reached', async ({ page }, testInfo) => {
+    await page.addInitScript(() => localStorage.setItem('fuelvoice-theme', 'light'));
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const nearby = page.locator('#nearby-stations');
+    await nearby.scrollIntoViewIfNeeded();
+
+    await expect(nearby.getByText('Fuel Station', { exact: true }).first()).toBeVisible({ timeout: 7000 });
+
+    const hiddenContent = await nearby.evaluate((section) => {
+      const stationLink = Array.from(section.querySelectorAll('a')).find((link) =>
+        link.textContent?.includes('Fuel Station')
+      );
+      if (!stationLink) return null;
+      const styles = getComputedStyle(stationLink);
+      return { opacity: styles.opacity, visibility: styles.visibility };
+    });
+
+    expect(hiddenContent).not.toBeNull();
+    expect(hiddenContent!.opacity).toBe('1');
+    expect(hiddenContent!.visibility).toBe('visible');
+
+    await page.screenshot({
+      path: screenshotPath(testInfo, 'phase-6-nearby-visible'),
+      fullPage: false,
+    });
+  });
+
 });

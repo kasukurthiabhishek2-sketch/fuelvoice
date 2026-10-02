@@ -120,7 +120,7 @@ export function SearchBar({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className={`w-full border outline-none transition-all duration-200 ${isHero
-            ? 'rounded-2xl py-4 pl-12 pr-24 text-[15px] shadow-[var(--shadow-xs)] focus:border-brand-500 focus:shadow-[var(--shadow-glow)] sm:py-[18px] sm:text-base'
+            ? 'rounded-2xl py-4 pl-12 pr-12 text-[15px] shadow-[var(--shadow-xs)] focus:border-brand-500 focus:shadow-[var(--shadow-glow)] sm:py-[18px] sm:pr-24 sm:text-base'
             : 'rounded-xl py-2.5 pl-10 pr-20 text-sm shadow-[var(--shadow-xs)] focus:border-brand-500'
           }`}
           style={{

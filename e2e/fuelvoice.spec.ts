@@ -750,11 +750,13 @@ test.describe('Map Viewport Dashboard', () => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    // The dashboard is part of the deferred map workspace. Scroll it into
-    // view before asserting the viewport-linked station list.
+    // Follow the same path a user takes. Clicking the hero anchor avoids
+    // racing a geolocation-driven React rerender with scrollIntoViewIfNeeded.
+    await expect(page.getByText('Precise location', { exact: true })).toBeVisible({ timeout: 10000 });
+    await page.getByRole('link', { name: 'Explore the map', exact: true }).click();
+
     const mapSection = page.locator('#explore-map');
-    await mapSection.scrollIntoViewIfNeeded();
-    await expect(mapSection).toBeInViewport();
+    await expect(mapSection).toBeInViewport({ timeout: 10000 });
 
     // Wait for the visible bunks header in sidebar
     const visibleBunksHeader = page.getByText('Visible Bunks');

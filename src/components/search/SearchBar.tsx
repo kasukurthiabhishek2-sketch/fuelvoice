@@ -1,25 +1,22 @@
 /**
  * Search Bar Component
- * 
- * Full-featured search bar with Photon API autocomplete.
- * Supports keyboard navigation (arrow keys, Enter, Escape).
+ *
+ * Autocomplete search with keyboard navigation, explicit clear affordance,
+ * and a high-contrast command surface that works in both themes.
  */
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useStationSearch } from '@/hooks/useStationSearch';
 import type { SearchResult } from '@/lib/api/photon';
 
 interface SearchBarProps {
-  /** Size variant */
   variant?: 'hero' | 'compact';
-  /** Bias search results toward user location */
   userLat?: number | null;
   userLng?: number | null;
-  /** Optional placeholder override */
   placeholder?: string;
 }
 
@@ -39,13 +36,13 @@ export function SearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -56,25 +53,26 @@ export function SearchBar({
     router.push(`/station/${result.id}`);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Escape') {
       setIsOpen(false);
       inputRef.current?.blur();
       return;
     }
+
     if (!isOpen || results.length === 0) return;
 
-    switch (e.key) {
+    switch (event.key) {
       case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+        event.preventDefault();
+        setSelectedIndex((previous) => (previous < results.length - 1 ? previous + 1 : 0));
         break;
       case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+        event.preventDefault();
+        setSelectedIndex((previous) => (previous > 0 ? previous - 1 : results.length - 1));
         break;
       case 'Enter':
-        e.preventDefault();
+        event.preventDefault();
         if (selectedIndex >= 0 && results[selectedIndex]) {
           handleSelect(results[selectedIndex]);
         }
@@ -82,32 +80,38 @@ export function SearchBar({
     }
   };
 
+  const clearSearch = () => {
+    setSearchTerm('');
+    setSelectedIndex(-1);
+    setIsOpen(false);
+    inputRef.current?.focus();
+  };
+
   const isHero = variant === 'hero';
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <div className={`relative ${isHero ? 'max-w-2xl mx-auto' : ''}`}>
-        {/* Search Icon */}
-        <div className="absolute z-50 left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+      <div className="relative w-full">
+        <div className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-[var(--text-tertiary)]">
           <svg
-            className={`${isHero ? 'w-5 h-5' : 'w-4 h-4'}`}
-            style={{ color: 'var(--text-tertiary)' }}
+            className={isHero ? 'h-5 w-5' : 'h-4 w-4'}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
             strokeWidth={2}
+            aria-hidden="true"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <circle cx="11" cy="11" r="6.5" />
+            <path d="m16 16 4 4" strokeLinecap="round" />
           </svg>
         </div>
 
-        {/* Input */}
         <input
           ref={inputRef}
           type="text"
           value={searchTerm}
-          onChange={(e) => {
-            const nextValue = e.target.value;
+          onChange={(event) => {
+            const nextValue = event.target.value;
             setSearchTerm(nextValue);
             setIsOpen(nextValue.length >= 2);
             setSelectedIndex(-1);
@@ -115,11 +119,10 @@ export function SearchBar({
           onFocus={() => results.length > 0 && setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`w-full transition-all duration-200 outline-none
-            ${isHero
-              ? 'pl-12 pr-4 py-4 text-base rounded-full shadow-xl border-2 focus:border-brand-500 focus:shadow-[var(--shadow-glow)]'
-              : 'pl-10 pr-4 py-2.5 text-sm rounded-full shadow-md border focus:border-brand-500'
-            }`}
+          className={`w-full border outline-none transition-all duration-200 ${isHero
+            ? 'rounded-2xl py-4 pl-12 pr-24 text-[15px] shadow-[var(--shadow-xs)] focus:border-brand-500 focus:shadow-[var(--shadow-glow)] sm:py-[18px] sm:text-base'
+            : 'rounded-xl py-2.5 pl-10 pr-20 text-sm shadow-[var(--shadow-xs)] focus:border-brand-500'
+          }`}
           style={{
             backgroundColor: 'var(--bg-card)',
             color: 'var(--text-primary)',
@@ -132,72 +135,100 @@ export function SearchBar({
           autoComplete="off"
         />
 
-        {/* Loading spinner */}
-        {isSearching && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
+        <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
+          {isSearching && (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" aria-label="Searching" />
+          )}
+          {!isSearching && searchTerm && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="grid h-8 w-8 place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+              aria-label="Clear search"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m7 7 10 10M17 7 7 17" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
+          {isHero && (
+            <span className="hidden rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--text-tertiary)] sm:inline-flex">
+              Search
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Dropdown Results */}
       <AnimatePresence>
         {isOpen && results.length > 0 && (
           <motion.div
             id="search-results"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.15 }}
-            className={`absolute top-full mt-2 w-full rounded-2xl overflow-hidden glass-strong shadow-xl z-[9999] ${isHero ? 'max-w-2xl left-1/2 -translate-x-1/2' : ''}`}
+            initial={{ opacity: 0, y: 8, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.99 }}
+            transition={{ duration: 0.14 }}
+            className="absolute left-0 top-full z-[9999] mt-2 w-full overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-elevated)] p-1.5 shadow-[var(--shadow-xl)] backdrop-blur-2xl"
             role="listbox"
           >
+            <div className="flex items-center justify-between px-3 pb-1.5 pt-1">
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Stations</span>
+              <span className="text-[10px] text-[var(--text-tertiary)]">Use ↑ ↓ and Enter</span>
+            </div>
             {results.map((result, index) => (
               <button
                 key={result.id}
+                type="button"
                 onClick={() => handleSelect(result)}
                 onMouseEnter={() => setSelectedIndex(index)}
-                className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${
-                  index === selectedIndex
-                    ? 'bg-brand-500/10'
-                    : 'hover:bg-surface-100 dark:hover:bg-surface-700'
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${index === selectedIndex
+                  ? 'bg-brand-500/10'
+                  : 'hover:bg-[var(--bg-tertiary)]'
                 }`}
                 role="option"
                 aria-selected={index === selectedIndex}
               >
-                <div className="flex-shrink-0 mt-0.5">
-                   <div className="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center">
-                    <span className="text-sm">⛽</span>
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500/10 text-brand-500">
+                  <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.9">
+                    <path d="M6.5 4.5h7.5v15H6.5z" strokeLinejoin="round" />
+                    <path d="M8.5 8h3.5M14 8.5h2.2l1.8 2.1V17a1.5 1.5 0 0 0 3 0v-5.7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {result.name}
-                  </p>
-                  <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                    {[result.city, result.state, result.country].filter(Boolean).join(', ')}
-                  </p>
-                </div>
+                  </span>
+                  <span className="mt-0.5 block truncate text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    {[result.city, result.state, result.country].filter(Boolean).join(', ') || 'Location details unavailable'}
+                  </span>
+                </span>
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
             ))}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* No results */}
       <AnimatePresence>
         {isOpen && searchTerm.length >= 2 && !isSearching && results.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            className={`absolute top-full mt-2 w-full rounded-2xl glass-strong shadow-xl z-[9999] p-6 text-center ${isHero ? 'max-w-2xl left-1/2 -translate-x-1/2' : ''}`}
+            exit={{ opacity: 0, y: 6 }}
+            className="absolute left-0 top-full z-[9999] mt-2 w-full rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-elevated)] p-6 text-center shadow-[var(--shadow-xl)] backdrop-blur-2xl"
           >
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              No fuel stations found for &ldquo;{searchTerm}&rdquo;
+            <div className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-tertiary)]">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="m16 16 4 4" strokeLinecap="round" />
+              </svg>
+            </div>
+            <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              No station matched &ldquo;{searchTerm}&rdquo;
             </p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
-              Try searching by station name, brand, or city
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              Try a station name, brand, locality, or city.
             </p>
           </motion.div>
         )}

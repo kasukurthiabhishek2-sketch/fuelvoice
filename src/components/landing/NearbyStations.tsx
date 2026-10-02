@@ -10,15 +10,19 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import type { GeolocationResult } from '@/hooks/useGeolocation';
 import { useNearbyStations } from '@/hooks/useNearbyStations';
 import { SkeletonStationCard } from '@/components/ui/Skeleton';
 import { StarRating } from '@/components/ui/StarRating';
 import { formatDistance } from '@/lib/utils/format';
 import { getBrand } from '@/lib/constants/brands';
 
-export function NearbyStations() {
-  const { latitude, longitude, loading: geoLoading, requestLocation, hasLocation, permissionState, isIpLocation } = useGeolocation();
+interface NearbyStationsProps {
+  geolocation: GeolocationResult;
+}
+
+export function NearbyStations({ geolocation }: NearbyStationsProps) {
+  const { latitude, longitude, loading: geoLoading, requestLocation, hasLocation, permissionState, isIpLocation } = geolocation;
   const { data: stations, isLoading: stationsLoading, error: stationsError, refetch } = useNearbyStations({
     lat: latitude,
     lng: longitude,

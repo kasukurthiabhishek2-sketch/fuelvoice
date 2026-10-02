@@ -383,7 +383,6 @@ export function ExploreMapInner({
 
   // Re-render markers whenever allStations or zoomLevel changes
   useEffect(() => {
-    const L = require('leaflet') as typeof import('leaflet');
     const map = mapInstanceRef.current;
     const markerGroup = markersRef.current;
     if (!map || !markerGroup) return;

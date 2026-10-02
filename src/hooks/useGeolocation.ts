@@ -176,3 +176,5 @@ export function useGeolocation() {
     hasLocation: state.latitude !== null && state.longitude !== null,
   };
 }
+
+export type GeolocationResult = ReturnType<typeof useGeolocation>;

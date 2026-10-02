@@ -50,7 +50,7 @@ export function ExploreMapSection({ geolocation }: ExploreMapSectionProps) {
   return (
     <section className="relative scroll-mt-24 pb-14 pt-4 sm:pb-20 sm:pt-8 lg:pb-24" id="explore-map">
       <div className="app-frame">
-        <div className="map-workspace p-3 sm:p-4 lg:p-5">
+        <div className="map-shell map-workspace p-3 sm:p-4 lg:p-5">
           <div className="flex flex-col gap-6 px-3 pb-5 pt-3 sm:px-4 sm:pb-6 sm:pt-4 lg:flex-row lg:items-end lg:justify-between lg:px-5">
             <div className="max-w-2xl">
               <div className="flex flex-wrap items-center gap-2">

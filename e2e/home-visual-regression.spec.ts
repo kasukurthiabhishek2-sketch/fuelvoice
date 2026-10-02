@@ -164,6 +164,16 @@ test.describe('Homepage visual stability and map performance', () => {
     );
     expect(darkBg.toUpperCase()).toBe('#111614');
 
+    const signIn = page.getByRole('button', { name: /sign in with google/i });
+    if (await signIn.count()) {
+      const signInColors = await signIn.evaluate((element) => {
+        const styles = getComputedStyle(element);
+        return { background: styles.backgroundColor, color: styles.color };
+      });
+      expect(signInColors.background).toBe('rgb(30, 38, 34)');
+      expect(signInColors.color).toBe('rgb(237, 241, 239)');
+    }
+
     await page.screenshot({
       path: screenshotPath(testInfo, 'phase-3-neutral-dark'),
       fullPage: false,

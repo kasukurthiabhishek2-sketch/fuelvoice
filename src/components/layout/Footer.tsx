@@ -54,7 +54,7 @@ export function Footer() {
         <div className="mt-10 flex flex-col gap-3 border-t border-[var(--border-primary)] pt-6 text-xs sm:flex-row sm:items-center sm:justify-between" style={{ color: 'var(--text-tertiary)' }}>
           <p>© {new Date().getFullYear()} FuelVoice. Community reviews with mapped source data.</p>
           <p>
-            Map data ©{' '}
+            Powered by OpenStreetMap · Map data ©{' '}
             <a
               href="https://www.openstreetmap.org/copyright"
               target="_blank"

@@ -36,7 +36,7 @@ export function ExploreMapSection({ geolocation }: ExploreMapSectionProps) {
   });
 
   const handleStationSelect = (stationId: string) => {
-    router.push(\`/station/\${stationId}\`);
+    router.push(`/station/${stationId}`);
   };
 
   return (

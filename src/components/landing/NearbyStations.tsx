@@ -9,7 +9,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import type { GeolocationResult } from '@/hooks/useGeolocation';
 import { useNearbyStations } from '@/hooks/useNearbyStations';
 import { SkeletonStationCard } from '@/components/ui/Skeleton';
@@ -72,11 +71,7 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
         </div>
 
         {showLocationPrompt && (
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="surface-panel mx-auto mb-8 flex max-w-3xl flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7"
-          >
+          <div className="surface-panel mx-auto mb-8 flex max-w-3xl flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
             <div className="flex gap-4">
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-500/10 text-brand-500">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
@@ -113,7 +108,7 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
                 </>
               )}
             </button>
-          </motion.div>
+          </div>
         )}
 
         {showDenied && (
@@ -140,18 +135,11 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
 
         {stations && stations.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {stations.slice(0, 9).map((station, index) => {
+            {stations.slice(0, 9).map((station) => {
               const brand = station.brand ? getBrand(station.brand) : null;
 
               return (
-                <motion.div
-                  key={station.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{ delay: Math.min(index * 0.04, 0.2), duration: 0.3 }}
-                  className="h-full"
-                >
+                <div key={station.id} className="h-full">
                   <Link href={`/station/${station.id}`} className="group block h-full">
                     <article className="station-card card flex h-full min-h-[220px] flex-col p-5 group-hover:-translate-y-0.5 group-hover:border-brand-500/25">
                       <div className="flex items-start gap-3">
@@ -222,7 +210,7 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
                       </div>
                     </article>
                   </Link>
-                </motion.div>
+                </div>
               );
             })}
           </div>

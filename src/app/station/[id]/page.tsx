@@ -31,7 +31,7 @@ export default function StationPage() {
   const { toast } = useToast();
   const { latitude, longitude } = useGeolocation();
 
-  const { data: station, isLoading, error } = useQuery({
+  const { data: station, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['station', stationId],
     queryFn: () => fetchStation(stationId),
     enabled: !!stationId,
@@ -41,16 +41,28 @@ export default function StationPage() {
   if (isLoading) return <SkeletonPage />;
 
   if (error || !station) {
+    const unavailable = error instanceof Error && /provider|timed out|rate-limited|temporarily/i.test(error.message);
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <div className="text-5xl mb-4">🔍</div>
-        <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Station Not Found</h1>
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>This station may not exist or could not be loaded.</p>
+        <div className="text-5xl mb-4">{unavailable ? '⚠️' : '🔍'}</div>
+        <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+          {unavailable ? 'Station Data Temporarily Unavailable' : 'Station Not Found'}
+        </h1>
+        <p className="text-sm mb-5" style={{ color: 'var(--text-secondary)' }}>
+          {unavailable ? 'OpenStreetMap station data could not be loaded right now. No substitute station data is being shown.' : 'This station does not appear to exist.'}
+        </p>
+        {unavailable && (
+          <button onClick={() => refetch()} disabled={isFetching}
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 disabled:opacity-50">
+            {isFetching ? 'Retrying…' : 'Retry'}
+          </button>
+        )}
       </div>
     );
   }
 
   const brand = getBrand(station.brand);
+  const safeWebsite = getSafeWebsite(station.website);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -124,7 +136,7 @@ export default function StationPage() {
               <DetailRow label="Brand" value={station.brand || 'Not available'} />
               <DetailRow label="Operator" value={station.operator || 'Not available'} />
               <DetailRow label="Phone" value={station.phone || 'Not available'} isLink={!!station.phone} href={`tel:${station.phone}`} />
-              <DetailRow label="Website" value={station.website ? new URL(station.website).hostname : 'Not available'} isLink={!!station.website} href={station.website} />
+              <DetailRow label="Website" value={safeWebsite?.label || 'Not available'} isLink={!!safeWebsite} href={safeWebsite?.href} />
               <DetailRow label="Opening Hours" value={station.openingHours || 'Not available'} />
               <DetailRow label="Coordinates" value={`${station.lat.toFixed(5)}, ${station.lng.toFixed(5)}`} />
             </div>
@@ -186,7 +198,7 @@ function DetailRow({ label, value, isLink, href }: { label: string; value: strin
     <div className="flex flex-col">
       <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>{label}</span>
       {isLink && href ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-brand-500 hover:text-brand-600 transition-colors truncate">{value}</a>
+        <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noopener noreferrer' : undefined} className="text-sm font-medium text-brand-500 hover:text-brand-600 transition-colors truncate">{value}</a>
       ) : (
         <span className="text-sm font-medium truncate" style={{ color: value === 'Not available' ? 'var(--text-tertiary)' : 'var(--text-primary)' }}>{value}</span>
       )}
@@ -210,6 +222,18 @@ function ScoreBar({ label, score }: { label: string; score: number }) {
   );
 }
 
+function getSafeWebsite(raw: string): { href: string; label: string } | null {
+  if (!raw?.trim()) return null;
+  try {
+    const withProtocol = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`;
+    const url = new URL(withProtocol);
+    if (!['http:', 'https:'].includes(url.protocol)) return null;
+    return { href: url.toString(), label: url.hostname };
+  } catch {
+    return null;
+  }
+}
+
 /** Fetch station from Firestore, or from Overpass API if first visit */
 async function fetchStation(stationId: string): Promise<Station> {
   // Try Firestore first
@@ -227,8 +251,9 @@ async function fetchStation(stationId: string): Promise<Station> {
   if (!element) throw new Error('Station not found on OpenStreetMap');
 
   const tags = element.tags || {};
-  const lat = element.lat ?? element.center?.lat ?? 0;
-  const lng = element.lon ?? element.center?.lon ?? 0;
+  const lat = element.lat ?? element.center?.lat;
+  const lng = element.lon ?? element.center?.lon;
+  if (lat === undefined || lng === undefined) throw new Error('Station has no usable coordinates');
 
   const addressParts = [tags['addr:street'], tags['addr:city'], tags['addr:state'], tags['addr:country']].filter(Boolean);
 

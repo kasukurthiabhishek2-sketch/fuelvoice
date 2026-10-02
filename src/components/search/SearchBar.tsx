@@ -47,7 +47,7 @@ export function SearchBar({
   const handleSelect = (result: SearchResult) => {
     setIsOpen(false);
     setSearchTerm('');
-    router.push(\`/station/\${result.id}\`);
+    router.push(`/station/${result.id}`);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -81,9 +81,9 @@ export function SearchBar({
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <div className={\`relative \${isHero ? 'max-w-2xl' : ''}\`}>
+      <div className={`relative ${isHero ? 'max-w-2xl' : ''}`}>
         <div
-          className={\`absolute left-2.5 top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-300 \${isHero ? 'h-10 w-10' : 'h-8 w-8'}\`}
+          className={`absolute left-2.5 top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-300 ${isHero ? 'h-10 w-10' : 'h-8 w-8'}`}
           aria-hidden="true"
         >
           <SearchIcon className={isHero ? 'h-5 w-5' : 'h-4 w-4'} />
@@ -102,10 +102,10 @@ export function SearchBar({
           onFocus={() => results.length > 0 && setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={\`w-full border outline-none transition-all duration-200 placeholder:text-surface-400 \${isHero
+          className={`w-full border outline-none transition-all duration-200 placeholder:text-surface-400 ${isHero
             ? 'min-h-[60px] rounded-2xl py-3.5 pl-[62px] pr-14 text-[15px] font-medium shadow-lg focus:border-brand-500 focus:shadow-[var(--shadow-glow)]'
             : 'min-h-11 rounded-xl py-2.5 pl-12 pr-11 text-sm shadow-sm focus:border-brand-500'
-          }\`}
+          }`}
           style={{
             backgroundColor: 'var(--bg-card)',
             color: 'var(--text-primary)',
@@ -143,7 +143,7 @@ export function SearchBar({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 7, scale: 0.99 }}
             transition={{ duration: 0.14 }}
-            className={\`absolute top-full z-[9999] mt-2 w-full overflow-hidden rounded-2xl border shadow-xl \${isHero ? 'max-w-2xl' : ''}\`}
+            className={`absolute top-full z-[9999] mt-2 w-full overflow-hidden rounded-2xl border shadow-xl ${isHero ? 'max-w-2xl' : ''}`}
             style={{ borderColor: 'var(--border-primary)', background: 'var(--bg-elevated)' }}
             role="listbox"
           >
@@ -156,7 +156,7 @@ export function SearchBar({
                 key={result.id}
                 onClick={() => handleSelect(result)}
                 onMouseEnter={() => setSelectedIndex(index)}
-                className={\`flex min-h-[60px] w-full items-center gap-3 px-3.5 py-3 text-left transition-colors \${index === selectedIndex ? 'bg-brand-500/10' : 'hover:bg-surface-50 dark:hover:bg-surface-800'}\`}
+                className={`flex min-h-[60px] w-full items-center gap-3 px-3.5 py-3 text-left transition-colors ${index === selectedIndex ? 'bg-brand-500/10' : 'hover:bg-surface-50 dark:hover:bg-surface-800'}`}
                 role="option"
                 aria-selected={index === selectedIndex}
               >
@@ -182,7 +182,7 @@ export function SearchBar({
             initial={{ opacity: 0, y: 7 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 7 }}
-            className={\`absolute top-full z-[9999] mt-2 w-full rounded-2xl border p-5 shadow-xl \${isHero ? 'max-w-2xl' : ''}\`}
+            className={`absolute top-full z-[9999] mt-2 w-full rounded-2xl border p-5 shadow-xl ${isHero ? 'max-w-2xl' : ''}`}
             style={{ borderColor: 'var(--border-primary)', background: 'var(--bg-elevated)' }}
           >
             <div className="flex items-start gap-3">

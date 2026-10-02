@@ -557,6 +557,10 @@ body {
     border-radius: 20px;
   }
 
+  .map-workspace {
+    border-radius: 28px;
+  }
+
   .surface-panel {
     border-radius: 20px;
   }

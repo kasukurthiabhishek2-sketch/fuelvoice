@@ -278,8 +278,6 @@ test.describe('Dark Mode', () => {
       htmlElement.evaluate(el => el.classList.contains('dark'))
     ).toBe(!initialHasDark);
 
-    const afterHasDark = await htmlElement.evaluate(el => el.classList.contains('dark'));
-
     await page.screenshot({ caret: 'initial', path: 'e2e/screenshots/07-dark-mode-toggled.png', fullPage: false });
 
     // Toggle back

@@ -227,6 +227,28 @@ test.describe('Search', () => {
 });
 
 // ────────────────────────────────────────────────
+// Hydration Tests
+// ────────────────────────────────────────────────
+
+test.describe('Hydration', () => {
+  test('should hydrate the homepage without React mismatch warnings', async ({ page }) => {
+    const hydrationWarnings: string[] = [];
+    page.on('console', (message) => {
+      const text = message.text();
+      if (text.includes('hydrated but some attributes') || text.includes('Hydration failed')) {
+        hydrationWarnings.push(text);
+      }
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(750);
+
+    expect(hydrationWarnings).toEqual([]);
+  });
+});
+
+// ────────────────────────────────────────────────
 // Dark Mode Tests
 // ────────────────────────────────────────────────
 

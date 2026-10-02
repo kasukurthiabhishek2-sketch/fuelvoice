@@ -26,7 +26,7 @@ export default defineConfig({
   ],
   /* Test the optimized production build so framework dev UI cannot contaminate visual evidence. */
   webServer: {
-    command: 'npm run build && npm run start',
+    command: 'NEXT_PUBLIC_FUELVOICE_E2E_MOCKS=true npm run build && NEXT_PUBLIC_FUELVOICE_E2E_MOCKS=true npm run start',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 120000,

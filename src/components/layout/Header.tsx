@@ -26,7 +26,7 @@ export function Header() {
             <motion.span
               whileHover={{ rotate: -5, scale: 1.04 }}
               transition={{ type: 'spring', stiffness: 320, damping: 18 }}
-              className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 text-white shadow-[0_10px_24px_rgba(249,115,22,0.24)]"
+              className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 text-white shadow-[0_10px_24px_rgba(85,114,104,0.2)]"
               aria-hidden="true"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
@@ -54,7 +54,7 @@ export function Header() {
           <div className="flex items-center gap-2">
             <Link
               href="/search"
-              className="grid h-10 w-10 place-items-center rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:text-brand-500 md:hidden"
+              className="grid h-10 w-10 place-items-center rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:text-brand-600 dark:hover:text-brand-300 md:hidden"
               aria-label="Search fuel stations"
             >
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2">
@@ -79,7 +79,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
-      className="rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors hover:bg-[var(--bg-tertiary)] hover:text-brand-500"
+      className="rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors hover:bg-[var(--bg-tertiary)] hover:text-brand-600 dark:hover:text-brand-300"
       style={{ color: 'var(--text-secondary)' }}
     >
       {children}

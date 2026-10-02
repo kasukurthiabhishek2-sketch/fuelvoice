@@ -1,15 +1,13 @@
 /**
  * Explore Map Section
- * 
- * Always-visible interactive map section on the homepage.
- * - If location is available: shows nearby stations on the map
- * - If location is not available: shows the map with a location prompt overlay
- * - Users can click station markers to navigate to station profiles
+ *
+ * Interactive map presented as the primary discovery workspace.
  */
 
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ExploreMap } from './ExploreMapDynamic';
@@ -32,7 +30,6 @@ export function ExploreMapSection({ geolocation }: ExploreMapSectionProps) {
     permissionState,
   } = geolocation;
 
-  // Fallback to default coordinates (Hyderabad) when user location is not yet available
   const queryLat = hasLocation && latitude !== null ? latitude : 17.3887027;
   const queryLng = hasLocation && longitude !== null ? longitude : 78.4753829;
 
@@ -45,46 +42,93 @@ export function ExploreMapSection({ geolocation }: ExploreMapSectionProps) {
     router.push(`/station/${stationId}`);
   };
 
+  const locationLabel = hasLocation
+    ? isIpLocation
+      ? 'Approximate area'
+      : 'Precise location'
+    : permissionState === 'denied'
+      ? 'Location blocked'
+      : 'Default map area';
+
   return (
-    <section className="py-12" id="explore-map">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Section Header */}
+    <section className="relative py-10 sm:py-14 lg:py-16" id="explore-map">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8"
+          viewport={{ once: true, margin: '-80px' }}
+          className="mb-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between"
         >
-          <div>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              Explore <span className="bg-gradient-to-r from-brand-500 to-amber-500 bg-clip-text text-transparent">Mapped Stations</span>
+          <div className="max-w-2xl">
+            <p className="section-kicker">Map discovery</p>
+            <h2 className="mt-3 text-3xl font-black tracking-[-0.045em] sm:text-4xl" style={{ color: 'var(--text-primary)' }}>
+              Explore <span className="text-brand-500">Mapped Stations</span>
             </h2>
-            <p className="text-sm mt-2 max-w-xl leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              Explore fuel stations mapped in OpenStreetMap. Pan, swipe, or zoom to update the visible station list and read community reviews.
+            <p className="mt-3 max-w-xl text-sm leading-6 sm:text-base" style={{ color: 'var(--text-secondary)' }}>
+              Browse stations spatially, then open the ones worth comparing. Pan or zoom the map to inspect a different area.
             </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="info-chip">
+              <span className={`h-2 w-2 rounded-full ${hasLocation && !isIpLocation ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
+              {locationLabel}
+            </span>
+            <Link href="/search" className="secondary-action">
+              Search by name
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
           </div>
         </motion.div>
 
-        {/* Map Explorer Dashboard Container */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 22 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="relative"
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.45, delay: 0.05 }}
+          className="map-shell p-2 sm:p-3"
         >
-          <ExploreMap
-            lat={latitude}
-            lng={longitude}
-            hasLocation={hasLocation}
-            isIpLocation={isIpLocation}
-            stations={stations || []}
-            onStationSelect={handleStationSelect}
-            requestLocation={requestLocation}
-            geoLoading={geoLoading}
-            permissionState={permissionState}
-            stationsLoading={stationsLoading}
-          />
+          <div className="mb-2.5 flex flex-wrap items-center justify-between gap-3 px-2 py-1 sm:px-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--text-tertiary)' }}>
+                Live area explorer
+              </p>
+              <p className="mt-0.5 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {stationsLoading
+                  ? 'Loading mapped stations…'
+                  : stations?.length
+                    ? `${stations.length} mapped station${stations.length === 1 ? '' : 's'} in the active area`
+                    : 'Move around the map to discover stations'}
+              </p>
+            </div>
+            <div className="hidden items-center gap-4 text-xs sm:flex" style={{ color: 'var(--text-secondary)' }}>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-brand-500" />
+                Station
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full border-2 border-sky-500 bg-sky-500/20" />
+                Your area
+              </span>
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-[20px] border border-[var(--border-secondary)] bg-[var(--bg-secondary)]">
+            <ExploreMap
+              lat={latitude}
+              lng={longitude}
+              hasLocation={hasLocation}
+              isIpLocation={isIpLocation}
+              stations={stations || []}
+              onStationSelect={handleStationSelect}
+              requestLocation={requestLocation}
+              geoLoading={geoLoading}
+              permissionState={permissionState}
+              stationsLoading={stationsLoading}
+            />
+          </div>
         </motion.div>
       </div>
     </section>

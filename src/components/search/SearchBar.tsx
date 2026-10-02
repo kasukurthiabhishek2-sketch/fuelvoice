@@ -225,7 +225,7 @@ export function SearchBar({
               </svg>
             </div>
             <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-              No station matched &ldquo;{searchTerm}&rdquo;
+              No fuel stations found for &ldquo;{searchTerm}&rdquo;
             </p>
             <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
               Try a station name, brand, locality, or city.

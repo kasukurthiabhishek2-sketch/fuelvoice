@@ -40,7 +40,7 @@ export function LoginButton({ variant = 'default', className = '' }: LoginButton
         whileTap={{ scale: 0.98 }}
         onClick={handleSignIn}
         disabled={loading}
-        className={\`flex min-h-11 items-center gap-2 rounded-xl border px-3.5 text-sm font-semibold shadow-sm transition-all hover:-translate-y-px hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 \${className}\`}
+        className={`flex min-h-11 items-center gap-2 rounded-xl border px-3.5 text-sm font-semibold shadow-sm transition-all hover:-translate-y-px hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
         style={{ color: 'var(--text-primary)', borderColor: 'var(--border-primary)', background: 'var(--bg-card)' }}
         aria-label="Sign in with Google"
       >
@@ -55,7 +55,7 @@ export function LoginButton({ variant = 'default', className = '' }: LoginButton
       whileTap={{ scale: 0.99 }}
       onClick={handleSignIn}
       disabled={loading}
-      className={\`flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border px-6 py-3 text-base font-semibold shadow-sm transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 \${className}\`}
+      className={`flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border px-6 py-3 text-base font-semibold shadow-sm transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       style={{ color: 'var(--text-primary)', borderColor: 'var(--border-primary)', background: 'var(--bg-card)' }}
       aria-label="Sign in with Google"
     >

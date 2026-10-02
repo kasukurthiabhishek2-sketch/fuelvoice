@@ -72,6 +72,14 @@ test.describe('Homepage visual stability and map performance', () => {
   test('phase 1: first paint remains above the fold and does not jump', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === 'mobile', 'Desktop geometry guard');
 
+    const hydrationWarnings: string[] = [];
+    page.on('console', (message) => {
+      const text = message.text();
+      if (text.includes('hydrated but some attributes') || text.includes('Hydration failed')) {
+        hydrationWarnings.push(text);
+      }
+    });
+
     await page.addInitScript(() => localStorage.setItem('fuelvoice-theme', 'light'));
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
@@ -89,7 +97,7 @@ test.describe('Homepage visual stability and map performance', () => {
     // elements. Keep a direct guard so that failure cannot silently return.
     await expect(page.locator('.brand-orb')).toHaveCount(0);
 
-    await page.screenshot({
+    await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-1-first-paint'),
       fullPage: false,
     });
@@ -99,10 +107,13 @@ test.describe('Homepage visual stability and map performance', () => {
     expect(settledBox).not.toBeNull();
     expect(Math.abs(settledBox!.y - firstBox!.y)).toBeLessThan(8);
 
-    await page.screenshot({
+    await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-1-settled'),
       fullPage: false,
     });
+
+    await page.waitForTimeout(250);
+    expect(hydrationWarnings).toEqual([]);
   });
 
   test('phase 2: map initializes promptly inside a stable shell', async ({ page }, testInfo) => {
@@ -128,7 +139,7 @@ test.describe('Homepage visual stability and map performance', () => {
     expect(mapBox!.height).toBeGreaterThanOrEqual(390);
     expect(mapBox!.width).toBeGreaterThan(250);
 
-    await page.screenshot({
+    await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-2-map-ready'),
       fullPage: false,
     });
@@ -148,7 +159,7 @@ test.describe('Homepage visual stability and map performance', () => {
     expect(lightColors.bg.toUpperCase()).toBe('#F8F9F8');
     expect(lightColors.brand.toUpperCase()).toBe('#67897D');
 
-    await page.screenshot({
+    await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-3-neutral-light'),
       fullPage: false,
     });
@@ -175,7 +186,7 @@ test.describe('Homepage visual stability and map performance', () => {
       });
     }
 
-    await page.screenshot({
+    await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-3-neutral-dark'),
       fullPage: false,
     });
@@ -198,7 +209,7 @@ test.describe('Homepage visual stability and map performance', () => {
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(metrics.innerWidth + 1);
 
-    await page.screenshot({
+    await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-4-responsive-viewport'),
       fullPage: false,
     });
@@ -221,7 +232,7 @@ test.describe('Homepage visual stability and map performance', () => {
 
     expect(geometry.sectionTop).toBeGreaterThanOrEqual(geometry.headerBottom - 1);
 
-    await page.screenshot({
+    await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-5-anchor-offset'),
       fullPage: false,
     });
@@ -249,7 +260,7 @@ test.describe('Homepage visual stability and map performance', () => {
     expect(hiddenContent!.opacity).toBe('1');
     expect(hiddenContent!.visibility).toBe('visible');
 
-    await page.screenshot({
+    await page.screenshot({ caret: 'initial',
       path: screenshotPath(testInfo, 'phase-6-nearby-visible'),
       fullPage: false,
     });

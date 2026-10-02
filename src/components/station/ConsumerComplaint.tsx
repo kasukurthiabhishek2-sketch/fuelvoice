@@ -20,21 +20,18 @@ interface ConsumerComplaintProps {
 
 export function ConsumerComplaint({ lat, lng, countryCode: initialCode }: ConsumerComplaintProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [complaints, setComplaints] = useState<CountryComplaints | null>(null);
+  const [detectedComplaints, setDetectedComplaints] = useState<CountryComplaints | null>(null);
+  const complaints = initialCode ? getComplaintPortals(initialCode) : detectedComplaints;
 
   useEffect(() => {
-    if (initialCode) {
-      setComplaints(getComplaintPortals(initialCode));
-      return;
-    }
-    // Auto-detect country from coordinates
+    if (initialCode) return;
+    let active = true;
     reverseGeocode(lat, lng).then((result) => {
-      if (result) {
-        setComplaints(getComplaintPortals(result.countryCode));
-      }
+      if (active) setDetectedComplaints(getComplaintPortals(result?.countryCode || ''));
     }).catch(() => {
-      setComplaints(getComplaintPortals(''));
+      if (active) setDetectedComplaints(getComplaintPortals(''));
     });
+    return () => { active = false; };
   }, [lat, lng, initialCode]);
 
   return (

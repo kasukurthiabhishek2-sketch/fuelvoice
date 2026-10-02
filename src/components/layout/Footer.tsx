@@ -13,7 +13,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-14">
         <div className="grid gap-10 lg:grid-cols-[1.25fr_0.75fr_0.75fr]">
           <div className="max-w-xl">
-            <Link href="/" className="inline-flex items-center gap-3" aria-label="FuelVoice home">
+            <Link href="/" className="inline-flex items-center gap-3" aria-label="FuelVoice footer">
               <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 text-white shadow-[0_10px_24px_rgba(249,115,22,0.2)]">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
                   <path d="M6.5 4.5h7.5v15H6.5z" strokeLinejoin="round" />

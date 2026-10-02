@@ -65,6 +65,11 @@ export function SearchBar({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsOpen(false);
+      inputRef.current?.blur();
+      return;
+    }
     if (!isOpen || results.length === 0) return;
 
     switch (e.key) {
@@ -81,10 +86,6 @@ export function SearchBar({
         if (selectedIndex >= 0 && results[selectedIndex]) {
           handleSelect(results[selectedIndex]);
         }
-        break;
-      case 'Escape':
-        setIsOpen(false);
-        inputRef.current?.blur();
         break;
     }
   };

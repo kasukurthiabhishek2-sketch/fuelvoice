@@ -7,7 +7,7 @@
  */
 
 import { chromium } from 'playwright';
-import { writeFileSync, mkdirSync } from 'fs';
+import { mkdirSync } from 'fs';
 import { join } from 'path';
 
 const SCREENSHOTS_DIR = 'e2e/screenshots/debug';

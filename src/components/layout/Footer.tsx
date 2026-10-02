@@ -11,7 +11,7 @@ export function Footer() {
       <div className="page-shell py-10 sm:py-12">
         <div className="grid gap-9 lg:grid-cols-[1.4fr_0.6fr_0.8fr]">
           <div>
-            <Link href="/" className="inline-flex items-center gap-2.5" aria-label="FuelVoice home">
+            <Link href="/" className="inline-flex items-center gap-2.5">
               <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-brand-500 text-white shadow-sm">
                 <PumpIcon />
               </span>

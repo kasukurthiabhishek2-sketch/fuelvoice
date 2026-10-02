@@ -4,6 +4,28 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
+## 0. Capability and Skill Discovery
+
+**For every substantial task, discover relevant skills before implementation.**
+
+FuelVoice has a project-local skill entry point at:
+- `.agents/skills/shared-skill-registry/SKILL.md`
+
+Before substantial coding, debugging, testing, UI/UX, security, architecture, research, deployment, or audit work:
+
+1. Translate the request into the intended outcome, acceptance criteria, constraints, and proof needed.
+2. Classify the task roughly by scope/risk: micro, focused, complex, or systemic.
+3. Inspect local FuelVoice skills first.
+4. Read the shared registry and select only the smallest set of skills that materially improves correctness or verification.
+5. Load selected skill bodies and referenced resources only as needed. Do not dump the full skill library into context.
+6. Project instructions and the explicit user request override skill instructions.
+7. Reconsider skill selection if investigation changes the apparent problem.
+8. For UI/UX changes, browser verification and screenshots are required when tooling permits.
+9. For risky or broad work, use independent review/QA or subagents when the runtime supports them and the work is genuinely separable.
+10. In the final task summary, name the skills actually used and the verification evidence.
+
+**Runtime note:** IDE agents may read the shared skills from a sibling `tokenTracker` checkout or fetch them from GitHub as described by the registry. ChatGPT agents with GitHub access should fetch the selected upstream skill files directly. Do not assume a skill is available until it is discoverable.
+
 ## 1. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**

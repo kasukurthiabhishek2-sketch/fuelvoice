@@ -133,6 +133,7 @@ export function ExploreMapInner({
   const [zoomLevel, setZoomLevel] = useState<number>(hasLocation ? 14 : 13);
 
   const mapRef = useRef<HTMLDivElement>(null);
+  const dashboardRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -152,6 +153,20 @@ export function ExploreMapInner({
   useEffect(() => {
     allStationsRef.current = allStations;
   }, [allStations]);
+
+  const openStationDetails = useCallback((station: StationSummary) => {
+    setReviews([]);
+    setSelectedStation(station);
+
+    // On smaller screens the dashboard can sit partly behind the sticky app
+    // header after a station is selected. Bring the panel to a safe position
+    // so the back control is immediately reachable.
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      window.requestAnimationFrame(() => {
+        dashboardRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+      });
+    }
+  }, []);
 
   // Haversine distance in km between two lat/lng points
   const haversineKm = useCallback((a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
@@ -243,11 +258,10 @@ export function ExploreMapInner({
     } else if (e.data?.type === 'fuelvoice:select' && e.data.stationId) {
       const selected = allStationsRef.current.find((s) => s.id === e.data.stationId);
       if (selected) {
-        setReviews([]);
-        setSelectedStation(selected);
+        openStationDetails(selected);
       }
     }
-  }, [onStationSelect]);
+  }, [onStationSelect, openStationDetails]);
 
   useEffect(() => {
     window.addEventListener('message', handleMessage);
@@ -465,8 +479,7 @@ export function ExploreMapInner({
       
       // Select station and open reviews on clicking marker
       marker.on('click', () => {
-        setReviews([]);
-        setSelectedStation(station);
+        openStationDetails(station);
       });
 
       markerGroup.addLayer(marker);
@@ -487,7 +500,7 @@ export function ExploreMapInner({
       const bounds = L.latLngBounds(allPoints);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
     }
-  }, [allStations, lat, lng, updateVisibleStations, zoomLevel]);
+  }, [allStations, lat, lng, openStationDetails, updateVisibleStations, zoomLevel]);
 
   // Load reviews when selectedStation changes
   useEffect(() => {
@@ -657,7 +670,8 @@ export function ExploreMapInner({
 
       {/* Left Sidebar Panel (Bunks List & Reviews) */}
       <div 
-        className="w-full lg:w-[380px] xl:w-[420px] shrink-0 flex flex-col h-[500px] lg:h-full rounded-2xl border shadow-lg overflow-hidden transition-all duration-300"
+        ref={dashboardRef}
+        className="scroll-mt-24 w-full lg:w-[380px] xl:w-[420px] shrink-0 flex flex-col h-[500px] lg:h-full rounded-2xl border shadow-lg overflow-hidden transition-all duration-300"
         style={{
           background: 'var(--bg-card)',
           borderColor: 'var(--border-primary)',
@@ -902,8 +916,7 @@ export function ExploreMapInner({
                   <div
                     key={station.id}
                     onClick={() => {
-                      setReviews([]);
-                      setSelectedStation(station);
+                      openStationDetails(station);
                       if (mapInstanceRef.current) {
                         mapInstanceRef.current.setView([station.lat, station.lng], 16);
                       }

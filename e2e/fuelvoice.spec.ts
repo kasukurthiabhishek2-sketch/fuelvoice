@@ -401,11 +401,14 @@ test.describe('Geolocation & Map', () => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    // Click enable/request location if required, or wait for auto-detection
+    // The map intentionally mounts only when the discovery workspace is near
+    // the viewport, so initial mobile paint stays fast and compositor-safe.
     const mapSection = page.locator('#explore-map');
     await expect(mapSection).toBeVisible();
+    await mapSection.scrollIntoViewIfNeeded();
+    await expect(mapSection).toBeInViewport();
 
-    // Leaflet container should render
+    // Leaflet should initialize promptly once the user reaches the workspace.
     const leafletContainer = page.locator('.leaflet-container');
     await expect(leafletContainer).toBeVisible({ timeout: 10000 });
 
@@ -696,13 +699,16 @@ test.describe('Map Theme Switcher', () => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    // Wait for map container to be visible
+    // Bring the deferred map workspace near the viewport before testing
+    // Leaflet-specific controls.
     const map = page.locator('#explore-map');
     await expect(map).toBeVisible();
+    await map.scrollIntoViewIfNeeded();
+    await expect(map).toBeInViewport();
 
     // Locate the switcher button by title/aria-label
     const switcherBtn = page.getByRole('button', { name: 'Switch Map Theme' });
-    await expect(switcherBtn).toBeVisible();
+    await expect(switcherBtn).toBeVisible({ timeout: 10000 });
     
     // Click switcher
     await switcherBtn.click();
@@ -744,9 +750,15 @@ test.describe('Map Viewport Dashboard', () => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
+    // The dashboard is part of the deferred map workspace. Scroll it into
+    // view before asserting the viewport-linked station list.
+    const mapSection = page.locator('#explore-map');
+    await mapSection.scrollIntoViewIfNeeded();
+    await expect(mapSection).toBeInViewport();
+
     // Wait for the visible bunks header in sidebar
     const visibleBunksHeader = page.getByText('Visible Bunks');
-    await expect(visibleBunksHeader).toBeVisible();
+    await expect(visibleBunksHeader).toBeVisible({ timeout: 10000 });
 
     // Confirm that the bunk cards are visible in the sidebar list (e.g. Fuel Station)
     const bunkCard = page.locator('.custom-scrollbar').getByText('Fuel Station').first();

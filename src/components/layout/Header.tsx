@@ -25,7 +25,7 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border-secondary)] bg-[var(--bg-glass-strong)] backdrop-blur-2xl">
+    <header className="sticky top-0 z-40 isolate border-b border-[var(--border-secondary)] bg-[var(--bg-primary)]">
       <div className="app-frame">
         <div className="flex h-[74px] items-center justify-between gap-4">
           <Link href="/" className="group flex shrink-0 items-center gap-3" aria-label="FuelVoice home">

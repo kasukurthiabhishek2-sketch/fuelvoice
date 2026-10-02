@@ -46,7 +46,7 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
   const showDenied = permissionState === 'denied';
 
   return (
-    <section className="border-y border-[var(--border-secondary)] bg-[var(--bg-secondary)] py-16 sm:py-20" id="nearby-stations">
+    <section className="scroll-mt-24 border-y border-[var(--border-secondary)] bg-[var(--bg-secondary)] py-16 sm:py-20" id="nearby-stations">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>

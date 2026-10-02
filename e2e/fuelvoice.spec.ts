@@ -335,7 +335,7 @@ test.describe('Geolocation & Map', () => {
 // ────────────────────────────────────────────────
 
 test.describe('Authenticated Actions', () => {
-  test('should submit a review successfully using mock authentication', async ({ page, context }) => {
+  test('should submit a review successfully using mock authentication', async ({ page }) => {
     // Navigate and set mock user state
     await page.goto('/');
     await page.evaluate(() => {

@@ -203,4 +203,28 @@ test.describe('Homepage visual stability and map performance', () => {
       fullPage: false,
     });
   });
+  test('phase 5: anchor navigation clears the sticky header', async ({ page }, testInfo) => {
+    await page.addInitScript(() => localStorage.setItem('fuelvoice-theme', 'light'));
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    await page.getByRole('link', { name: 'Explore map', exact: true }).first().click();
+    await expect(page.locator('#explore-map')).toBeInViewport();
+
+    const geometry = await page.evaluate(() => {
+      const header = document.querySelector('header')?.getBoundingClientRect();
+      const section = document.querySelector('#explore-map')?.getBoundingClientRect();
+      return {
+        headerBottom: header?.bottom ?? 0,
+        sectionTop: section?.top ?? -1,
+      };
+    });
+
+    expect(geometry.sectionTop).toBeGreaterThanOrEqual(geometry.headerBottom - 1);
+
+    await page.screenshot({
+      path: screenshotPath(testInfo, 'phase-5-anchor-offset'),
+      fullPage: false,
+    });
+  });
+
 });

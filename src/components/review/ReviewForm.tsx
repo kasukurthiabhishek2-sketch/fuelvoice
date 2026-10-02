@@ -45,6 +45,16 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
     );
   }
 
+  if (profile?.isBanned) {
+    return (
+      <div className="card p-6 text-center">
+        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+          Reviews are unavailable for this account.
+        </p>
+      </div>
+    );
+  }
+
   if (hasReviewed) {
     return (
       <div className="card p-6 text-center">
@@ -75,6 +85,8 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
         formData: { ...form, title: sanitizeText(form.title), content: sanitizeText(form.content), suggestions: sanitizeText(form.suggestions) },
       });
       toast('Review submitted!', 'success');
+      setForm(INITIAL_FORM);
+      setErrors({});
       setIsOpen(false);
       onSuccess?.();
     } catch { toast('Failed to submit review', 'error'); }
@@ -101,7 +113,7 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
 
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>Overall Rating *</label>
-              <StarRating value={form.rating} onChange={v => { console.log("STARRATING CLICKED IN FORM:", v); setForm({ ...form, rating: v }); }} size="lg" />
+              <StarRating value={form.rating} onChange={v => setForm({ ...form, rating: v })} size="lg" />
               {errors.rating && <p className="text-xs text-danger-500 mt-1">{errors.rating}</p>}
             </div>
 

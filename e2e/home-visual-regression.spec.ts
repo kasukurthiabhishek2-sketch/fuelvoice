@@ -118,6 +118,26 @@ test.describe('Homepage visual stability and map performance', () => {
     expect(hydrationWarnings).toEqual([]);
   });
 
+  test('phase 1b: mobile initial paint keeps offscreen Leaflet unmounted', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'Mobile compositor guard');
+
+    await page.addInitScript(() => localStorage.setItem('fuelvoice-theme', 'light'));
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(900);
+
+    // The bundle may be preloaded, but no Leaflet DOM should exist until the
+    // map workspace reaches the viewport. This guards the Chromium layer-bleed
+    // regression that painted map content over the hero.
+    await expect(page.locator('.leaflet-container')).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    await page.screenshot({
+      path: screenshotPath(testInfo, 'phase-1b-mobile-no-offscreen-map'),
+      fullPage: false,
+      caret: 'initial',
+    });
+  });
+
   test('phase 2: map initializes promptly inside a stable shell', async ({ page }, testInfo) => {
     await page.addInitScript(() => localStorage.setItem('fuelvoice-theme', 'light'));
     await page.goto('/', { waitUntil: 'domcontentloaded' });

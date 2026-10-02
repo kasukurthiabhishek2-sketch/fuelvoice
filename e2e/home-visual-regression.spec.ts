@@ -152,6 +152,7 @@ test.describe('Homepage visual stability and map performance', () => {
     await expect(toggle).toBeVisible();
     await toggle.click();
     await expect(page.locator('html')).toHaveClass(/dark/);
+    await page.waitForTimeout(350);
 
     const darkBg = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim()

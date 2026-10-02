@@ -74,7 +74,7 @@ export default function StationPage() {
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: station.name, text: \`Check out \${station.name} on FuelVoice\`, url });
+        await navigator.share({ title: station.name, text: `Check out ${station.name} on FuelVoice`, url });
       } else {
         await navigator.clipboard.writeText(url);
         toast('Link copied!', 'success');
@@ -84,7 +84,7 @@ export default function StationPage() {
     }
   };
 
-  const directionsUrl = \`https://www.google.com/maps/dir/?api=1&destination=\${station.lat},\${station.lng}\`;
+  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}`;
 
   return (
     <main className="pb-16">
@@ -205,10 +205,10 @@ export default function StationPage() {
               <dl className="mt-6 grid gap-3 sm:grid-cols-2">
                 <DetailRow label="Brand" value={station.brand || 'Not available'} />
                 <DetailRow label="Operator" value={station.operator || 'Not available'} />
-                <DetailRow label="Phone" value={station.phone || 'Not available'} href={station.phone ? \`tel:\${station.phone}\` : undefined} />
+                <DetailRow label="Phone" value={station.phone || 'Not available'} href={station.phone ? `tel:${station.phone}` : undefined} />
                 <DetailRow label="Website" value={safeWebsite?.label || 'Not available'} href={safeWebsite?.href} />
                 <DetailRow label="Opening hours" value={station.openingHours || 'Not available'} />
-                <DetailRow label="Coordinates" value={\`\${station.lat.toFixed(5)}, \${station.lng.toFixed(5)}\`} />
+                <DetailRow label="Coordinates" value={`${station.lat.toFixed(5)}, ${station.lng.toFixed(5)}`} />
               </dl>
             </section>
 
@@ -241,7 +241,7 @@ export default function StationPage() {
                   Share station
                 </button>
                 {station.phone && (
-                  <a href={\`tel:\${station.phone}\`} className="button-secondary w-full">
+                  <a href={`tel:${station.phone}`} className="button-secondary w-full">
                     <PhoneIcon />
                     Call station
                   </a>
@@ -311,7 +311,7 @@ function ScoreBar({ label, score }: { label: string; score: number }) {
       <div className="h-2.5 overflow-hidden rounded-full" style={{ background: 'var(--bg-tertiary)' }}>
         <motion.div
           initial={{ width: 0 }}
-          animate={{ width: \`\${percentage}%\` }}
+          animate={{ width: `${percentage}%` }}
           transition={{ duration: 0.65, ease: 'easeOut' }}
           className="h-full rounded-full bg-gradient-to-r from-brand-500 to-accent-500"
         />
@@ -324,7 +324,7 @@ function getSafeWebsite(raw: string): { href: string; label: string } | null {
   if (!raw?.trim()) return null;
 
   try {
-    const withProtocol = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : \`https://\${raw}\`;
+    const withProtocol = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`;
     const url = new URL(withProtocol);
     if (!['http:', 'https:'].includes(url.protocol)) return null;
     return { href: url.toString(), label: url.hostname };

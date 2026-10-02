@@ -37,8 +37,6 @@ export function ExploreMapSection() {
     lng: queryLng,
   });
 
-  const stationCount = stations?.length || 0;
-
   const handleStationSelect = (stationId: string) => {
     router.push(`/station/${stationId}`);
   };
@@ -55,10 +53,10 @@ export function ExploreMapSection() {
         >
           <div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              Explore <span className="bg-gradient-to-r from-brand-500 to-amber-500 bg-clip-text text-transparent">Live Stations</span>
+              Explore <span className="bg-gradient-to-r from-brand-500 to-amber-500 bg-clip-text text-transparent">Mapped Stations</span>
             </h2>
             <p className="text-sm mt-2 max-w-xl leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              Explore active fuel bunks near you in real-time. Pan, swipe, or zoom the map to instantly update the visible stations list and read community reviews.
+              Explore fuel stations mapped in OpenStreetMap. Pan, swipe, or zoom to update the visible station list and read community reviews.
             </p>
           </div>
         </motion.div>

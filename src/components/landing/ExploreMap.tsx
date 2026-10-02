@@ -10,8 +10,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import 'leaflet/dist/leaflet.css';
+import * as L from 'leaflet';
 import type { StationSummary } from '@/types/station';
 import { getReviews } from '@/lib/firebase/firestore';
 import { findNearbyStations } from '@/lib/api/overpass';
@@ -110,8 +111,12 @@ export function ExploreMapInner({
   const [selectedStation, setSelectedStation] = useState<StationSummary | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  // Local merged set: prop stations + dynamically fetched on drag
-  const [allStations, setAllStations] = useState<StationSummary[]>(stations);
+  // Keep API-provided stations separate from stations discovered while panning.
+  const [fetchedStations, setFetchedStations] = useState<StationSummary[]>([]);
+  const allStations = useMemo(
+    () => mergeStations(stations, fetchedStations),
+    [stations, fetchedStations],
+  );
   const [isFetchingArea, setIsFetchingArea] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<number>(hasLocation ? 14 : 13);
 
@@ -132,15 +137,9 @@ export function ExploreMapInner({
   // Track whether we've already panned to user location
   const hasPannedToUserRef = useRef(false);
 
-  // Keep ref in sync on every render
-  allStationsRef.current = allStations;
-
-  // Sync prop stations into allStations when they first arrive / change
   useEffect(() => {
-    if (stations.length > 0) {
-      setAllStations(prev => mergeStations(prev, stations));
-    }
-  }, [stations]);
+    allStationsRef.current = allStations;
+  }, [allStations]);
 
   // Haversine distance in km between two lat/lng points
   const haversineKm = useCallback((a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
@@ -166,7 +165,7 @@ export function ExploreMapInner({
     try {
       const newStations = await findNearbyStations(centerLat, centerLng, 5000);
       if (newStations.length > 0) {
-        setAllStations(prev => mergeStations(prev, newStations));
+        setFetchedStations(prev => mergeStations(prev, newStations));
       }
     } catch (err) {
       console.error('[FuelVoice] Failed to fetch stations for area:', err);
@@ -232,6 +231,7 @@ export function ExploreMapInner({
     } else if (e.data?.type === 'fuelvoice:select' && e.data.stationId) {
       const selected = allStationsRef.current.find((s) => s.id === e.data.stationId);
       if (selected) {
+        setReviews([]);
         setSelectedStation(selected);
       }
     }
@@ -249,8 +249,6 @@ export function ExploreMapInner({
   // Initialize Map
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
-
-    const L = require('leaflet') as typeof import('leaflet');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -327,8 +325,6 @@ export function ExploreMapInner({
     const map = mapInstanceRef.current;
     if (!map || lat === null || lng === null) return;
 
-    const L = require('leaflet') as typeof import('leaflet');
-
     // Add pulsing user location marker (amber for IP, blue for GPS)
     if (userMarkerRef.current) {
       map.removeLayer(userMarkerRef.current);
@@ -367,8 +363,6 @@ export function ExploreMapInner({
     const map = mapInstanceRef.current;
     const currentTileLayer = tileLayerRef.current;
     if (!map) return;
-
-    const L = require('leaflet') as typeof import('leaflet');
 
     if (currentTileLayer) {
       map.removeLayer(currentTileLayer);
@@ -459,6 +453,7 @@ export function ExploreMapInner({
       
       // Select station and open reviews on clicking marker
       marker.on('click', () => {
+        setReviews([]);
         setSelectedStation(station);
       });
 
@@ -484,10 +479,7 @@ export function ExploreMapInner({
 
   // Load reviews when selectedStation changes
   useEffect(() => {
-    if (!selectedStation) {
-      setReviews([]);
-      return;
-    }
+    if (!selectedStation) return;
 
     let active = true;
     const fetchReviewsList = async () => {
@@ -665,7 +657,10 @@ export function ExploreMapInner({
             {/* Header */}
             <div className="p-4 border-b flex flex-col gap-2 shrink-0" style={{ borderColor: 'var(--border-primary)' }}>
               <button
-                onClick={() => setSelectedStation(null)}
+                onClick={() => {
+                  setSelectedStation(null);
+                  setReviews([]);
+                }}
                 className="flex items-center gap-1.5 text-xs font-bold text-brand-500 hover:text-brand-600 transition-colors self-start"
               >
                 ← Back to Bunks List
@@ -895,6 +890,7 @@ export function ExploreMapInner({
                   <div
                     key={station.id}
                     onClick={() => {
+                      setReviews([]);
                       setSelectedStation(station);
                       if (mapInstanceRef.current) {
                         mapInstanceRef.current.setView([station.lat, station.lng], 16);

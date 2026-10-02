@@ -163,7 +163,7 @@ export function Hero({ geolocation }: HeroProps) {
           </div>
 
           <p className="mt-5 border-t border-[var(--border-primary)] pt-4 text-xs leading-5" style={{ color: 'var(--text-tertiary)' }}>
-            FuelVoice does not invent replacement station data when its map provider is unavailable. Unavailable means unavailable.
+            If the map provider is unavailable, FuelVoice shows an unavailable state instead of substitute station data.
           </p>
         </motion.aside>
       </div>

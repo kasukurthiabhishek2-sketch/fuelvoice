@@ -50,14 +50,6 @@ export function SearchBar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Open dropdown when results appear
-  useEffect(() => {
-    if (results.length > 0 && searchTerm.length >= 2) {
-      setIsOpen(true);
-      setSelectedIndex(-1);
-    }
-  }, [results, searchTerm]);
-
   const handleSelect = (result: SearchResult) => {
     setIsOpen(false);
     setSearchTerm('');
@@ -114,7 +106,12 @@ export function SearchBar({
           ref={inputRef}
           type="text"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            const nextValue = e.target.value;
+            setSearchTerm(nextValue);
+            setIsOpen(nextValue.length >= 2);
+            setSelectedIndex(-1);
+          }}
           onFocus={() => results.length > 0 && setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}

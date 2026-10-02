@@ -11,7 +11,6 @@ import {
   getDoc,
   setDoc,
   updateDoc,
-  deleteDoc,
   collection,
   query,
   where,
@@ -22,6 +21,7 @@ import {
   increment,
   serverTimestamp,
   writeBatch,
+  runTransaction,
   DocumentSnapshot,
   QueryConstraint,
   Timestamp,
@@ -40,28 +40,26 @@ const isMockMode = (): boolean => {
 };
 
 /** Helper to identify plain JS objects (vs SDK classes like FieldValue or Timestamp) */
-function isPlainObject(val: any): boolean {
-  return val && (val.constructor === Object || val.constructor === undefined);
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 /** Recursively strips undefined fields from plain objects before writing to Firestore */
-function removeUndefined<T>(obj: T): T {
-  if (Array.isArray(obj)) {
-    return obj.map(removeUndefined) as any;
+function removeUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => removeUndefined(item)) as T;
   }
-  if (isPlainObject(obj)) {
-    const result: any = {};
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        const val = obj[key];
-        if (val !== undefined) {
-          result[key] = removeUndefined(val);
-        }
-      }
-    }
-    return result;
+  if (isPlainObject(value)) {
+    const cleaned = Object.fromEntries(
+      Object.entries(value)
+        .filter(([, item]) => item !== undefined)
+        .map(([key, item]) => [key, removeUndefined(item)]),
+    );
+    return cleaned as T;
   }
-  return obj;
+  return value;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -278,12 +276,11 @@ export async function createReview(
   const batch = writeBatch(db);
 
   // Create review document
-  const reviewRef = doc(collection(db, 'reviews'));
+  const reviewRef = doc(db, 'reviews', `${stationId}__${userId}`);
   const review = {
     ...formData,
     id: reviewRef.id,
     stationId,
-    userId,
     userName: formData.isAnonymous ? 'Anonymous' : userName,
     userPhoto: formData.isAnonymous ? '' : userPhoto,
     likeCount: 0,
@@ -332,10 +329,15 @@ export async function getReviews(
     if (typeof window !== 'undefined') {
       const key = `fuelvoice:mock_user_reviews:${stationId}`;
       const mockReviewsStr = localStorage.getItem(key) || '[]';
-      mockUserReviews = JSON.parse(mockReviewsStr).map((r: any) => ({
-        ...r,
-        createdAt: Timestamp.fromMillis(r.createdAt?.seconds ? r.createdAt.seconds * 1000 : Date.now()),
-        updatedAt: Timestamp.fromMillis(r.updatedAt?.seconds ? r.updatedAt.seconds * 1000 : Date.now()),
+      type StoredMockReview = Omit<Review, 'createdAt' | 'updatedAt'> & {
+        createdAt?: { seconds?: number };
+        updatedAt?: { seconds?: number };
+      };
+      const storedReviews = JSON.parse(mockReviewsStr) as StoredMockReview[];
+      mockUserReviews = storedReviews.map((review) => ({
+        ...review,
+        createdAt: Timestamp.fromMillis(review.createdAt?.seconds ? review.createdAt.seconds * 1000 : Date.now()),
+        updatedAt: Timestamp.fromMillis(review.updatedAt?.seconds ? review.updatedAt.seconds * 1000 : Date.now()),
       }));
     }
 
@@ -376,7 +378,7 @@ export async function getReviews(
     const mockReviews = [...mockUserReviews, ...generatedReviews];
 
     // Sort mock reviews based on selected sortBy criteria
-    let sorted = [...mockReviews];
+    const sorted = [...mockReviews];
     switch (sortBy) {
       case 'newest':
         sorted.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
@@ -400,7 +402,7 @@ export async function getReviews(
     const pageDocs = sorted.slice(startIndex, startIndex + pageSize);
     const hasMore = startIndex + pageSize < sorted.length;
     const nextLastDoc = hasMore 
-      ? ({ id: `mock-doc-${startIndex + pageSize}` } as any as DocumentSnapshot)
+      ? ({ id: `mock-doc-${startIndex + pageSize}` } as unknown as DocumentSnapshot)
       : null;
 
     return {
@@ -459,17 +461,24 @@ export async function hasUserReviewed(stationId: string, userId: string): Promis
     return false;
   }
 
-  const q = query(
+  const deterministic = await getDoc(doc(db, 'reviews', `${stationId}__${userId}`));
+  if (deterministic.exists()) return true;
+
+  // Legacy reviews used random IDs and stored userId. Keep this fallback so
+  // existing reviewers do not accidentally get a second review slot.
+  const legacyQuery = query(
     collection(db, 'reviews'),
     where('stationId', '==', stationId),
     where('userId', '==', userId),
+    where('isHidden', '==', false),
     limit(1)
   );
-  const snapshot = await getDocs(q);
-  return !snapshot.empty;
+  const legacySnapshot = await getDocs(legacyQuery);
+  return !legacySnapshot.empty;
 }
 
-/** Recalculate station average scores from all reviews */
+/** Recalculate visible review aggregates for a station. Optional category ratings
+ * are averaged only across reviews that actually supplied that category. */
 async function recalculateStationScores(stationId: string): Promise<void> {
   const q = query(
     collection(db, 'reviews'),
@@ -477,78 +486,68 @@ async function recalculateStationScores(stationId: string): Promise<void> {
     where('isHidden', '==', false)
   );
   const snapshot = await getDocs(q);
-
-  if (snapshot.empty) return;
-
   const reviews = snapshot.docs.map(d => d.data() as Review);
-  const count = reviews.length;
 
-  const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / count;
+  const average = (values: number[]) => {
+    const supplied = values.filter((value) => Number.isFinite(value) && value > 0);
+    if (supplied.length === 0) return 0;
+    return Math.round((supplied.reduce((sum, value) => sum + value, 0) / supplied.length) * 10) / 10;
+  };
+
+  const negativeTags = new Set(['fraud', 'overcharging', 'short-measure', 'adulteration']);
   const scores: StationScores = {
-    fuelQuality: reviews.reduce((sum, r) => sum + (r.fuelQuality || 0), 0) / count,
-    service: reviews.reduce((sum, r) => sum + (r.service || 0), 0) / count,
-    staffBehaviour: reviews.reduce((sum, r) => sum + (r.staffBehaviour || 0), 0) / count,
-    cleanliness: reviews.reduce((sum, r) => sum + (r.cleanliness || 0), 0) / count,
-    washroom: reviews.reduce((sum, r) => sum + (r.washroom || 0), 0) / count,
-    airFilling: reviews.reduce((sum, r) => sum + (r.airFilling || 0), 0) / count,
+    fuelQuality: average(reviews.map(r => r.fuelQuality)),
+    service: average(reviews.map(r => r.service)),
+    staffBehaviour: average(reviews.map(r => r.staffBehaviour)),
+    cleanliness: average(reviews.map(r => r.cleanliness)),
+    washroom: average(reviews.map(r => r.washroom)),
+    airFilling: average(reviews.map(r => r.airFilling)),
   };
 
   const stationRef = doc(db, 'stations', stationId);
-  await updateDoc(stationRef, { avgRating: Math.round(avgRating * 10) / 10, scores });
+  await updateDoc(stationRef, {
+    avgRating: average(reviews.map(r => r.rating)),
+    reviewCount: reviews.length,
+    complaintCount: reviews.filter(r => r.tags?.some(tag => negativeTags.has(tag))).length,
+    scores,
+  });
 }
 
 // ────────────────────────────────────────────────────────────────
 // LIKES
 // ────────────────────────────────────────────────────────────────
 
-export async function toggleLike(reviewId: string, userId: string, userEmail?: string): Promise<boolean> {
+export async function toggleLike(reviewId: string, userId: string): Promise<boolean> {
   if (isMockMode()) {
-    if (typeof window !== 'undefined') {
-      const mockLikesStr = localStorage.getItem('fuelvoice:mock_likes') || '[]';
-      const mockLikes: { reviewId: string; userId: string; userEmail?: string }[] = JSON.parse(mockLikesStr);
-      const index = mockLikes.findIndex(l => l.reviewId === reviewId && l.userId === userId);
-      
-      if (index > -1) {
-        // Unlike
-        mockLikes.splice(index, 1);
-        localStorage.setItem('fuelvoice:mock_likes', JSON.stringify(mockLikes));
-        return false;
-      } else {
-        // Like
-        mockLikes.push({ reviewId, userId, userEmail });
-        localStorage.setItem('fuelvoice:mock_likes', JSON.stringify(mockLikes));
-        return true;
-      }
-    }
-    return true;
+    const mockLikes: { reviewId: string; userId: string }[] = JSON.parse(
+      localStorage.getItem('fuelvoice:mock_likes') || '[]'
+    );
+    const index = mockLikes.findIndex(like => like.reviewId === reviewId && like.userId === userId);
+    if (index >= 0) mockLikes.splice(index, 1);
+    else mockLikes.push({ reviewId, userId });
+    localStorage.setItem('fuelvoice:mock_likes', JSON.stringify(mockLikes));
+    return index < 0;
   }
 
-  const likeId = `${reviewId}__${userId}`;
-  const likeRef = doc(db, 'likes', likeId);
-  const likeSnap = await getDoc(likeRef);
-
-  const batch = writeBatch(db);
+  const likeRef = doc(db, 'likes', `${reviewId}__${userId}`);
   const reviewRef = doc(db, 'reviews', reviewId);
 
-  if (likeSnap.exists()) {
-    // Unlike
-    batch.delete(likeRef);
-    batch.update(reviewRef, { likeCount: increment(-1) });
-    await batch.commit();
-    return false;
-  } else {
-    // Like
-    batch.set(likeRef, {
-      reviewId,
-      userId,
-      userEmail: userEmail || '',
-      userMail: userEmail || '',
-      createdAt: serverTimestamp(),
-    });
-    batch.update(reviewRef, { likeCount: increment(1) });
-    await batch.commit();
+  return runTransaction(db, async (transaction) => {
+    const likeSnap = await transaction.get(likeRef);
+    const reviewSnap = await transaction.get(reviewRef);
+    if (!reviewSnap.exists()) throw new Error('Review no longer exists');
+
+    const currentCount = Math.max(0, Number(reviewSnap.data().likeCount) || 0);
+    if (likeSnap.exists()) {
+      transaction.delete(likeRef);
+      transaction.update(reviewRef, { likeCount: Math.max(0, currentCount - 1) });
+      return false;
+    }
+
+    transaction.set(likeRef, { reviewId, userId, createdAt: serverTimestamp() });
+    transaction.update(reviewRef, { likeCount: currentCount + 1 });
     return true;
-  }
+  });
 }
 
 /** Check if user has liked a review */
@@ -618,34 +617,36 @@ export async function createReport(
 ): Promise<string> {
   if (isMockMode()) {
     console.log('MOCK: createReport called', { reviewId, stationId, reporterId, reason, details });
-    return 'mock-report-id-123';
+    return `${reviewId}__${reporterId}`;
   }
-  const reportRef = doc(collection(db, 'reports'));
-  const report: Omit<Report, 'id' | 'createdAt' | 'reviewedAt'> & {
-    id: string;
-    createdAt: ReturnType<typeof serverTimestamp>;
-    reviewedAt: null;
-  } = {
-    id: reportRef.id,
-    reviewId,
-    stationId,
-    reporterId,
-    reason,
-    details,
-    status: 'pending',
-    createdAt: serverTimestamp(),
-    reviewedAt: null,
-    reviewedBy: null,
-  };
 
-  const batch = writeBatch(db);
-  batch.set(reportRef, report);
-
-  // Increment report count on review
+  const reportRef = doc(db, 'reports', `${reviewId}__${reporterId}`);
   const reviewRef = doc(db, 'reviews', reviewId);
-  batch.update(reviewRef, { reportCount: increment(1) });
 
-  await batch.commit();
+  await runTransaction(db, async (transaction) => {
+    const reportSnap = await transaction.get(reportRef);
+    const reviewSnap = await transaction.get(reviewRef);
+    if (reportSnap.exists()) throw new Error('You already reported this review');
+    if (!reviewSnap.exists()) throw new Error('Review no longer exists');
+
+    const report = {
+      id: reportRef.id,
+      reviewId,
+      stationId,
+      reporterId,
+      reason,
+      details,
+      status: 'pending' as const,
+      createdAt: serverTimestamp(),
+      reviewedAt: null,
+      reviewedBy: null,
+    };
+    transaction.set(reportRef, report);
+    transaction.update(reviewRef, {
+      reportCount: Math.max(0, Number(reviewSnap.data().reportCount) || 0) + 1,
+    });
+  });
+
   return reportRef.id;
 }
 
@@ -660,7 +661,10 @@ export async function hideReview(reviewId: string): Promise<void> {
     return;
   }
   const reviewRef = doc(db, 'reviews', reviewId);
+  const reviewSnap = await getDoc(reviewRef);
+  if (!reviewSnap.exists()) throw new Error('Review not found');
   await updateDoc(reviewRef, { isHidden: true });
+  await recalculateStationScores(reviewSnap.data().stationId);
 }
 
 /** Unhide a review (admin action) */
@@ -670,7 +674,10 @@ export async function unhideReview(reviewId: string): Promise<void> {
     return;
   }
   const reviewRef = doc(db, 'reviews', reviewId);
+  const reviewSnap = await getDoc(reviewRef);
+  if (!reviewSnap.exists()) throw new Error('Review not found');
   await updateDoc(reviewRef, { isHidden: false });
+  await recalculateStationScores(reviewSnap.data().stationId);
 }
 
 /** Feature a review (admin action) */

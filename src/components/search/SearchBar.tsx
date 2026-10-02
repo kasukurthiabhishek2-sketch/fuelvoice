@@ -50,14 +50,6 @@ export function SearchBar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Open dropdown when results appear
-  useEffect(() => {
-    if (results.length > 0 && searchTerm.length >= 2) {
-      setIsOpen(true);
-      setSelectedIndex(-1);
-    }
-  }, [results, searchTerm]);
-
   const handleSelect = (result: SearchResult) => {
     setIsOpen(false);
     setSearchTerm('');
@@ -65,6 +57,11 @@ export function SearchBar({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsOpen(false);
+      inputRef.current?.blur();
+      return;
+    }
     if (!isOpen || results.length === 0) return;
 
     switch (e.key) {
@@ -81,10 +78,6 @@ export function SearchBar({
         if (selectedIndex >= 0 && results[selectedIndex]) {
           handleSelect(results[selectedIndex]);
         }
-        break;
-      case 'Escape':
-        setIsOpen(false);
-        inputRef.current?.blur();
         break;
     }
   };
@@ -113,7 +106,12 @@ export function SearchBar({
           ref={inputRef}
           type="text"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            const nextValue = e.target.value;
+            setSearchTerm(nextValue);
+            setIsOpen(nextValue.length >= 2);
+            setSelectedIndex(-1);
+          }}
           onFocus={() => results.length > 0 && setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}

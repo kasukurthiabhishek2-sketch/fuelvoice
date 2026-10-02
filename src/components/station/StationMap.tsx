@@ -1,14 +1,10 @@
-/**
- * Station Map Component
- * 
- * Leaflet map with OpenStreetMap tiles. Dynamically imported (no SSR)
- * because Leaflet requires the window object.
- */
+/** Leaflet station map, dynamically loaded because Leaflet requires window. */
 
 'use client';
 
 import React, { useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
+import * as L from 'leaflet';
 
 interface StationMapProps {
   lat: number;
@@ -19,16 +15,21 @@ interface StationMapProps {
   className?: string;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function StationMapInner({ lat, lng, name, userLat, userLng, className = '' }: StationMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
-
-    const L = require('leaflet') as typeof import('leaflet');
-
-    // Fix Leaflet's default icon issue
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
@@ -38,30 +39,31 @@ export function StationMapInner({ lat, lng, name, userLat, userLng, className = 
     });
 
     const map = L.map(mapRef.current).setView([lat, lng], 15);
-
     const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
-    L.tileLayer(`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${maptilerKey}`, {
-      attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    const tileUrl = maptilerKey
+      ? `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${maptilerKey}`
+      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const attribution = maptilerKey
+      ? '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+    L.tileLayer(tileUrl, {
+      attribution,
       maxZoom: 20,
-      tileSize: 512,
-      zoomOffset: -1,
-      crossOrigin: true,
+      ...(maptilerKey ? { tileSize: 512, zoomOffset: -1, crossOrigin: true } : {}),
     }).addTo(map);
 
-    // Station marker
     const stationIcon = L.divIcon({
       html: '<div style="font-size:24px;text-align:center;">⛽</div>',
       className: 'custom-marker',
       iconSize: [30, 30],
       iconAnchor: [15, 15],
     });
-
     L.marker([lat, lng], { icon: stationIcon })
       .addTo(map)
-      .bindPopup(`<strong>${name}</strong>`);
+      .bindPopup(`<strong>${escapeHtml(name)}</strong>`);
 
-    // User location marker
-    if (userLat && userLng) {
+    if (userLat !== null && userLat !== undefined && userLng !== null && userLng !== undefined) {
       const userIcon = L.divIcon({
         html: '<div style="width:12px;height:12px;background:#3B82F6;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(59,130,246,0.5);"></div>',
         className: 'custom-marker',
@@ -69,14 +71,10 @@ export function StationMapInner({ lat, lng, name, userLat, userLng, className = 
         iconAnchor: [9, 9],
       });
       L.marker([userLat, userLng], { icon: userIcon }).addTo(map).bindPopup('Your Location');
-
-      // Fit bounds to show both markers
-      const bounds = L.latLngBounds([lat, lng], [userLat, userLng]);
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+      map.fitBounds(L.latLngBounds([lat, lng], [userLat, userLng]), { padding: [50, 50], maxZoom: 15 });
     }
 
     mapInstanceRef.current = map;
-
     return () => {
       map.remove();
       mapInstanceRef.current = null;

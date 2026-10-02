@@ -10,8 +10,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import 'leaflet/dist/leaflet.css';
+import * as L from 'leaflet';
 import type { StationSummary } from '@/types/station';
 import { getReviews } from '@/lib/firebase/firestore';
 import { findNearbyStations } from '@/lib/api/overpass';
@@ -29,37 +30,56 @@ function escapeHtml(str: string): string {
 
 type MapTheme = 'default' | 'dark' | 'satellite' | 'terrain';
 
-const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY ;
+const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
+const MAP_ATTRIBUTION = '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const MIN_ZOOM = 13;
+const MAX_CACHED_STATIONS = 300;
+
+function mergeStations(current: StationSummary[], incoming: StationSummary[]): StationSummary[] {
+  const byId = new Map(current.map(station => [station.id, station]));
+  incoming.forEach(station => byId.set(station.id, station));
+  return Array.from(byId.values()).slice(-MAX_CACHED_STATIONS);
+}
 
 const THEMES = {
   default: {
     name: 'Road Map',
-    url: `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
-    attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    subdomains: '',
+    url: MAPTILER_KEY
+      ? `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`
+      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: MAPTILER_KEY ? MAP_ATTRIBUTION : OSM_ATTRIBUTION,
+    subdomains: MAPTILER_KEY ? '' : 'abc',
     maxZoom: 20,
+    tileSize: MAPTILER_KEY ? 512 : 256,
+    zoomOffset: MAPTILER_KEY ? -1 : 0,
   },
   dark: {
     name: 'Dark Map',
     url: `https://api.maptiler.com/maps/dark-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
-    attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: MAP_ATTRIBUTION,
     subdomains: '',
     maxZoom: 20,
+    tileSize: 512,
+    zoomOffset: -1,
   },
   satellite: {
     name: 'Satellite',
     url: `https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
-    attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: MAP_ATTRIBUTION,
     subdomains: '',
     maxZoom: 20,
+    tileSize: 512,
+    zoomOffset: -1,
   },
   terrain: {
     name: 'Terrain',
     url: `https://api.maptiler.com/maps/topo-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
-    attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: MAP_ATTRIBUTION,
     subdomains: '',
     maxZoom: 20,
+    tileSize: 512,
+    zoomOffset: -1,
   },
 };
 
@@ -103,8 +123,12 @@ export function ExploreMapInner({
   const [selectedStation, setSelectedStation] = useState<StationSummary | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  // Local merged set: prop stations + dynamically fetched on drag
-  const [allStations, setAllStations] = useState<StationSummary[]>(stations);
+  // Keep API-provided stations separate from stations discovered while panning.
+  const [fetchedStations, setFetchedStations] = useState<StationSummary[]>([]);
+  const allStations = useMemo(
+    () => mergeStations(stations, fetchedStations),
+    [stations, fetchedStations],
+  );
   const [isFetchingArea, setIsFetchingArea] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<number>(hasLocation ? 14 : 13);
 
@@ -125,19 +149,9 @@ export function ExploreMapInner({
   // Track whether we've already panned to user location
   const hasPannedToUserRef = useRef(false);
 
-  // Keep ref in sync on every render
-  allStationsRef.current = allStations;
-
-  // Sync prop stations into allStations when they first arrive / change
   useEffect(() => {
-    if (stations.length > 0) {
-      setAllStations(prev => {
-        const ids = new Set(prev.map(s => s.id));
-        const merged = [...prev, ...stations.filter(s => !ids.has(s.id))];
-        return merged;
-      });
-    }
-  }, [stations]);
+    allStationsRef.current = allStations;
+  }, [allStations]);
 
   // Haversine distance in km between two lat/lng points
   const haversineKm = useCallback((a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
@@ -154,7 +168,7 @@ export function ExploreMapInner({
   // Fetch stations for the new map center, merge with existing (dedup by id)
   const fetchStationsForArea = useCallback(async (centerLat: number, centerLng: number) => {
     const last = lastFetchedCenterRef.current;
-    if (last && haversineKm(last, { lat: centerLat, lng: centerLng }) < 8) return;
+    if (last && haversineKm(last, { lat: centerLat, lng: centerLng }) < 2.5) return;
     if (isFetchingAreaRef.current) return;
 
     lastFetchedCenterRef.current = { lat: centerLat, lng: centerLng };
@@ -163,11 +177,7 @@ export function ExploreMapInner({
     try {
       const newStations = await findNearbyStations(centerLat, centerLng, 5000);
       if (newStations.length > 0) {
-        setAllStations(prev => {
-          const ids = new Set(prev.map(s => s.id));
-          const merged = [...prev, ...newStations.filter(s => !ids.has(s.id))];
-          return merged;
-        });
+        setFetchedStations(prev => mergeStations(prev, newStations));
       }
     } catch (err) {
       console.error('[FuelVoice] Failed to fetch stations for area:', err);
@@ -231,12 +241,13 @@ export function ExploreMapInner({
     if (e.data?.type === 'fuelvoice:navigate' && e.data.stationId) {
       onStationSelect?.(e.data.stationId);
     } else if (e.data?.type === 'fuelvoice:select' && e.data.stationId) {
-      const selected = stations.find((s) => s.id === e.data.stationId);
+      const selected = allStationsRef.current.find((s) => s.id === e.data.stationId);
       if (selected) {
+        setReviews([]);
         setSelectedStation(selected);
       }
     }
-  }, [onStationSelect, stations]);
+  }, [onStationSelect]);
 
   useEffect(() => {
     window.addEventListener('message', handleMessage);
@@ -244,14 +255,12 @@ export function ExploreMapInner({
   }, [handleMessage]);
 
   // Default to Hyderabad center at station-level zoom
-  const defaultLat = lat || 17.3887;
-  const defaultLng = lng || 78.4754;
+  const defaultLat = lat ?? 17.3887;
+  const defaultLng = lng ?? 78.4754;
 
   // Initialize Map
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
-
-    const L = require('leaflet') as typeof import('leaflet');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -266,12 +275,13 @@ export function ExploreMapInner({
       scrollWheelZoom: true,
     }).setView([defaultLat, defaultLng], hasLocation ? 14 : 13);
 
-    const initialTileLayer = L.tileLayer(THEMES[mapTheme].url, {
-      attribution: THEMES[mapTheme].attribution,
-      subdomains: THEMES[mapTheme].subdomains || 'abcd',
-      maxZoom: THEMES[mapTheme].maxZoom || 20,
-      tileSize: 512,
-      zoomOffset: -1,
+    const initialTheme = THEMES[mapTheme];
+    const initialTileLayer = L.tileLayer(initialTheme.url, {
+      attribution: initialTheme.attribution,
+      subdomains: initialTheme.subdomains || 'abcd',
+      maxZoom: initialTheme.maxZoom || 20,
+      tileSize: initialTheme.tileSize,
+      zoomOffset: initialTheme.zoomOffset,
       crossOrigin: true,
     }).addTo(map);
     tileLayerRef.current = initialTileLayer;
@@ -300,7 +310,6 @@ export function ExploreMapInner({
 
     // Event hooks for map view transitions — use single handler for both
     map.on('moveend', handleMapMoveEnd);
-    map.on('zoomend', handleMapMoveEnd);
 
     mapInstanceRef.current = map;
     
@@ -313,7 +322,6 @@ export function ExploreMapInner({
 
     return () => {
       map.off('moveend', handleMapMoveEnd);
-      map.off('zoomend', handleMapMoveEnd);
       if (fetchTimerRef.current) clearTimeout(fetchTimerRef.current);
       map.remove();
       mapInstanceRef.current = null;
@@ -329,8 +337,6 @@ export function ExploreMapInner({
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || lat === null || lng === null) return;
-
-    const L = require('leaflet') as typeof import('leaflet');
 
     // Add pulsing user location marker (amber for IP, blue for GPS)
     if (userMarkerRef.current) {
@@ -371,8 +377,6 @@ export function ExploreMapInner({
     const currentTileLayer = tileLayerRef.current;
     if (!map) return;
 
-    const L = require('leaflet') as typeof import('leaflet');
-
     if (currentTileLayer) {
       map.removeLayer(currentTileLayer);
     }
@@ -382,8 +386,8 @@ export function ExploreMapInner({
       attribution: themeConfig.attribution,
       subdomains: themeConfig.subdomains || 'abcd',
       maxZoom: themeConfig.maxZoom || 20,
-      tileSize: 512,
-      zoomOffset: -1,
+      tileSize: themeConfig.tileSize,
+      zoomOffset: themeConfig.zoomOffset,
       crossOrigin: true,
     }).addTo(map);
 
@@ -392,7 +396,6 @@ export function ExploreMapInner({
 
   // Re-render markers whenever allStations or zoomLevel changes
   useEffect(() => {
-    const L = require('leaflet') as typeof import('leaflet');
     const map = mapInstanceRef.current;
     const markerGroup = markersRef.current;
     if (!map || !markerGroup) return;
@@ -428,7 +431,7 @@ export function ExploreMapInner({
         : '';
 
       const ratingStars = station.avgRating > 0
-        ? `<div style="color:#F59E0B;font-size:12px;margin:2px 0;">${'★'.repeat(Math.round(station.avgRating))}${'☆'.repeat(5 - Math.round(station.avgRating))} <span style="color:#64748B;">${station.avgRating.toFixed(1)}</span></div>`
+        ? `<div style="color:#F59E0B;font-size:12px;margin:2px 0;">${'★'.repeat(Math.round(station.avgRating))}{'☆'.repeat(5 - Math.round(station.avgRating))} <span style="color:#64748B;">${station.avgRating.toFixed(1)}</span></div>`
         : '<div style="font-size:11px;color:#94A3B8;margin:2px 0;">No reviews yet</div>';
 
       const reviewText = station.reviewCount > 0
@@ -462,6 +465,7 @@ export function ExploreMapInner({
       
       // Select station and open reviews on clicking marker
       marker.on('click', () => {
+        setReviews([]);
         setSelectedStation(station);
       });
 
@@ -487,10 +491,7 @@ export function ExploreMapInner({
 
   // Load reviews when selectedStation changes
   useEffect(() => {
-    if (!selectedStation) {
-      setReviews([]);
-      return;
-    }
+    if (!selectedStation) return;
 
     let active = true;
     const fetchReviewsList = async () => {
@@ -600,8 +601,8 @@ export function ExploreMapInner({
             <span className="text-xl">🎯</span>
           </button>
 
-          {/* Floating Theme Switcher */}
-          <div 
+          {/* Floating Theme Switcher (MapTiler-specific themes) */}
+          {MAPTILER_KEY && <div 
             ref={switcherRef}
             className="flex flex-col items-end"
           >
@@ -650,7 +651,7 @@ export function ExploreMapInner({
             >
               <span className="text-xl">{THEME_ICONS[mapTheme]}</span>
             </button>
-          </div>
+          </div>}
         </div>
       </div>
 
@@ -668,7 +669,10 @@ export function ExploreMapInner({
             {/* Header */}
             <div className="p-4 border-b flex flex-col gap-2 shrink-0" style={{ borderColor: 'var(--border-primary)' }}>
               <button
-                onClick={() => setSelectedStation(null)}
+                onClick={() => {
+                  setSelectedStation(null);
+                  setReviews([]);
+                }}
                 className="flex items-center gap-1.5 text-xs font-bold text-brand-500 hover:text-brand-600 transition-colors self-start"
               >
                 ← Back to Bunks List
@@ -701,7 +705,7 @@ export function ExploreMapInner({
                   <div className="flex items-center gap-0.5 text-xs text-amber-500 mt-1.5">
                     {selectedStation.avgRating > 0 ? (
                       <>
-                        {'★'.repeat(Math.round(selectedStation.avgRating))}${'☆'.repeat(5 - Math.round(selectedStation.avgRating))}
+                        {'★'.repeat(Math.round(selectedStation.avgRating))}{'☆'.repeat(5 - Math.round(selectedStation.avgRating))}
                       </>
                     ) : (
                       '☆☆☆☆☆'
@@ -770,7 +774,7 @@ export function ExploreMapInner({
                           </span>
                         </div>
                         <div className="flex items-center gap-0.5 text-[9px] text-amber-500">
-                          {'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                          {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
                         </div>
                       </div>
                       
@@ -816,11 +820,11 @@ export function ExploreMapInner({
                   )}
                 </h3>
                 <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  {isFetchingArea ? 'Searching new area…' : 'Showing active stations inside current area'}
+                  {isFetchingArea ? 'Searching new area…' : 'Showing mapped stations inside the current area'}
                 </p>
               </div>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-600 dark:bg-brand-950/20 dark:text-brand-400">
-                {visibleStations.length} Active
+                {visibleStations.length} Visible
               </span>
             </div>
 
@@ -898,6 +902,7 @@ export function ExploreMapInner({
                   <div
                     key={station.id}
                     onClick={() => {
+                      setReviews([]);
                       setSelectedStation(station);
                       if (mapInstanceRef.current) {
                         mapInstanceRef.current.setView([station.lat, station.lng], 16);

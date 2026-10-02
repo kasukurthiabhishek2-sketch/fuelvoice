@@ -15,11 +15,11 @@ import {
   getReviews,
   createReview,
   toggleLike,
-  hasUserLiked,
   hasUserReviewed,
   getUserLikes,
 } from '@/lib/firebase/firestore';
-import type { Review, ReviewFormData, ReviewSortOption } from '@/types/review';
+import type { ReviewFormData, ReviewSortOption } from '@/types/review';
+import type { DocumentSnapshot } from 'firebase/firestore';
 import { useState } from 'react';
 
 export function useReviews(stationId: string) {
@@ -36,7 +36,7 @@ export function useReviews(stationId: string) {
   } = useInfiniteQuery({
     queryKey: ['reviews', stationId, sortBy],
     queryFn: ({ pageParam }) => getReviews(stationId, sortBy, 20, pageParam),
-    initialPageParam: undefined as any,
+    initialPageParam: undefined as DocumentSnapshot | undefined,
     getNextPageParam: (lastPage) => lastPage.lastDoc || undefined,
     enabled: !!stationId,
     placeholderData: keepPreviousData,
@@ -84,9 +84,9 @@ export function useToggleLike() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ reviewId, userId, userEmail }: { reviewId: string; userId: string; userEmail?: string }) =>
-      toggleLike(reviewId, userId, userEmail),
-    onSuccess: (_, variables) => {
+    mutationFn: ({ reviewId, userId }: { reviewId: string; userId: string }) =>
+      toggleLike(reviewId, userId),
+    onSuccess: () => {
       // Invalidate to refetch updated like counts
       queryClient.invalidateQueries({ queryKey: ['reviews'] });
       queryClient.invalidateQueries({ queryKey: ['user-likes'] });

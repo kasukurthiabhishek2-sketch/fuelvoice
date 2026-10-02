@@ -12,7 +12,7 @@ import {
   onAuthStateChanged,
   User,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from './config';
 import type { UserProfile } from '@/types/user';
 
@@ -29,14 +29,11 @@ export async function getOrCreateUserProfile(user: User): Promise<UserProfile> {
     return userSnap.data() as UserProfile;
   }
 
-  const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
-  const role = user.email && adminEmails.includes(user.email) ? 'admin' : 'user';
-
   const profile: UserProfile = {
     uid: user.uid,
     displayName: user.displayName || 'Anonymous User',
     photoURL: user.photoURL || '',
-    role,
+    role: 'user',
     createdAt: Timestamp.now(),
     reviewCount: 0,
     likeCount: 0,

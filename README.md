@@ -1,37 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FuelVoice
 
-## Getting Started
+FuelVoice is a Next.js community review app for fuel stations. Station discovery is based on OpenStreetMap/Overpass and Photon; authentication and review data use Firebase Authentication and Firestore.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 / React 19 / TypeScript
+- Firebase Authentication + Firestore
+- TanStack Query
+- Leaflet / OpenStreetMap / MapTiler (optional)
+- Playwright E2E tests
+
+## Local setup
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Configure the Firebase client values used by `src/lib/firebase/config.ts` as `NEXT_PUBLIC_FIREBASE_*` environment variables. `NEXT_PUBLIC_MAPTILER_API_KEY` is optional; the station detail map falls back to OpenStreetMap tiles if it is absent.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Validation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm run test:e2e
+```
 
-## Learn More
+CI runs lint, typecheck and production build on every push to `main` and on pull requests.
 
-To learn more about Next.js, take a look at the following resources:
+## Authorization
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Firestore roles are the authorization source. New client-created profiles are always `role: "user"`; never use a `NEXT_PUBLIC_*` email allow-list as admin authority.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Bootstrap the first admin with a trusted Firebase Console/Admin SDK operation by changing that user's `users/{uid}.role` to `admin`. After that, Firestore rules allow existing admins to perform moderation changes.
 
-## Deploy on Vercel
+Deploy the included `firestore.rules` with your normal Firebase deployment process. Treat rules changes as part of the application release, not an optional follow-up.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Data authenticity
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# fuelvoice
+Production Overpass failures return an unavailable state. FuelVoice does **not** generate fake nearby stations, ratings, addresses or OSM records as a fallback. Deterministic mock data remains development/test-only.
+
+## Known architecture boundary
+
+Station review aggregates are still computed by the web client. Rules limit aggregate mutation to users with a review at that station, but truly tamper-proof counters and averages require moving aggregate computation to a trusted server/Cloud Function. This should be the next backend hardening step if FuelVoice is exposed to hostile clients at scale.

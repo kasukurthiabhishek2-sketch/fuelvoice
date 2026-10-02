@@ -14,12 +14,7 @@ import DOMPurify from 'dompurify';
 export function sanitizeText(input: string): string {
   if (typeof window === 'undefined') {
     // Server-side: basic sanitization (strip HTML tags)
-    return input
-      .replace(/<[^>]*>/g, '')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&')
-      .trim();
+    return input.replace(/<[^>]*>/g, '').trim();
   }
 
   // Client-side: use DOMPurify for robust sanitization

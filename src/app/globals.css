@@ -326,3 +326,28 @@ body {
   animation: float 4s ease-in-out infinite;
   animation-delay: 0.5s;
 }
+
+/* Keep toast actions usable on narrow screens. */
+@media (max-width: 480px) {
+  .toast-container {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .toast-container > * {
+    width: 100%;
+    min-width: 0 !important;
+  }
+}
+
+/* Respect OS-level reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

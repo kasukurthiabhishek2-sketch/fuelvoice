@@ -7,17 +7,17 @@
 
 'use client';
 
-import React from 'react';
 import { motion } from 'framer-motion';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ExploreMapSection } from './ExploreMapSection';
+import type { GeolocationResult } from '@/hooks/useGeolocation';
 
 interface HeroProps {
-  userLat?: number | null;
-  userLng?: number | null;
+  geolocation: GeolocationResult;
 }
 
-export function Hero({ userLat, userLng }: HeroProps) {
+export function Hero({ geolocation }: HeroProps) {
+  const { latitude, longitude } = geolocation;
   return (
     <section className="relative overflow-hidden gradient-mesh">
       {/* Floating fuel icons */}
@@ -25,14 +25,6 @@ export function Hero({ userLat, userLng }: HeroProps) {
 
       <div className="relative max-w-7xl mx-auto px-4 pt-20 pb-5">
         <div className="text-center max-w-3xl mx-auto">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-          </motion.div>
-
           {/* Heading */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -48,17 +40,15 @@ export function Hero({ userLat, userLng }: HeroProps) {
             Reviews
           </motion.h1>
 
-          {/* Subtitle
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
             className="mt-5 text-base sm:text-lg max-w-xl mx-auto"
             style={{ color: 'var(--text-secondary)' }}
           >
-            Real reviews from real people. Discover quality fuel, honest service,
-            and report fraud at petrol pumps and gas stations worldwide.
-          </motion.p> */}
+            Search mapped fuel stations, read community reviews, and share first-hand experiences.
+          </motion.p>
 
           {/* Search Bar */}
           <motion.div
@@ -69,28 +59,15 @@ export function Hero({ userLat, userLng }: HeroProps) {
           >
             <SearchBar
               variant="hero"
-              userLat={userLat}
-              userLng={userLng}
+              userLat={latitude}
+              userLng={longitude}
               placeholder="Search fuel stations by name, brand, or city…"
             />
           </motion.div>
         </div>
       </div>
-      <ExploreMapSection />
+      <ExploreMapSection geolocation={geolocation} />
     </section>
-  );
-}
-
-function StatItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="text-center">
-      <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-brand-500 to-accent-500 bg-clip-text text-transparent">
-        {value}
-      </p>
-      <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-        {label}
-      </p>
-    </div>
   );
 }
 

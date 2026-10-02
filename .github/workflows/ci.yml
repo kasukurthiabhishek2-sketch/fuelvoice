@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_PUBLIC_FIREBASE_API_KEY: ci-placeholder
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: example.firebaseapp.com
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: fuelvoice-ci
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: example.appspot.com
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
+  NEXT_PUBLIC_FIREBASE_APP_ID: '1:000000000000:web:ci'
+  NEXT_PUBLIC_MAPTILER_API_KEY: ci-maptiler-placeholder
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:e2e

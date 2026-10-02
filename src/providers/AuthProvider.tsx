@@ -51,42 +51,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       : null;
     const isMock = mockVal === 'true' || mockVal === 'admin';
     if (isMock) {
-      setUser({
-        uid: 'test-user-123',
-        displayName: mockVal === 'admin' ? 'Test Admin' : 'Test User',
-        photoURL: 'https://lh3.googleusercontent.com/a/ACg8ocKD6k78CQfNv1nsWh1CVLzzRQusp8Cl7vuewBvCtcdfyeiVmFazwA=s96-c',
-        email: mockVal === 'admin' ? 'admin@example.com' : 'test@example.com',
-      } as any);
-      setProfile({
-        uid: 'test-user-123',
-        displayName: mockVal === 'admin' ? 'Test Admin' : 'Test User',
-        photoURL: 'https://lh3.googleusercontent.com/a/ACg8ocKD6k78CQfNv1nsWh1CVLzzRQusp8Cl7vuewBvCtcdfyeiVmFazwA=s96-c',
-        role: mockVal === 'admin' ? 'admin' : 'user',
-        createdAt: Timestamp.now(),
-        reviewCount: 5,
-        likeCount: 2,
-        isBanned: false,
-        lastReviewAt: null,
-      });
-      setLoading(false);
-      return;
+      const timer = window.setTimeout(() => {
+        setUser({
+          uid: 'test-user-123',
+          displayName: mockVal === 'admin' ? 'Test Admin' : 'Test User',
+          photoURL: 'https://lh3.googleusercontent.com/a/ACg8ocKD6k78CQfNv1nsWh1CVLzzRQusp8Cl7vuewBvCtcdfyeiVmFazwA=s96-c',
+          email: mockVal === 'admin' ? 'admin@example.com' : 'test@example.com',
+        } as unknown as User);
+        setProfile({
+          uid: 'test-user-123',
+          displayName: mockVal === 'admin' ? 'Test Admin' : 'Test User',
+          photoURL: 'https://lh3.googleusercontent.com/a/ACg8ocKD6k78CQfNv1nsWh1CVLzzRQusp8Cl7vuewBvCtcdfyeiVmFazwA=s96-c',
+          role: mockVal === 'admin' ? 'admin' : 'user',
+          createdAt: Timestamp.now(),
+          reviewCount: 5,
+          likeCount: 2,
+          isBanned: false,
+          lastReviewAt: null,
+        });
+        setLoading(false);
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
 
     const unsubscribe = onAuthChange(async (firebaseUser) => {
       setUser(firebaseUser);
 
-      if (firebaseUser) {
-        // Fetch Firestore profile for role, etc.
-        let userProfile = await getUserProfile(firebaseUser.uid);
-        if (!userProfile) {
-          userProfile = await getOrCreateUserProfile(firebaseUser);
+      try {
+        if (firebaseUser) {
+          let userProfile = await getUserProfile(firebaseUser.uid);
+          if (!userProfile) {
+            userProfile = await getOrCreateUserProfile(firebaseUser);
+          }
+          setProfile(userProfile);
+        } else {
+          setProfile(null);
         }
-        setProfile(userProfile);
-      } else {
+      } catch (error) {
+        console.error('Failed to load user profile:', error);
         setProfile(null);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -113,10 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const isAdmin =
-    profile?.role === 'admin' ||
-    (user?.email &&
-      process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').includes(user.email)) === true;
+  const isAdmin = profile?.role === 'admin';
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, isAdmin, signIn, logOut }}>

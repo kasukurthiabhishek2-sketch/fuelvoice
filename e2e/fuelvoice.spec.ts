@@ -12,6 +12,64 @@
 
 import { test, expect } from '@playwright/test';
 
+const OSM_STATION = {
+  type: 'node',
+  id: 6254336890,
+  lat: 17.3887027,
+  lon: 78.4753829,
+  tags: {
+    amenity: 'fuel',
+    name: 'Fuel Station',
+    brand: 'Shell',
+    operator: 'Shell Retail',
+    'addr:street': 'Abids Road',
+    'addr:city': 'Hyderabad',
+    'addr:state': 'Telangana',
+    'addr:country': 'IN',
+    'addr:country_code': 'IN',
+    opening_hours: '24/7',
+    'fuel:diesel': 'yes',
+    'fuel:octane_95': 'yes',
+  },
+};
+
+test.beforeEach(async ({ page }) => {
+  await page.route('https://ipwho.is/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, latitude: 17.3887027, longitude: 78.4753829 }),
+    });
+  });
+
+  await page.route('https://nominatim.openstreetmap.org/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        display_name: 'Hyderabad, Telangana, India',
+        address: { city: 'Hyderabad', state: 'Telangana', country: 'India', country_code: 'in' },
+      }),
+    });
+  });
+
+  await page.route('**/api/overpass', async (route) => {
+    const encoded = new URLSearchParams(route.request().postData() || '').get('data') || '';
+    const isAreaQuery = encoded.includes('amenity') && encoded.includes('fuel');
+    const isKnownStation = /node\(6254336890\)/.test(encoded);
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ elements: isAreaQuery || isKnownStation ? [OSM_STATION] : [] }),
+    });
+  });
+
+  // Tile rendering is not under test. Failing fast avoids third-party network
+  // timing from turning UI tests into an accidental availability monitor.
+  await page.route('https://api.maptiler.com/**', route => route.abort());
+  await page.route('https://*.tile.openstreetmap.org/**', route => route.abort());
+});
+
 // ────────────────────────────────────────────────
 // Landing Page Tests
 // ────────────────────────────────────────────────
@@ -19,7 +77,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Landing Page', () => {
   test('should load and display hero section', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Hero heading
     const heading = page.getByRole('heading', { level: 1 });
@@ -36,7 +94,7 @@ test.describe('Landing Page', () => {
 
   test('should display FuelVoice logo in header', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const logo = page.getByRole('link', { name: /fuelvoice home/i });
     await expect(logo).toBeVisible();
@@ -76,7 +134,7 @@ test.describe('Landing Page', () => {
 
   test('full page screenshot', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000); // Let animations settle
 
     await page.screenshot({ path: 'e2e/screenshots/05-full-landing.png', fullPage: true });
@@ -118,7 +176,7 @@ test.describe('Search', () => {
     });
 
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const searchInput = page.getByRole('combobox', { name: /search fuel stations/i });
     await searchInput.click();
@@ -142,7 +200,7 @@ test.describe('Search', () => {
 
   test('search input should be focusable and accept text', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const searchInput = page.getByRole('combobox', { name: /search fuel stations/i });
     await searchInput.click();
@@ -153,7 +211,7 @@ test.describe('Search', () => {
 
   test('should clear search on Escape', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const searchInput = page.getByRole('combobox', { name: /search fuel stations/i });
     await searchInput.click();
@@ -175,7 +233,7 @@ test.describe('Search', () => {
 test.describe('Dark Mode', () => {
   test('should toggle dark mode', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Find the theme toggle button
     const themeToggle = page.getByRole('button', { name: /switch to/i });
@@ -211,7 +269,7 @@ test.describe('Dark Mode', () => {
 test.describe('Auth UI', () => {
   test('should show sign in button when not logged in', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const signInButton = page.getByRole('button', { name: /sign in/i });
     await expect(signInButton).toBeVisible();
@@ -244,7 +302,7 @@ test.describe('Station Page', () => {
 test.describe('404 Page', () => {
   test('should display custom 404 page', async ({ page }) => {
     await page.goto('/some-nonexistent-page');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const heading = page.getByText('Page Not Found');
     await expect(heading).toBeVisible();
@@ -263,7 +321,7 @@ test.describe('404 Page', () => {
 test.describe('Admin Page', () => {
   test('should block access for unauthenticated users', async ({ page }) => {
     await page.goto('/admin');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
 
     const accessDenied = page.getByText(/access denied|sign in/i);
@@ -335,7 +393,7 @@ test.describe('Geolocation & Map', () => {
 // ────────────────────────────────────────────────
 
 test.describe('Authenticated Actions', () => {
-  test('should submit a review successfully using mock authentication', async ({ page, context }) => {
+  test('should submit a review successfully using mock authentication', async ({ page }) => {
     // Navigate and set mock user state
     await page.goto('/');
     await page.evaluate(() => {
@@ -416,7 +474,7 @@ test.describe('Search Autocomplete & Keyboard Navigation', () => {
     await page.evaluate(() => {
       localStorage.setItem('fuelvoice:mock_user', 'true');
     });
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const searchInput = page.getByRole('combobox', { name: /search fuel stations/i });
     await searchInput.click();
@@ -510,7 +568,7 @@ test.describe('Consumer Complaints Widget', () => {
 
     // Navigate to test station page (simulating country IN)
     await page.goto('/station/node_6254336890');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Scroll to the complaints section / button
     const complaintsBtn = page.getByRole('button', { name: /file consumer complaint/i });
@@ -542,7 +600,7 @@ test.describe('Admin Dashboard', () => {
 
     // Go to admin page
     await page.goto('/admin');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Verify admin dashboard components are visible
     // 1. Stat cards
@@ -607,7 +665,7 @@ test.describe('Map Theme Switcher', () => {
     
     // Refresh to apply mock user and geolocation settings
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Wait for map container to be visible
     const map = page.locator('#explore-map');
@@ -655,7 +713,7 @@ test.describe('Map Viewport Dashboard', () => {
     
     // Refresh to apply mock settings
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Wait for the visible bunks header in sidebar
     const visibleBunksHeader = page.getByText('Visible Bunks');

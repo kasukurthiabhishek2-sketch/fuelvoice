@@ -9,8 +9,8 @@ export interface Review {
   id: string;
   /** Station ID (OSM format: "type_osmId") */
   stationId: string;
-  /** Firebase UID of reviewer */
-  userId: string;
+  /** Legacy reviewer UID. New public review documents intentionally omit this. */
+  userId?: string;
   /** Denormalized display name (for fast reads) */
   userName: string;
   /** Denormalized profile photo URL */

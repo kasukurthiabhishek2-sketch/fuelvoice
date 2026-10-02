@@ -236,15 +236,16 @@ function getSafeWebsite(raw: string): { href: string; label: string } | null {
 
 /** Fetch station from Firestore, or from Overpass API if first visit */
 async function fetchStation(stationId: string): Promise<Station> {
-  // Try Firestore first
+  // Validate public station IDs before touching Firestore or external APIs.
+  const match = /^(node|way|relation)_([1-9][0-9]*)$/.exec(stationId);
+  if (!match) throw new Error('Invalid station ID');
+  const [, osmType, osmIdText] = match;
+  const osmId = Number(osmIdText);
+  if (!Number.isSafeInteger(osmId)) throw new Error('Invalid station ID');
+
+  // Try Firestore first only after the route parameter is known-safe.
   const cached = await getStation(stationId);
   if (cached) return cached;
-
-  // Parse OSM ID: "node_12345678"
-  const [osmType, osmIdStr] = stationId.split('_');
-  const osmId = parseInt(osmIdStr, 10);
-
-  if (!osmType || isNaN(osmId)) throw new Error('Invalid station ID');
 
   // Fetch from Overpass
   const element = await getStationByOsmId(osmType, osmId);

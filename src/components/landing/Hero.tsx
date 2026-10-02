@@ -10,13 +10,14 @@
 import { motion } from 'framer-motion';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ExploreMapSection } from './ExploreMapSection';
+import type { GeolocationResult } from '@/hooks/useGeolocation';
 
 interface HeroProps {
-  userLat?: number | null;
-  userLng?: number | null;
+  geolocation: GeolocationResult;
 }
 
-export function Hero({ userLat, userLng }: HeroProps) {
+export function Hero({ geolocation }: HeroProps) {
+  const { latitude, longitude } = geolocation;
   return (
     <section className="relative overflow-hidden gradient-mesh">
       {/* Floating fuel icons */}
@@ -58,14 +59,14 @@ export function Hero({ userLat, userLng }: HeroProps) {
           >
             <SearchBar
               variant="hero"
-              userLat={userLat}
-              userLng={userLng}
+              userLat={latitude}
+              userLng={longitude}
               placeholder="Search fuel stations by name, brand, or city…"
             />
           </motion.div>
         </div>
       </div>
-      <ExploreMapSection />
+      <ExploreMapSection geolocation={geolocation} />
     </section>
   );
 }

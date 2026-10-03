@@ -13,3 +13,10 @@ export function canUseE2EMocks(): boolean {
     process.env.NEXT_PUBLIC_FUELVOICE_E2E_MOCKS === 'true'
   );
 }
+
+
+/** Enable deterministic station/review fixtures without pretending the visitor is signed in. */
+export function canUseE2EGuestDataMocks(): boolean {
+  if (!canUseE2EMocks() || typeof window === 'undefined') return false;
+  return localStorage.getItem('fuelvoice:mock_guest_data') === 'true';
+}

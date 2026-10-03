@@ -34,8 +34,10 @@ export function Header() {
           <Link
             href="/search"
             className={`header-action ${pathname === '/search' ? 'header-action-active' : ''}`}
+            aria-label="Search fuel stations"
+            aria-current={pathname === '/search' ? 'page' : undefined}
           >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="11" cy="11" r="6.5" />
               <path d="m16 16 4 4" strokeLinecap="round" />
             </svg>

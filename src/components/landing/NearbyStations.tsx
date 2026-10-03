@@ -152,7 +152,7 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
                           <div className="flex flex-wrap items-center gap-2">
                             {featured && (
                               <span className="rounded-full bg-brand-500 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white">
-                                Closest mapped result
+                                {hasLocation && !isIpLocation ? 'Closest mapped result' : 'Top mapped result'}
                               </span>
                             )}
                             {brand && (
@@ -209,7 +209,7 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
           </div>
         )}
 
-        {stations && stations.length === 0 && !stationsLoading && (
+        {stations && stations.length === 0 && !stationsLoading && !stationsError && (
           <div className="premium-shell mx-auto max-w-2xl p-8 text-center">
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[var(--bg-tertiary)] text-[var(--text-tertiary)]">
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">

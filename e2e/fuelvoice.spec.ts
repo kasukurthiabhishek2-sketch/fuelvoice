@@ -193,12 +193,17 @@ test.describe('Minimal homepage', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await expect(input).toHaveAttribute('aria-autocomplete', 'list');
     await input.pressSequentially('Shell', { delay: 40 });
 
     const result = page.getByRole('option', { name: /Shell Fuel Station/i });
     await expect(result).toBeVisible({ timeout: 10000 });
-    await result.click();
 
+    await input.press('ArrowDown');
+    await expect(input).toHaveAttribute('aria-activedescendant', `search-result-${STATION_ID}`);
+    await expect(result).toHaveAttribute('aria-selected', 'true');
+
+    await input.press('Enter');
     await expect(page).toHaveURL(new RegExp(`/station/${STATION_ID}$`));
   });
 
@@ -361,13 +366,26 @@ test.describe('Station trust page', () => {
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
 
     const composer = page.locator('#write-review');
-    await composer.getByRole('button', { name: /^Write a review/ }).click();
-    await composer.getByRole('button', { name: '1 star', exact: true }).click();
+    const openComposer = composer.getByRole('button', { name: /^Write a review/ });
+    await expect(openComposer).toHaveAttribute('aria-expanded', 'false');
+    await openComposer.click();
+    await expect(composer.locator('#review-form-panel')).toBeVisible();
+
+    const oneStar = composer.getByRole('button', { name: '1 star', exact: true });
+    const starBox = await oneStar.boundingBox();
+    expect(starBox).not.toBeNull();
+    expect(starBox!.width).toBeGreaterThanOrEqual(44);
+    expect(starBox!.height).toBeGreaterThanOrEqual(44);
+
+    await oneStar.click();
+    await expect(oneStar).toHaveAttribute('aria-pressed', 'true');
     await composer.getByRole('button', { name: 'Publish review', exact: true }).click();
 
     await expect(composer.getByText('Choose at least one complaint category.')).toBeVisible();
 
-    await composer.getByRole('button', { name: 'Fuel quality', exact: true }).click();
+    const fuelQuality = composer.getByRole('button', { name: 'Fuel quality', exact: true });
+    await fuelQuality.click();
+    await expect(fuelQuality).toHaveAttribute('aria-pressed', 'true');
     await composer.getByRole('button', { name: 'Publish review', exact: true }).click();
 
     await expect(page.getByText('Review published')).toBeVisible();
@@ -414,6 +432,8 @@ test.describe('Mobile station actions', () => {
     await expect(write).toBeVisible();
     await expect(complaint).toBeVisible();
     await expect(complaint).toHaveAttribute('href', /shell\.com/);
+    await expect(page.getByRole('link', { name: 'Search fuel stations' })).toBeVisible();
+    await expect(page.locator('.review-controls')).toHaveCSS('position', 'static');
 
     const metrics = await page.evaluate(() => ({
       innerWidth: window.innerWidth,

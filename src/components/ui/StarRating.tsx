@@ -49,8 +49,9 @@ export function StarRating({
           onClick={() => onChange?.(star)}
           onMouseEnter={() => isInteractive && setHoverValue(star)}
           onMouseLeave={() => isInteractive && setHoverValue(0)}
-          className={`${isInteractive ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform duration-150 disabled:cursor-default`}
+          className={`${isInteractive ? 'grid h-11 w-11 cursor-pointer place-items-center rounded-xl hover:bg-[var(--bg-tertiary)] hover:scale-105' : 'cursor-default'} transition duration-150 disabled:cursor-default`}
           aria-label={`${star} star${star !== 1 ? 's' : ''}`}
+          aria-pressed={isInteractive ? star === value : undefined}
         >
           <svg
             className={`${SIZES[size]} transition-colors duration-150`}

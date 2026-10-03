@@ -144,6 +144,8 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
           type="button"
           onClick={() => setIsOpen(true)}
           className="review-composer-shell group flex w-full items-center justify-between gap-4 p-5 text-left transition hover:border-[var(--border-strong)] sm:p-6"
+          aria-expanded="false"
+          aria-controls="review-form-panel"
         >
           <div>
             <p className="text-sm font-bold text-[var(--text-primary)]">Write a review</p>
@@ -158,7 +160,7 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
           </span>
         </button>
       ) : (
-        <form onSubmit={handleSubmit} className="review-composer-shell p-5 sm:p-6">
+        <form id="review-form-panel" onSubmit={handleSubmit} className="review-composer-shell p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-lg font-bold tracking-[-0.03em] text-[var(--text-primary)]">Review {stationName}</p>
@@ -178,8 +180,8 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
 
           <div className="mt-6">
             <label className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Your rating</label>
-            <div className="mt-3"><StarRating value={form.rating} onChange={setRating} size="lg" /></div>
-            {errors.rating && <p className="mt-2 text-xs text-rose-400">{errors.rating}</p>}
+            <div className="mt-3"><StarRating value={form.rating} onChange={setRating} size="lg" label="Your rating" /></div>
+            {errors.rating && <p className="mt-2 text-xs text-rose-400" role="alert">{errors.rating}</p>}
           </div>
 
           {form.rating > 0 && form.rating <= 2 && (
@@ -196,6 +198,7 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
                       key={value}
                       type="button"
                       onClick={() => toggleCategory(value)}
+                      aria-pressed={selected}
                       className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
                         selected
                           ? 'border-white bg-white text-black'
@@ -207,7 +210,7 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
                   );
                 })}
               </div>
-              {errors.categories && <p className="mt-2 text-xs text-rose-400">{errors.categories}</p>}
+              {errors.categories && <p className="mt-2 text-xs text-rose-400" role="alert">{errors.categories}</p>}
             </div>
           )}
 
@@ -222,10 +225,12 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
               placeholder="What should another customer know?"
               rows={4}
               maxLength={2000}
+              aria-invalid={Boolean(errors.content)}
+              aria-describedby={errors.content ? 'review-content-error' : undefined}
               className="mt-3 w-full resize-none rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3 text-sm leading-6 text-[var(--text-primary)] outline-none transition focus:border-[var(--border-strong)]"
             />
             <div className="mt-2 flex items-center justify-between gap-3">
-              {errors.content ? <p className="text-xs text-rose-400">{errors.content}</p> : <span />}
+              {errors.content ? <p id="review-content-error" className="text-xs text-rose-400" role="alert">{errors.content}</p> : <span />}
               <span className="text-xs text-[var(--text-tertiary)]">{form.content.length}/2000</span>
             </div>
           </div>

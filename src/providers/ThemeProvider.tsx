@@ -42,9 +42,9 @@ function isTheme(value: string | null): value is Theme {
 function readTheme(): Theme {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return isTheme(stored) ? stored : 'system';
+    return isTheme(stored) ? stored : 'dark';
   } catch {
-    return 'system';
+    return 'dark';
   }
 }
 
@@ -78,7 +78,7 @@ function resolveSnapshot(snapshot: string): {
   resolvedTheme: 'light' | 'dark';
 } {
   const [rawTheme, systemTheme] = snapshot.split(':');
-  const theme: Theme = isTheme(rawTheme) ? rawTheme : 'system';
+  const theme: Theme = isTheme(rawTheme) ? rawTheme : 'dark';
   const resolvedTheme: 'light' | 'dark' =
     theme === 'system'
       ? (systemTheme === 'light' ? 'light' : 'dark')

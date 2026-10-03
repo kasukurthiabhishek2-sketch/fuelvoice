@@ -88,6 +88,9 @@ export function SearchBar({
   };
 
   const isHero = variant === 'hero';
+  const activeOptionId = selectedIndex >= 0 && results[selectedIndex]
+    ? `search-result-${results[selectedIndex].id}`
+    : undefined;
 
   return (
     <div className="relative w-full" ref={containerRef}>
@@ -127,6 +130,9 @@ export function SearchBar({
           aria-expanded={isOpen}
           aria-controls="search-results"
           aria-label="Search fuel stations"
+          aria-autocomplete="list"
+          aria-activedescendant={activeOptionId}
+          aria-busy={isSearching}
           autoComplete="off"
         />
 
@@ -154,6 +160,16 @@ export function SearchBar({
         </div>
       </div>
 
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {isSearching
+          ? 'Searching fuel stations'
+          : isOpen && searchTerm.length >= 2
+            ? results.length > 0
+              ? `${results.length} fuel station result${results.length === 1 ? '' : 's'} available`
+              : 'No fuel stations found'
+            : ''}
+      </div>
+
       <AnimatePresence>
         {isOpen && results.length > 0 && (
           <motion.div
@@ -164,6 +180,7 @@ export function SearchBar({
             transition={{ duration: 0.14 }}
             className="absolute left-0 top-full z-[9999] mt-2 w-full overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-elevated)] p-1.5 shadow-[var(--shadow-xl)] backdrop-blur-2xl"
             role="listbox"
+            aria-label="Fuel station search results"
           >
             <div className="flex items-center justify-between px-3 pb-1.5 pt-1">
               <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Stations</span>
@@ -172,6 +189,7 @@ export function SearchBar({
             {results.map((result, index) => (
               <button
                 key={result.id}
+                id={`search-result-${result.id}`}
                 type="button"
                 onClick={() => handleSelect(result)}
                 onMouseEnter={() => setSelectedIndex(index)}

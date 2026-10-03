@@ -61,3 +61,23 @@ jobs:
             e2e/report
           if-no-files-found: warn
           retention-days: 7
+
+
+  firestore-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Install Firestore rules test dependency
+        run: npm install --no-save --no-package-lock @firebase/rules-unit-testing
+      - name: Verify review security rules in Firestore emulator
+        run: npx --yes firebase-tools@latest emulators:exec --only firestore "node scripts/firestore-rules-review.test.mjs" --project fuelvoice-rules-test

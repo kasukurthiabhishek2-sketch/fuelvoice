@@ -39,6 +39,13 @@ service cloud.firestore {
       );
     }
 
+    function reviewSlotIdOwnedByRequester(reviewId) {
+      return signedIn() && (
+        reviewId.matches('(node|way|relation)_[0-9]+__' + request.auth.uid) ||
+        reviewId.matches('(node|way|relation)_[0-9]+__' + request.auth.uid + '__(1|2|3)')
+      );
+    }
+
     function hasOwnReview(stationId) {
       return signedIn() && (
         exists(/databases/$(database)/documents/reviews/$(stationId + '__' + request.auth.uid)) ||
@@ -193,7 +200,14 @@ service cloud.firestore {
     }
 
     match /reviews/{reviewId} {
-      allow read: if (
+      // Owners need get access to their deterministic review slot IDs even
+      // before those documents exist. List/query access remains public-only.
+      allow get: if reviewSlotIdOwnedByRequester(reviewId) || (
+        resource.data.isHidden == false &&
+        resource.data.get('isAnonymous', false) == false
+      ) || isAdmin();
+
+      allow list: if (
         resource.data.isHidden == false &&
         resource.data.get('isAnonymous', false) == false
       ) || isAdmin();

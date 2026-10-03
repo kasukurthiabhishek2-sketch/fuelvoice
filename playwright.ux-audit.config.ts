@@ -2,16 +2,16 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: '**/ux-audit-baseline.spec.ts',
-  outputDir: './e2e/test-results',
+  testMatch: 'ux-audit-baseline.spec.ts',
+  outputDir: './e2e/ux-audit-test-results',
   fullyParallel: false,
-  retries: 1,
+  retries: 0,
   workers: 1,
-  reporter: [['html', { outputFolder: './e2e/report', open: 'never' }]],
+  reporter: [['line']],
   timeout: 30000,
   use: {
     baseURL: 'http://localhost:3000',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'on',
     video: 'off',
   },
@@ -20,12 +20,7 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'mobile',
-      use: { ...devices['iPhone 14'] },
-    },
   ],
-  /* Test the optimized production build so framework dev UI cannot contaminate visual evidence. */
   webServer: {
     command: 'NEXT_PUBLIC_FUELVOICE_E2E_MOCKS=true npm run build && NEXT_PUBLIC_FUELVOICE_E2E_MOCKS=true npm run start',
     url: 'http://localhost:3000',

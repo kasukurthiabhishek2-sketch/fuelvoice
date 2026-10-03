@@ -219,6 +219,38 @@ test.describe('Minimal homepage', () => {
 });
 
 test.describe('Signed-out station loading', () => {
+  test('keeps the station loading state inside a 375px viewport', async ({ page }) => {
+    await enableGuestDataMocks(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+
+    await page.unroute('**/api/osm-element**');
+    await page.route('**/api/osm-element**', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          element: {
+            type: 'node',
+            id: 6254336890,
+            lat: 17.3887027,
+            lon: 78.4753829,
+            tags: { amenity: 'fuel', name: 'Shell Fuel Station' },
+          },
+        }),
+      });
+    });
+
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('.skeleton').first()).toBeVisible();
+
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+  });
+
   test('loads an uncached mapped station without requiring a Firestore write', async ({ page }, testInfo) => {
     await enableGuestDataMocks(page);
 
@@ -446,6 +478,27 @@ test.describe('Mobile station actions', () => {
       fullPage: false,
       caret: 'initial',
     });
+  });
+});
+
+test.describe('Admin responsiveness', () => {
+  test('contains authenticated admin content inside a 375px viewport', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fuelvoice:mock_user', 'admin');
+      localStorage.setItem('fuelvoice-theme', 'dark');
+    });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { name: 'Admin Panel' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Pending Reports/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Users/ })).toBeVisible();
+
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
   });
 });
 

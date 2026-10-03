@@ -1,0 +1,106 @@
+name: UX Audit Change Verification
+
+on:
+  push:
+    branches: [ux-audit-2026-10-04]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'e2e/fuelvoice.spec.ts'
+      - 'e2e/ux-audit-baseline.spec.ts'
+      - '.github/workflows/ux-audit-verify.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ux-audit-change-verification
+  cancel-in-progress: true
+
+env:
+  NEXT_PUBLIC_FIREBASE_API_KEY: ci-placeholder
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: example.firebaseapp.com
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: fuelvoice-ci
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: example.appspot.com
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
+  NEXT_PUBLIC_FIREBASE_APP_ID: '1:000000000000:web:ci'
+  NEXT_PUBLIC_MAPTILER_API_KEY: ci-maptiler-placeholder
+  NEXT_PUBLIC_FUELVOICE_E2E_MOCKS: 'true'
+  UX_AUDIT_BASELINE_SHA: a9b7f0dbf6c9a081f1c2f21f6d687e597dd4a442
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Normal repository CI runs lint, typecheck, build, dependency/rules checks,
+      # and the existing Playwright suite for this same PR commit. This workflow
+      # owns only the deterministic UX evidence so the gates run in parallel.
+      - name: Capture all audit states at four widths
+        env:
+          UX_AUDIT_OUTPUT: ux-audit/current
+        run: npx playwright test --config=playwright.ux-audit.config.ts
+
+      - name: Summarize current evidence
+        if: always()
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const root = path.join(process.cwd(), 'ux-audit', 'current');
+          if (!fs.existsSync(root)) process.exit(0);
+          const widths = [375, 768, 1280, 1920];
+          const manifests = widths.map((width) => {
+            const file = path.join(root, `manifest-${width}.json`);
+            return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+          }).filter(Boolean);
+          const entries = manifests.flatMap((manifest) => manifest.entries || []);
+          const summary = {
+            baselineCommit: process.env.UX_AUDIT_BASELINE_SHA,
+            changeCommit: process.env.GITHUB_SHA,
+            screenshotCount: entries.length,
+            ok: entries.filter((entry) => entry.status === 'ok').length,
+            failed: entries.filter((entry) => entry.status !== 'ok').map((entry) => ({
+              width: entry.width,
+              scenario: entry.scenario,
+              error: entry.error,
+            })),
+            horizontalOverflow: entries
+              .filter((entry) => entry.viewport?.horizontalOverflow)
+              .map((entry) => ({
+                width: entry.width,
+                scenario: entry.scenario,
+                scrollWidth: entry.viewport?.scrollWidth,
+              })),
+            consoleErrorCount: entries.reduce((sum, entry) => sum + (entry.consoleErrors?.length || 0), 0),
+            pageErrorCount: entries.reduce((sum, entry) => sum + (entry.pageErrors?.length || 0), 0),
+          };
+          fs.writeFileSync(path.join(root, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
+          NODE
+
+      - name: Upload change evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-audit-current-${{ github.sha }}
+          path: |
+            ux-audit/current
+            e2e/report
+            e2e/test-results
+          if-no-files-found: warn
+          retention-days: 14

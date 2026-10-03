@@ -66,8 +66,8 @@ export function SkeletonPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
       <div className="space-y-3">
-        <div className="skeleton h-8 w-64" />
-        <div className="skeleton h-4 w-96" />
+        <div className="skeleton h-8 w-full max-w-64" />
+        <div className="skeleton h-4 w-full max-w-96" />
       </div>
       <div className="skeleton h-64 rounded-2xl" />
       <div className="grid gap-4 md:grid-cols-2">

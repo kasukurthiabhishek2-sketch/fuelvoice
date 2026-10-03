@@ -75,7 +75,7 @@ jobs:
         id: capture
         if: steps.install.outcome == 'success' && steps.browser.outcome == 'success'
         continue-on-error: true
-        run: npx playwright test e2e/ux-audit-baseline.spec.ts --project=chromium --workers=1
+        run: npx playwright test --config=playwright.ux-audit.config.ts
 
       - name: Write Phase 0 evidence
         if: always()

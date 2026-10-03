@@ -53,7 +53,7 @@ jobs:
       - name: Capture all audit states at four widths
         env:
           UX_AUDIT_OUTPUT: ux-audit/current
-        run: npx playwright test e2e/ux-audit-baseline.spec.ts --project=chromium --workers=1
+        run: npx playwright test --config=playwright.ux-audit.config.ts
 
       - name: Summarize current evidence
         if: always()

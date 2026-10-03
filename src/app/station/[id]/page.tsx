@@ -315,8 +315,13 @@ async function fetchStation(stationId: string): Promise<Station> {
   const match = /^(node|way|relation)_([1-9][0-9]*)$/.exec(stationId);
   if (!match) throw new Error('Invalid station ID');
 
-  const cached = await getStation(stationId);
-  if (cached) return cached;
+  try {
+    const cached = await getStation(stationId);
+    if (cached) return cached;
+  } catch {
+    // Firestore is an optional cache/community layer for station identity.
+    // Fall through to the mapped source so public station pages remain usable.
+  }
 
   const osmId = Number(match[2]);
   if (!Number.isSafeInteger(osmId)) throw new Error('Invalid station ID');

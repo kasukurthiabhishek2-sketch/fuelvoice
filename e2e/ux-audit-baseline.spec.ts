@@ -41,6 +41,7 @@ interface Scenario {
   route: string;
   auth?: AuthMode;
   network?: NetworkMode;
+  theme?: 'dark' | 'light';
   prepare?: (page: Page) => Promise<void>;
 }
 
@@ -212,26 +213,26 @@ async function installNetwork(page: Page, mode: NetworkMode) {
   await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
 }
 
-async function createContext(browser: Browser, width: number, height: number, auth: AuthMode) {
+async function createContext(browser: Browser, width: number, height: number, auth: AuthMode, theme: 'dark' | 'light') {
   const context = await browser.newContext({
     viewport: { width, height },
     colorScheme: 'dark',
     reducedMotion: 'reduce',
   });
 
-  await context.addInitScript((mode: AuthMode) => {
-    localStorage.setItem('fuelvoice-theme', 'dark');
+  await context.addInitScript((config: { auth: AuthMode; theme: 'dark' | 'light' }) => {
+    localStorage.setItem('fuelvoice-theme', config.theme);
     localStorage.removeItem('fuelvoice:mock_user');
     localStorage.removeItem('fuelvoice:mock_guest_data');
 
-    if (mode === 'guest-data') {
+    if (config.auth === 'guest-data') {
       localStorage.setItem('fuelvoice:mock_guest_data', 'true');
-    } else if (mode === 'user') {
+    } else if (config.auth === 'user') {
       localStorage.setItem('fuelvoice:mock_user', 'true');
-    } else if (mode === 'admin') {
+    } else if (config.auth === 'admin') {
       localStorage.setItem('fuelvoice:mock_user', 'admin');
     }
-  }, auth);
+  }, { auth, theme });
 
   return context;
 }
@@ -464,7 +465,7 @@ const scenarios: Scenario[] = [
     route: `/station/${STATION_ID}`,
     auth: 'guest-data',
     prepare: async (page) => {
-      const link = page.getByRole('link', { name: 'Get directions' });
+      const link = page.getByRole('link', { name: 'Get directions' }).first();
       await link.waitFor();
       await link.focus();
     },
@@ -510,6 +511,51 @@ const scenarios: Scenario[] = [
     },
   },
   {
+    name: 'home-light-theme',
+    route: '/',
+    theme: 'light',
+    prepare: async (page) => {
+      await page.getByRole('heading', { level: 1 }).waitFor();
+      await page.getByRole('heading', { name: /Nearby Fuel Stations/i }).waitFor();
+    },
+  },
+  {
+    name: 'search-light-theme',
+    route: '/search',
+    theme: 'light',
+    prepare: async (page) => {
+      await page.getByRole('heading', { level: 1 }).waitFor();
+    },
+  },
+  {
+    name: 'station-light-theme',
+    route: `/station/${STATION_ID}`,
+    auth: 'guest-data',
+    theme: 'light',
+    prepare: async (page) => {
+      await page.getByRole('heading', { level: 1 }).waitFor();
+      await page.getByRole('heading', { name: 'Reviews', exact: true }).waitFor();
+    },
+  },
+  {
+    name: 'admin-light-theme',
+    route: '/admin',
+    auth: 'admin',
+    theme: 'light',
+    prepare: async (page) => {
+      await page.getByRole('heading', { name: 'Admin Panel' }).waitFor();
+      await page.waitForTimeout(700);
+    },
+  },
+  {
+    name: 'not-found-light-theme',
+    route: '/ux-audit-intentional-404-light',
+    theme: 'light',
+    prepare: async (page) => {
+      await page.getByRole('heading').first().waitFor();
+    },
+  },
+  {
     name: 'not-found',
     route: '/ux-audit-intentional-404',
     prepare: async (page) => {
@@ -525,7 +571,8 @@ async function capture(
 ): Promise<CaptureEntry> {
   const auth = scenario.auth ?? 'none';
   const network = scenario.network ?? 'default';
-  const context: BrowserContext = await createContext(browser, viewport.width, viewport.height, auth);
+  const theme = scenario.theme ?? 'dark';
+  const context: BrowserContext = await createContext(browser, viewport.width, viewport.height, auth, theme);
   const page = await context.newPage();
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];

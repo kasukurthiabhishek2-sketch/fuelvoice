@@ -135,9 +135,9 @@ jobs:
           cat > ux-audit/baseline/test-results.md <<EOF
           # Phase 0 baseline test results
 
-          Baseline product commit: `$UX_AUDIT_BASELINE_SHA`
+          Baseline product commit: $UX_AUDIT_BASELINE_SHA
 
-          The ChatGPT execution container could not resolve `github.com` / the npm registry, so the executable baseline was obtained from GitHub Actions rather than pretending local commands had run. The exact baseline commit's normal CI run (CI #114) had already passed lint, type-check, production build, Playwright E2E, production-dependency audit, and Firestore-rules tests.
+          The ChatGPT execution container could not resolve github.com / the npm registry, so the executable baseline was obtained from GitHub Actions rather than pretending local commands had run. The exact baseline commit's normal CI run (CI #114) had already passed lint, type-check, production build, Playwright E2E, production-dependency audit, and Firestore-rules tests.
 
           This branch contains audit-only capture tooling and no product-code changes at baseline time.
 
@@ -150,7 +150,7 @@ jobs:
           | npm run build | $BUILD_OUTCOME |
           | deterministic 375/768/1280/1920 capture | $CAPTURE_OUTCOME |
 
-          Existing baseline production smoke run #36 failed before this audit because `https://fuelvoice.vercel.app/api/health` did not converge to the exact main commit. Its homepage/station smoke steps were skipped. This is recorded as pre-existing operational evidence, not attributed to UX changes.
+          Existing baseline production smoke run #36 failed before this audit because https://fuelvoice.vercel.app/api/health did not converge to the exact main commit. Its homepage/station smoke steps were skipped. This is recorded as pre-existing operational evidence, not attributed to UX changes.
           EOF
 
           cat > ux-audit/baseline/README.md <<EOF

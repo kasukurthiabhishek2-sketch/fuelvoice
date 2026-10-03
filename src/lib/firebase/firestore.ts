@@ -61,6 +61,75 @@ function removeUndefined<T>(value: T): T {
   return value;
 }
 
+const EMPTY_STATION_SCORES: StationScores = {
+  fuelQuality: 0,
+  service: 0,
+  staffBehaviour: 0,
+  cleanliness: 0,
+  washroom: 0,
+  airFilling: 0,
+};
+
+function finiteNumber(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function normalizeStation(stationId: string, raw: Record<string, unknown>): Station {
+  const address = isPlainObject(raw.addressComponents) ? raw.addressComponents : {};
+  const rawScores = isPlainObject(raw.scores) ? raw.scores : {};
+  const rawTags = isPlainObject(raw.osmTags) ? raw.osmTags : {};
+
+  const trustScore = typeof raw.trustScore === 'number' && Number.isFinite(raw.trustScore)
+    ? raw.trustScore
+    : undefined;
+
+  const lastUpdated = typeof raw.lastUpdated === 'string'
+    ? raw.lastUpdated
+    : raw.lastUpdated instanceof Timestamp
+      ? raw.lastUpdated.toDate().toISOString()
+      : new Date().toISOString();
+
+  return {
+    id: stationId,
+    name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : 'Unknown Station',
+    brand: typeof raw.brand === 'string' ? raw.brand : '',
+    operator: typeof raw.operator === 'string' ? raw.operator : '',
+    address: typeof raw.address === 'string' ? raw.address : '',
+    addressComponents: {
+      street: typeof address.street === 'string' ? address.street : undefined,
+      city: typeof address.city === 'string' ? address.city : undefined,
+      state: typeof address.state === 'string' ? address.state : undefined,
+      postcode: typeof address.postcode === 'string' ? address.postcode : undefined,
+      country: typeof address.country === 'string' ? address.country : undefined,
+      countryCode: typeof address.countryCode === 'string' ? address.countryCode : undefined,
+    },
+    lat: finiteNumber(raw.lat),
+    lng: finiteNumber(raw.lng),
+    phone: typeof raw.phone === 'string' ? raw.phone : '',
+    website: typeof raw.website === 'string' ? raw.website : '',
+    openingHours: typeof raw.openingHours === 'string' ? raw.openingHours : '',
+    fuelTypes: Array.isArray(raw.fuelTypes)
+      ? raw.fuelTypes.filter((value): value is string => typeof value === 'string')
+      : [],
+    osmTags: Object.fromEntries(
+      Object.entries(rawTags).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+    ),
+    avgRating: finiteNumber(raw.avgRating),
+    reviewCount: Math.max(0, finiteNumber(raw.reviewCount)),
+    ...(trustScore === undefined ? {} : { trustScore }),
+    complaintCount: Math.max(0, finiteNumber(raw.complaintCount)),
+    scores: {
+      fuelQuality: finiteNumber(rawScores.fuelQuality),
+      service: finiteNumber(rawScores.service),
+      staffBehaviour: finiteNumber(rawScores.staffBehaviour),
+      cleanliness: finiteNumber(rawScores.cleanliness),
+      washroom: finiteNumber(rawScores.washroom),
+      airFilling: finiteNumber(rawScores.airFilling),
+    },
+    lastUpdated,
+  };
+}
+
 // ────────────────────────────────────────────────────────────────
 // STATIONS
 // ────────────────────────────────────────────────────────────────
@@ -102,18 +171,10 @@ export async function getOrCreateStation(stationData: Partial<Station> & { id: s
   const stationSnap = await getDoc(stationRef);
 
   if (stationSnap.exists()) {
-    return { ...stationSnap.data(), id: stationSnap.id } as Station;
+    return normalizeStation(stationSnap.id, stationSnap.data());
   }
 
   // Create station with defaults for missing data
-  const defaultScores: StationScores = {
-    fuelQuality: 0,
-    service: 0,
-    staffBehaviour: 0,
-    cleanliness: 0,
-    washroom: 0,
-    airFilling: 0,
-  };
 
   const station: Station = {
     id: stationData.id,
@@ -132,7 +193,7 @@ export async function getOrCreateStation(stationData: Partial<Station> & { id: s
     avgRating: 0,
     reviewCount: 0,
     complaintCount: 0,
-    scores: defaultScores,
+    scores: EMPTY_STATION_SCORES,
     lastUpdated: new Date().toISOString(),
   };
 
@@ -179,7 +240,11 @@ export async function getStation(stationId: string): Promise<Station | null> {
 
   const stationRef = doc(db, 'stations', stationId);
   const stationSnap = await getDoc(stationRef);
-  return stationSnap.exists() ? ({ ...stationSnap.data(), id: stationSnap.id } as Station) : null;
+  if (!stationSnap.exists()) return null;
+
+  const station = normalizeStation(stationSnap.id, stationSnap.data());
+  if (!Number.isFinite(station.lat) || !Number.isFinite(station.lng)) return null;
+  return station;
 }
 
 // ────────────────────────────────────────────────────────────────

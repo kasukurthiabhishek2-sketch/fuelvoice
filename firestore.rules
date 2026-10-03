@@ -39,6 +39,568 @@ service cloud.firestore {
       );
     }
 
+    function reviewSlotIdOwnedByRequester(reviewId) {
+      return signedIn() && (
+        reviewId.matches('^(node|way|relation)_[0-9]+__' + request.auth.uid + '
+    function hasOwnReview(stationId) {
+      return signedIn() && (
+        exists(/databases/$(database)/documents/reviews/$(stationId + '__' + request.auth.uid)) ||
+        exists(/databases/$(database)/documents/reviews/$(stationId + '__' + request.auth.uid + '__1')) ||
+        exists(/databases/$(database)/documents/reviews/$(stationId + '__' + request.auth.uid + '__2')) ||
+        exists(/databases/$(database)/documents/reviews/$(stationId + '__' + request.auth.uid + '__3'))
+      );
+    }
+
+    function hasOwnDeletionAudit(stationId) {
+      return signedIn() && (
+        (
+          exists(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid)) &&
+          get(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid)).data.stationId == stationId
+        ) ||
+        (
+          exists(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__1')) &&
+          get(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__1')).data.stationId == stationId
+        ) ||
+        (
+          exists(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__2')) &&
+          get(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__2')).data.stationId == stationId
+        ) ||
+        (
+          exists(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__3')) &&
+          get(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__3')).data.stationId == stationId
+        )
+      );
+    }
+
+    function validComplaintCategories(data) {
+      return data.complaintCategories is list &&
+        data.complaintCategories.size() <= 8 &&
+        data.complaintCategories.hasOnly([
+          'fuel-quality',
+          'short-filling',
+          'pricing-billing',
+          'staff-behavior',
+          'payment-issue',
+          'facilities',
+          'safety',
+          'other'
+        ]) &&
+        (
+          (data.rating <= 2 && data.complaintCategories.size() >= 1) ||
+          (data.rating >= 3 && data.complaintCategories.size() == 0)
+        );
+    }
+
+    function validReviewEditableFields(data) {
+      return data.rating is number &&
+        data.rating >= 1 && data.rating <= 5 &&
+        data.content is string &&
+        data.content.size() <= 2000 &&
+        validComplaintCategories(data);
+    }
+
+    function validReactionCountUpdate(reviewId) {
+      let path = /databases/$(database)/documents/reviewReactions/$(reviewId + '__' + request.auth.uid);
+      let beforeHelpful = resource.data.get('helpfulCount', resource.data.get('likeCount', 0));
+      let beforeNotHelpful = resource.data.get('notHelpfulCount', 0);
+      let afterHelpful = request.resource.data.helpfulCount;
+      let afterNotHelpful = request.resource.data.notHelpfulCount;
+      let helpfulDelta = afterHelpful - beforeHelpful;
+      let notHelpfulDelta = afterNotHelpful - beforeNotHelpful;
+      let hadBefore = exists(path);
+      let hasAfter = existsAfter(path);
+
+      return signedIn() && isNotBanned() &&
+        changedOnly(['helpfulCount', 'notHelpfulCount']) &&
+        afterHelpful is number && afterHelpful >= 0 &&
+        afterNotHelpful is number && afterNotHelpful >= 0 &&
+        helpfulDelta >= -1 && helpfulDelta <= 1 &&
+        notHelpfulDelta >= -1 && notHelpfulDelta <= 1 &&
+        (
+          (!hadBefore && hasAfter &&
+            getAfter(path).data.reaction == 'helpful' &&
+            helpfulDelta == 1 && notHelpfulDelta == 0) ||
+          (!hadBefore && hasAfter &&
+            getAfter(path).data.reaction == 'not-helpful' &&
+            helpfulDelta == 0 && notHelpfulDelta == 1) ||
+          (hadBefore && !hasAfter &&
+            get(path).data.reaction == 'helpful' &&
+            helpfulDelta == -1 && notHelpfulDelta == 0) ||
+          (hadBefore && !hasAfter &&
+            get(path).data.reaction == 'not-helpful' &&
+            helpfulDelta == 0 && notHelpfulDelta == -1) ||
+          (hadBefore && hasAfter &&
+            get(path).data.reaction == 'helpful' &&
+            getAfter(path).data.reaction == 'not-helpful' &&
+            helpfulDelta == -1 && notHelpfulDelta == 1) ||
+          (hadBefore && hasAfter &&
+            get(path).data.reaction == 'not-helpful' &&
+            getAfter(path).data.reaction == 'helpful' &&
+            helpfulDelta == 1 && notHelpfulDelta == -1)
+        );
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+
+      allow create: if signedIn() && request.auth.uid == userId &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.role == 'user' &&
+        request.resource.data.isBanned == false &&
+        request.resource.data.reviewCount == 0 &&
+        request.resource.data.likeCount == 0;
+
+      allow update: if signedIn() && request.auth.uid == userId &&
+        changedOnly(['displayName', 'photoURL']);
+
+      allow update: if signedIn() && request.auth.uid == userId && isNotBanned() &&
+        changedOnly(['reviewCount', 'lastReviewAt']) &&
+        request.resource.data.reviewCount == resource.data.reviewCount + 1 &&
+        request.resource.data.lastReviewAt == request.time;
+
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /stations/{stationId} {
+      allow read: if true;
+
+      allow create: if signedIn() && isNotBanned() &&
+        stationId.matches('^(node|way|relation)_[0-9]+$') &&
+        request.resource.data.id == stationId &&
+        request.resource.data.lat is number &&
+        request.resource.data.lng is number &&
+        request.resource.data.lat >= -90 && request.resource.data.lat <= 90 &&
+        request.resource.data.lng >= -180 && request.resource.data.lng <= 180 &&
+        request.resource.data.avgRating == 0 &&
+        request.resource.data.reviewCount == 0 &&
+        request.resource.data.complaintCount == 0;
+
+      allow update: if isAdmin() || (
+        signedIn() && isNotBanned() &&
+        (hasOwnReview(stationId) || hasOwnDeletionAudit(stationId)) &&
+        changedOnly(['reviewCount', 'complaintCount', 'lastUpdated', 'avgRating', 'trustScore', 'scores']) &&
+        request.resource.data.reviewCount is number &&
+        request.resource.data.reviewCount >= 0 &&
+        request.resource.data.complaintCount is number &&
+        request.resource.data.complaintCount >= 0 &&
+        request.resource.data.complaintCount <= request.resource.data.reviewCount &&
+        request.resource.data.avgRating is number &&
+        request.resource.data.avgRating >= 0 && request.resource.data.avgRating <= 5 &&
+        request.resource.data.get('trustScore', 0) is number &&
+        request.resource.data.get('trustScore', 0) >= 0 &&
+        request.resource.data.get('trustScore', 0) <= 100
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      // Owners need get access to their deterministic review slot IDs even
+      // before those documents exist. List/query access remains public-only.
+      allow get: if reviewSlotIdOwnedByRequester(reviewId) || (
+        resource.data.isHidden == false &&
+        resource.data.get('isAnonymous', false) == false
+      ) || isAdmin();
+
+      allow list: if (
+        resource.data.isHidden == false &&
+        resource.data.get('isAnonymous', false) == false
+      ) || isAdmin();
+
+      allow create: if signedIn() && isNotBanned() &&
+        reviewOwnedByRequester(request.resource.data.stationId, reviewId) &&
+        reviewId.matches('^' + request.resource.data.stationId + '__' + request.auth.uid + '__(1|2|3)$') &&
+        request.resource.data.id == reviewId &&
+        request.resource.data.stationId.matches('^(node|way|relation)_[0-9]+$') &&
+        existsAfter(/databases/$(database)/documents/stations/$(request.resource.data.stationId)) &&
+        request.resource.data.keys().hasOnly([
+          'id', 'stationId', 'userName', 'userPhoto', 'rating', 'content',
+          'complaintCategories', 'reviewerJoinedAt', 'helpfulCount',
+          'notHelpfulCount', 'isHidden', 'isFeatured', 'createdAt', 'updatedAt',
+          'title', 'fuelQuality', 'service', 'staffBehaviour', 'cleanliness',
+          'washroom', 'airFilling', 'tags', 'isAnonymous', 'likeCount',
+          'reportCount', 'suggestions'
+        ]) &&
+        request.resource.data.userName is string &&
+        request.resource.data.userName.size() >= 1 &&
+        request.resource.data.userName.size() <= 100 &&
+        request.resource.data.userPhoto is string &&
+        request.resource.data.userPhoto.size() <= 2048 &&
+        validReviewEditableFields(request.resource.data) &&
+        request.resource.data.reviewerJoinedAt ==
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.createdAt &&
+        request.resource.data.helpfulCount == 0 &&
+        request.resource.data.notHelpfulCount == 0 &&
+        request.resource.data.isHidden == false &&
+        request.resource.data.isFeatured == false &&
+        request.resource.data.isAnonymous == false &&
+        request.resource.data.likeCount == 0 &&
+        request.resource.data.reportCount == 0 &&
+        request.resource.data.title == '' &&
+        request.resource.data.fuelQuality == 0 &&
+        request.resource.data.get('service', 0) == 0 &&
+        request.resource.data.staffBehaviour == 0 &&
+        request.resource.data.cleanliness == 0 &&
+        request.resource.data.washroom == 0 &&
+        request.resource.data.airFilling == 0 &&
+        request.resource.data.tags.size() == 0 &&
+        request.resource.data.suggestions == '' &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.updatedAt == request.time;
+
+      allow update: if signedIn() && isNotBanned() &&
+        reviewOwnedByRequester(resource.data.stationId, reviewId) &&
+        changedOnly(['rating', 'content', 'complaintCategories', 'updatedAt']) &&
+        validReviewEditableFields(request.resource.data) &&
+        request.resource.data.updatedAt == request.time;
+
+      allow update: if validReactionCountUpdate(reviewId);
+      allow update: if isAdmin();
+
+      allow delete: if signedIn() && isNotBanned() &&
+        reviewOwnedByRequester(resource.data.stationId, reviewId) &&
+        existsAfter(/databases/$(database)/documents/reviewDeletions/$(reviewId)) &&
+        getAfter(/databases/$(database)/documents/reviewDeletions/$(reviewId)).data.deletedBy == request.auth.uid &&
+        getAfter(/databases/$(database)/documents/reviewDeletions/$(reviewId)).data.stationId == resource.data.stationId;
+
+      allow delete: if isAdmin();
+    }
+
+    match /reviewDeletions/{reviewId} {
+      allow read: if signedIn() &&
+        (resource.data.deletedBy == request.auth.uid || isAdmin());
+
+      allow create, update: if signedIn() && isNotBanned() &&
+        request.resource.data.reviewId == reviewId &&
+        request.resource.data.deletedBy == request.auth.uid &&
+        request.resource.data.stationId is string &&
+        reviewOwnedByRequester(request.resource.data.stationId, reviewId) &&
+        request.resource.data.reason is string &&
+        request.resource.data.reason.size() >= 10 &&
+        request.resource.data.reason.size() <= 500 &&
+        request.resource.data.deletedAt == request.time &&
+        request.resource.data.keys().hasOnly([
+          'reviewId', 'stationId', 'deletedBy', 'reason', 'deletedAt'
+        ]);
+
+      allow delete: if isAdmin();
+    }
+
+    match /reviewReactions/{reactionId} {
+      allow read: if signedIn() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+
+      allow create, update: if signedIn() && isNotBanned() &&
+        reactionId == request.resource.data.reviewId + '__' + request.auth.uid &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.reaction in ['helpful', 'not-helpful'] &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.keys().hasOnly([
+          'reviewId', 'userId', 'reaction', 'updatedAt'
+        ]);
+
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Legacy collections remain readable for their owners/admins, but the
+    // redesigned product does not create new likes or review reports.
+    match /likes/{likeId} {
+      allow read: if signedIn() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /reports/{reportId} {
+      allow read: if signedIn() &&
+        (resource.data.reporterId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+) ||
+        reviewId.matches('^(node|way|relation)_[0-9]+__' + request.auth.uid + '__(1|2|3)
+    function hasOwnReview(stationId) {
+      return signedIn() && (
+        exists(/databases/$(database)/documents/reviews/$(stationId + '__' + request.auth.uid)) ||
+        exists(/databases/$(database)/documents/reviews/$(stationId + '__' + request.auth.uid + '__1')) ||
+        exists(/databases/$(database)/documents/reviews/$(stationId + '__' + request.auth.uid + '__2')) ||
+        exists(/databases/$(database)/documents/reviews/$(stationId + '__' + request.auth.uid + '__3'))
+      );
+    }
+
+    function hasOwnDeletionAudit(stationId) {
+      return signedIn() && (
+        (
+          exists(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid)) &&
+          get(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid)).data.stationId == stationId
+        ) ||
+        (
+          exists(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__1')) &&
+          get(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__1')).data.stationId == stationId
+        ) ||
+        (
+          exists(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__2')) &&
+          get(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__2')).data.stationId == stationId
+        ) ||
+        (
+          exists(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__3')) &&
+          get(/databases/$(database)/documents/reviewDeletions/$(stationId + '__' + request.auth.uid + '__3')).data.stationId == stationId
+        )
+      );
+    }
+
+    function validComplaintCategories(data) {
+      return data.complaintCategories is list &&
+        data.complaintCategories.size() <= 8 &&
+        data.complaintCategories.hasOnly([
+          'fuel-quality',
+          'short-filling',
+          'pricing-billing',
+          'staff-behavior',
+          'payment-issue',
+          'facilities',
+          'safety',
+          'other'
+        ]) &&
+        (
+          (data.rating <= 2 && data.complaintCategories.size() >= 1) ||
+          (data.rating >= 3 && data.complaintCategories.size() == 0)
+        );
+    }
+
+    function validReviewEditableFields(data) {
+      return data.rating is number &&
+        data.rating >= 1 && data.rating <= 5 &&
+        data.content is string &&
+        data.content.size() <= 2000 &&
+        validComplaintCategories(data);
+    }
+
+    function validReactionCountUpdate(reviewId) {
+      let path = /databases/$(database)/documents/reviewReactions/$(reviewId + '__' + request.auth.uid);
+      let beforeHelpful = resource.data.get('helpfulCount', resource.data.get('likeCount', 0));
+      let beforeNotHelpful = resource.data.get('notHelpfulCount', 0);
+      let afterHelpful = request.resource.data.helpfulCount;
+      let afterNotHelpful = request.resource.data.notHelpfulCount;
+      let helpfulDelta = afterHelpful - beforeHelpful;
+      let notHelpfulDelta = afterNotHelpful - beforeNotHelpful;
+      let hadBefore = exists(path);
+      let hasAfter = existsAfter(path);
+
+      return signedIn() && isNotBanned() &&
+        changedOnly(['helpfulCount', 'notHelpfulCount']) &&
+        afterHelpful is number && afterHelpful >= 0 &&
+        afterNotHelpful is number && afterNotHelpful >= 0 &&
+        helpfulDelta >= -1 && helpfulDelta <= 1 &&
+        notHelpfulDelta >= -1 && notHelpfulDelta <= 1 &&
+        (
+          (!hadBefore && hasAfter &&
+            getAfter(path).data.reaction == 'helpful' &&
+            helpfulDelta == 1 && notHelpfulDelta == 0) ||
+          (!hadBefore && hasAfter &&
+            getAfter(path).data.reaction == 'not-helpful' &&
+            helpfulDelta == 0 && notHelpfulDelta == 1) ||
+          (hadBefore && !hasAfter &&
+            get(path).data.reaction == 'helpful' &&
+            helpfulDelta == -1 && notHelpfulDelta == 0) ||
+          (hadBefore && !hasAfter &&
+            get(path).data.reaction == 'not-helpful' &&
+            helpfulDelta == 0 && notHelpfulDelta == -1) ||
+          (hadBefore && hasAfter &&
+            get(path).data.reaction == 'helpful' &&
+            getAfter(path).data.reaction == 'not-helpful' &&
+            helpfulDelta == -1 && notHelpfulDelta == 1) ||
+          (hadBefore && hasAfter &&
+            get(path).data.reaction == 'not-helpful' &&
+            getAfter(path).data.reaction == 'helpful' &&
+            helpfulDelta == 1 && notHelpfulDelta == -1)
+        );
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+
+      allow create: if signedIn() && request.auth.uid == userId &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.role == 'user' &&
+        request.resource.data.isBanned == false &&
+        request.resource.data.reviewCount == 0 &&
+        request.resource.data.likeCount == 0;
+
+      allow update: if signedIn() && request.auth.uid == userId &&
+        changedOnly(['displayName', 'photoURL']);
+
+      allow update: if signedIn() && request.auth.uid == userId && isNotBanned() &&
+        changedOnly(['reviewCount', 'lastReviewAt']) &&
+        request.resource.data.reviewCount == resource.data.reviewCount + 1 &&
+        request.resource.data.lastReviewAt == request.time;
+
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /stations/{stationId} {
+      allow read: if true;
+
+      allow create: if signedIn() && isNotBanned() &&
+        stationId.matches('^(node|way|relation)_[0-9]+$') &&
+        request.resource.data.id == stationId &&
+        request.resource.data.lat is number &&
+        request.resource.data.lng is number &&
+        request.resource.data.lat >= -90 && request.resource.data.lat <= 90 &&
+        request.resource.data.lng >= -180 && request.resource.data.lng <= 180 &&
+        request.resource.data.avgRating == 0 &&
+        request.resource.data.reviewCount == 0 &&
+        request.resource.data.complaintCount == 0;
+
+      allow update: if isAdmin() || (
+        signedIn() && isNotBanned() &&
+        (hasOwnReview(stationId) || hasOwnDeletionAudit(stationId)) &&
+        changedOnly(['reviewCount', 'complaintCount', 'lastUpdated', 'avgRating', 'trustScore', 'scores']) &&
+        request.resource.data.reviewCount is number &&
+        request.resource.data.reviewCount >= 0 &&
+        request.resource.data.complaintCount is number &&
+        request.resource.data.complaintCount >= 0 &&
+        request.resource.data.complaintCount <= request.resource.data.reviewCount &&
+        request.resource.data.avgRating is number &&
+        request.resource.data.avgRating >= 0 && request.resource.data.avgRating <= 5 &&
+        request.resource.data.get('trustScore', 0) is number &&
+        request.resource.data.get('trustScore', 0) >= 0 &&
+        request.resource.data.get('trustScore', 0) <= 100
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if (
+        resource.data.isHidden == false &&
+        resource.data.get('isAnonymous', false) == false
+      ) || isAdmin();
+
+      allow create: if signedIn() && isNotBanned() &&
+        reviewOwnedByRequester(request.resource.data.stationId, reviewId) &&
+        reviewId.matches('^' + request.resource.data.stationId + '__' + request.auth.uid + '__(1|2|3)$') &&
+        request.resource.data.id == reviewId &&
+        request.resource.data.stationId.matches('^(node|way|relation)_[0-9]+$') &&
+        existsAfter(/databases/$(database)/documents/stations/$(request.resource.data.stationId)) &&
+        request.resource.data.keys().hasOnly([
+          'id', 'stationId', 'userName', 'userPhoto', 'rating', 'content',
+          'complaintCategories', 'reviewerJoinedAt', 'helpfulCount',
+          'notHelpfulCount', 'isHidden', 'isFeatured', 'createdAt', 'updatedAt',
+          'title', 'fuelQuality', 'service', 'staffBehaviour', 'cleanliness',
+          'washroom', 'airFilling', 'tags', 'isAnonymous', 'likeCount',
+          'reportCount', 'suggestions'
+        ]) &&
+        request.resource.data.userName is string &&
+        request.resource.data.userName.size() >= 1 &&
+        request.resource.data.userName.size() <= 100 &&
+        request.resource.data.userPhoto is string &&
+        request.resource.data.userPhoto.size() <= 2048 &&
+        validReviewEditableFields(request.resource.data) &&
+        request.resource.data.reviewerJoinedAt ==
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.createdAt &&
+        request.resource.data.helpfulCount == 0 &&
+        request.resource.data.notHelpfulCount == 0 &&
+        request.resource.data.isHidden == false &&
+        request.resource.data.isFeatured == false &&
+        request.resource.data.isAnonymous == false &&
+        request.resource.data.likeCount == 0 &&
+        request.resource.data.reportCount == 0 &&
+        request.resource.data.title == '' &&
+        request.resource.data.fuelQuality == 0 &&
+        request.resource.data.get('service', 0) == 0 &&
+        request.resource.data.staffBehaviour == 0 &&
+        request.resource.data.cleanliness == 0 &&
+        request.resource.data.washroom == 0 &&
+        request.resource.data.airFilling == 0 &&
+        request.resource.data.tags.size() == 0 &&
+        request.resource.data.suggestions == '' &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.updatedAt == request.time;
+
+      allow update: if signedIn() && isNotBanned() &&
+        reviewOwnedByRequester(resource.data.stationId, reviewId) &&
+        changedOnly(['rating', 'content', 'complaintCategories', 'updatedAt']) &&
+        validReviewEditableFields(request.resource.data) &&
+        request.resource.data.updatedAt == request.time;
+
+      allow update: if validReactionCountUpdate(reviewId);
+      allow update: if isAdmin();
+
+      allow delete: if signedIn() && isNotBanned() &&
+        reviewOwnedByRequester(resource.data.stationId, reviewId) &&
+        existsAfter(/databases/$(database)/documents/reviewDeletions/$(reviewId)) &&
+        getAfter(/databases/$(database)/documents/reviewDeletions/$(reviewId)).data.deletedBy == request.auth.uid &&
+        getAfter(/databases/$(database)/documents/reviewDeletions/$(reviewId)).data.stationId == resource.data.stationId;
+
+      allow delete: if isAdmin();
+    }
+
+    match /reviewDeletions/{reviewId} {
+      allow read: if signedIn() &&
+        (resource.data.deletedBy == request.auth.uid || isAdmin());
+
+      allow create, update: if signedIn() && isNotBanned() &&
+        request.resource.data.reviewId == reviewId &&
+        request.resource.data.deletedBy == request.auth.uid &&
+        request.resource.data.stationId is string &&
+        reviewOwnedByRequester(request.resource.data.stationId, reviewId) &&
+        request.resource.data.reason is string &&
+        request.resource.data.reason.size() >= 10 &&
+        request.resource.data.reason.size() <= 500 &&
+        request.resource.data.deletedAt == request.time &&
+        request.resource.data.keys().hasOnly([
+          'reviewId', 'stationId', 'deletedBy', 'reason', 'deletedAt'
+        ]);
+
+      allow delete: if isAdmin();
+    }
+
+    match /reviewReactions/{reactionId} {
+      allow read: if signedIn() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+
+      allow create, update: if signedIn() && isNotBanned() &&
+        reactionId == request.resource.data.reviewId + '__' + request.auth.uid &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.reaction in ['helpful', 'not-helpful'] &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.keys().hasOnly([
+          'reviewId', 'userId', 'reaction', 'updatedAt'
+        ]);
+
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Legacy collections remain readable for their owners/admins, but the
+    // redesigned product does not create new likes or review reports.
+    match /likes/{likeId} {
+      allow read: if signedIn() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /reports/{reportId} {
+      allow read: if signedIn() &&
+        (resource.data.reporterId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+)
+      );
+    }
+
     function hasOwnReview(stationId) {
       return signedIn() && (
         exists(/databases/$(database)/documents/reviews/$(stationId + '__' + request.auth.uid)) ||

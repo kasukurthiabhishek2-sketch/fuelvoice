@@ -828,6 +828,10 @@ body {
   box-shadow: none !important;
 }
 
+html:not(.dark) .home-search-shell input {
+  background: #fbfbf8 !important;
+}
+
 .dark .home-search-shell input {
   background: #111315 !important;
 }

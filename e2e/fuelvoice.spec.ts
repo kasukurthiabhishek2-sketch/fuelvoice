@@ -22,7 +22,61 @@ const PHOTON_RESPONSE = {
   ],
 };
 
+const OVERPASS_NEARBY_RESPONSE = {
+  elements: [
+    {
+      type: 'node',
+      id: 6254336890,
+      lat: 17.3887027,
+      lon: 78.4753829,
+      tags: {
+        amenity: 'fuel',
+        name: 'Shell Fuel Station',
+        brand: 'Shell',
+        'addr:street': 'Abids Road',
+        'addr:city': 'Hyderabad',
+        'addr:state': 'Telangana',
+        'addr:country': 'IN',
+      },
+    },
+    {
+      type: 'node',
+      id: 6254336891,
+      lat: 17.3901,
+      lon: 78.478,
+      tags: {
+        amenity: 'fuel',
+        name: 'IndianOil Station',
+        brand: 'IndianOil',
+        'addr:city': 'Hyderabad',
+        'addr:state': 'Telangana',
+        'addr:country': 'IN',
+      },
+    },
+  ],
+};
+
 async function installDeterministicNetwork(page: Page) {
+  await page.route('https://ipwho.is/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        latitude: 17.3887027,
+        longitude: 78.4753829,
+      }),
+    });
+  });
+
+  await page.route('**/api/overpass', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(OVERPASS_NEARBY_RESPONSE),
+    });
+  });
+
   await page.route('https://photon.komoot.io/api**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -63,10 +117,12 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Minimal homepage', () => {
-  test('loads the search-first experience without location or map work', async ({ page }) => {
+  test('loads nearby stations from approximate location without eager map work', async ({ page }) => {
     let ipLocationRequests = 0;
+    let nearbyRequests = 0;
     page.on('request', (request) => {
       if (request.url().includes('ipwho.is')) ipLocationRequests += 1;
+      if (request.url().includes('/api/overpass')) nearbyRequests += 1;
     });
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -75,14 +131,18 @@ test.describe('Minimal homepage', () => {
     await expect(page.getByRole('combobox', { name: /search fuel stations/i })).toBeVisible();
     await expect(page.getByText('Fuel station trust, without the noise.')).toBeVisible();
 
-    await page.waitForTimeout(500);
-    expect(ipLocationRequests).toBe(0);
+    await expect(page.getByRole('heading', { name: /Nearby Fuel Stations/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Shell Fuel Station/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /IndianOil Station/i })).toBeVisible();
+
+    expect(ipLocationRequests).toBeGreaterThan(0);
+    expect(nearbyRequests).toBeGreaterThan(0);
     await expect(page.locator('.leaflet-container')).toHaveCount(0);
     await expect(page.locator('#explore-map')).toHaveCount(0);
 
     await page.screenshot({
-      path: 'e2e/screenshots/home-minimal-dark.png',
-      fullPage: false,
+      path: 'e2e/screenshots/home-location-stations.png',
+      fullPage: true,
       caret: 'initial',
     });
   });

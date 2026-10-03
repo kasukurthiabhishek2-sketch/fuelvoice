@@ -21,7 +21,7 @@ type NetworkMode =
   | 'nearby-error'
   | 'station-loading'
   | 'station-error'
-  | 'search-loading';
+  | 'search-loading'\n  | 'search-empty';
 
 interface CaptureEntry {
   width: number;
@@ -189,7 +189,7 @@ async function installNetwork(page: Page, mode: NetworkMode) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(PHOTON_RESPONSE),
+      body: JSON.stringify(mode === 'search-empty' ? { features: [] } : PHOTON_RESPONSE),
     });
   });
 
@@ -414,6 +414,16 @@ const scenarios: Scenario[] = [
       const input = page.getByRole('combobox', { name: /search fuel stations/i });
       await input.fill('Shell');
       await page.getByLabel('Searching').waitFor();
+    },
+  },
+  {
+    name: 'search-no-results',
+    route: '/search',
+    network: 'search-empty',
+    prepare: async (page) => {
+      const input = page.getByRole('combobox', { name: /search fuel stations/i });
+      await input.fill('NoSuchStation');
+      await page.getByText(/No fuel stations found for/i).waitFor();
     },
   },
   {

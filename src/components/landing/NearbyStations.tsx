@@ -12,7 +12,6 @@ import Link from 'next/link';
 import type { GeolocationResult } from '@/hooks/useGeolocation';
 import { useNearbyStations } from '@/hooks/useNearbyStations';
 import { SkeletonStationCard } from '@/components/ui/Skeleton';
-import { StarRating } from '@/components/ui/StarRating';
 import { formatDistance } from '@/lib/utils/format';
 import { getBrand } from '@/lib/constants/brands';
 
@@ -187,16 +186,11 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
                         {station.distance !== undefined && (
                           <span className="info-chip">{formatDistance(station.distance)}</span>
                         )}
-                        {station.reviewCount > 0 ? (
-                          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-2">
-                            <StarRating value={station.avgRating} size="sm" showValue />
-                            <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                              {station.reviewCount} review{station.reviewCount === 1 ? '' : 's'}
-                            </span>
-                          </span>
-                        ) : (
-                          <span className="info-chip">No community reviews yet</span>
-                        )}
+                        <span className="info-chip">
+                          {station.reviewCount > 0
+                            ? `${station.reviewCount} review${station.reviewCount === 1 ? '' : 's'} · Trust score on station page`
+                            : 'Trust score available after 5 reviews'}
+                        </span>
                       </div>
 
                       <span className="inline-flex items-center gap-2 text-xs font-extrabold text-brand-600 dark:text-brand-300">

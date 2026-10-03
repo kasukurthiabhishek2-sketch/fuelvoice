@@ -17,7 +17,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="relative p-2 rounded-xl transition-colors hover:bg-surface-100 dark:hover:bg-surface-700"
+      className="relative grid h-10 w-10 place-items-center rounded-xl transition-colors hover:bg-surface-100 dark:hover:bg-surface-700"
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
     >

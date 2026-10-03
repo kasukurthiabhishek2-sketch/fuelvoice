@@ -78,7 +78,7 @@ export function ConsumerComplaint({
               FuelVoice only shows destinations we have verified as official brand or consumer-protection sources.
             </p>
           </div>
-          <VerifiedBadge />
+          {(brandRoute || governmentRoute) && <VerifiedBadge />}
         </div>
 
         <div className="mt-5 grid gap-3">

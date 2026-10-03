@@ -68,7 +68,8 @@ function normalizeReview(id: string, raw: Record<string, unknown>): Review {
         ? Math.max(0, raw.likeCount)
         : 0,
     notHelpfulCount: typeof raw.notHelpfulCount === 'number' ? Math.max(0, raw.notHelpfulCount) : 0,
-    isHidden: raw.isHidden === true,
+    // Legacy anonymous reviews are intentionally not surfaced in the new public experience.
+    isHidden: raw.isHidden === true || raw.isAnonymous === true,
     isFeatured: raw.isFeatured === true,
     createdAt,
     updatedAt,
@@ -258,7 +259,9 @@ export async function getReviewsV2(
   const docs = snapshot.docs;
   const hasMore = docs.length > pageSize;
   const pageDocs = hasMore ? docs.slice(0, pageSize) : docs;
-  let reviews = pageDocs.map((item) => normalizeReview(item.id, item.data()));
+  let reviews = pageDocs
+    .map((item) => normalizeReview(item.id, item.data()))
+    .filter((review) => !review.isHidden);
 
   if (sortBy === 'most-helpful') {
     reviews = reviews.sort(
@@ -281,7 +284,9 @@ async function getAllVisibleReviews(stationId: string): Promise<Review[]> {
       where('isHidden', '==', false),
     ),
   );
-  return snapshot.docs.map((item) => normalizeReview(item.id, item.data()));
+  return snapshot.docs
+    .map((item) => normalizeReview(item.id, item.data()))
+    .filter((review) => !review.isHidden);
 }
 
 async function recalculateStationTrust(stationId: string): Promise<void> {

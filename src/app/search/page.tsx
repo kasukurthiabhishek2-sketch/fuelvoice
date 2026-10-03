@@ -4,7 +4,7 @@ import { SearchBar } from '@/components/search/SearchBar';
 
 export default function SearchPage() {
   return (
-    <section className="min-h-[calc(100svh-74px)] border-b border-[var(--border-secondary)] bg-[var(--bg-primary)]">
+    <section className="search-workspace min-h-[calc(100svh-74px)] border-b border-[var(--border-secondary)]">
       <div className="app-frame py-14 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-4xl">
           <p className="home-kicker">Station search</p>
@@ -23,7 +23,7 @@ export default function SearchPage() {
             />
           </div>
 
-          <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--border-primary)] sm:grid-cols-3">
+          <div className="search-principles mt-10 grid gap-px overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--border-primary)] sm:grid-cols-3">
             <SearchPrinciple title="No location gate" copy="Search works without granting location permission." />
             <SearchPrinciple title="Trust over stars" copy="Open a station to see its Trust Score and reviews." />
             <SearchPrinciple title="Official complaint paths" copy="Verified destinations appear on supported station pages." />

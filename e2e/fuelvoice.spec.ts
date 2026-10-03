@@ -182,7 +182,7 @@ test.describe('Minimal homepage', () => {
 });
 
 test.describe('Signed-out station loading', () => {
-  test('loads an uncached mapped station without requiring a Firestore write', async ({ page }) => {
+  test('loads an uncached mapped station without requiring a Firestore write', async ({ page }, testInfo) => {
     await enableGuestDataMocks(page);
 
     let firestoreRequests = 0;
@@ -210,7 +210,7 @@ test.describe('Signed-out station loading', () => {
     expect(consoleErrors).toEqual([]);
 
     await page.screenshot({
-      path: 'e2e/screenshots/station-signed-out-uncached.png',
+      path: `e2e/screenshots/station-signed-out-uncached-${testInfo.project.name}.png`,
       fullPage: false,
       caret: 'initial',
     });

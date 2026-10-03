@@ -28,6 +28,8 @@ export function ReviewList({ stationId }: ReviewListProps) {
     fetchNextPage,
     isFetchingNextPage,
     isLoading,
+    error,
+    refetch,
     sortBy,
     setSortBy,
     category,
@@ -96,7 +98,19 @@ export function ReviewList({ stationId }: ReviewListProps) {
         </div>
       )}
 
-      {!isLoading && reviews.length > 0 && (
+      {!isLoading && error && (
+        <div className="empty-review-state">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Reviews could not be loaded.</p>
+          <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+            The station is still available. Retry the review feed without losing your place.
+          </p>
+          <button type="button" onClick={() => refetch()} className="secondary-action mt-4">
+            Retry reviews
+          </button>
+        </div>
+      )}
+
+      {!isLoading && !error && reviews.length > 0 && (
         <div className="mt-4 space-y-3">
           {reviews.map((review) => (
             <ReviewCard
@@ -109,7 +123,7 @@ export function ReviewList({ stationId }: ReviewListProps) {
         </div>
       )}
 
-      {!isLoading && reviews.length === 0 && (
+      {!isLoading && !error && reviews.length === 0 && (
         <div className="empty-review-state">
           <p className="text-sm font-semibold text-[var(--text-primary)]">
             {category ? 'No reviews match this issue yet.' : 'No reviews yet.'}

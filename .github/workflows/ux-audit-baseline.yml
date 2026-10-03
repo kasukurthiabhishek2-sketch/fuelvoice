@@ -1,0 +1,215 @@
+name: UX Audit Phase 0 Baseline
+
+on:
+  push:
+    branches: [ux-audit-2026-10-04]
+    paths:
+      - 'e2e/ux-audit-baseline.spec.ts'
+      - '.github/workflows/ux-audit-baseline.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ux-audit-phase-0-baseline
+  cancel-in-progress: true
+
+env:
+  NEXT_PUBLIC_FIREBASE_API_KEY: ci-placeholder
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: example.firebaseapp.com
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: fuelvoice-ci
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: example.appspot.com
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
+  NEXT_PUBLIC_FIREBASE_APP_ID: '1:000000000000:web:ci'
+  NEXT_PUBLIC_MAPTILER_API_KEY: ci-maptiler-placeholder
+  NEXT_PUBLIC_FUELVOICE_E2E_MOCKS: 'true'
+  UX_AUDIT_BASELINE_SHA: a9b7f0dbf6c9a081f1c2f21f6d687e597dd4a442
+
+jobs:
+  capture:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ux-audit-2026-10-04
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        id: install
+        continue-on-error: true
+        run: npm ci
+
+      - name: Install Chromium
+        id: browser
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npx playwright install --with-deps chromium
+
+      - name: Lint
+        id: lint
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Type check
+        id: typecheck
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run typecheck
+
+      - name: Production build
+        id: build
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run build
+
+      - name: Capture deterministic UX baseline
+        id: capture
+        if: steps.install.outcome == 'success' && steps.browser.outcome == 'success'
+        continue-on-error: true
+        run: npx playwright test e2e/ux-audit-baseline.spec.ts --project=chromium --workers=1
+
+      - name: Write Phase 0 evidence
+        if: always()
+        shell: bash
+        env:
+          INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          BROWSER_OUTCOME: ${{ steps.browser.outcome }}
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+          TYPECHECK_OUTCOME: ${{ steps.typecheck.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          CAPTURE_OUTCOME: ${{ steps.capture.outcome }}
+        run: |
+          mkdir -p ux-audit/baseline
+
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const root = path.join(process.cwd(), 'ux-audit', 'baseline');
+          const widths = [375, 768, 1280, 1920];
+          const manifests = widths
+            .map(width => {
+              const file = path.join(root, `manifest-${width}.json`);
+              return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+            })
+            .filter(Boolean);
+
+          const entries = manifests.flatMap(m => m.entries || []);
+          const byStatus = entries.reduce((acc, entry) => {
+            acc[entry.status] = (acc[entry.status] || 0) + 1;
+            return acc;
+          }, {});
+
+          const summary = {
+            baselineCommit: process.env.UX_AUDIT_BASELINE_SHA,
+            branchHeadAtCapture: process.env.GITHUB_SHA,
+            widths,
+            manifestCount: manifests.length,
+            screenshotCount: entries.length,
+            status: byStatus,
+            scenarioErrors: entries
+              .filter(entry => entry.status !== 'ok')
+              .map(entry => ({
+                width: entry.width,
+                scenario: entry.scenario,
+                error: entry.error,
+              })),
+            consoleErrorCount: entries.reduce((sum, entry) => sum + (entry.consoleErrors?.length || 0), 0),
+            pageErrorCount: entries.reduce((sum, entry) => sum + (entry.pageErrors?.length || 0), 0),
+          };
+
+          fs.writeFileSync(
+            path.join(root, 'summary.json'),
+            JSON.stringify(summary, null, 2) + '\n',
+          );
+          NODE
+
+          cat > ux-audit/baseline/test-results.md <<EOF
+          # Phase 0 baseline test results
+
+          Baseline product commit: `$UX_AUDIT_BASELINE_SHA`
+
+          The ChatGPT execution container could not resolve `github.com` / the npm registry, so the executable baseline was obtained from GitHub Actions rather than pretending local commands had run. The exact baseline commit's normal CI run (CI #114) had already passed lint, type-check, production build, Playwright E2E, production-dependency audit, and Firestore-rules tests.
+
+          This branch contains audit-only capture tooling and no product-code changes at baseline time.
+
+          | Check | Outcome |
+          | --- | --- |
+          | npm ci | $INSTALL_OUTCOME |
+          | Playwright Chromium install | $BROWSER_OUTCOME |
+          | npm run lint | $LINT_OUTCOME |
+          | npm run typecheck | $TYPECHECK_OUTCOME |
+          | npm run build | $BUILD_OUTCOME |
+          | deterministic 375/768/1280/1920 capture | $CAPTURE_OUTCOME |
+
+          Existing baseline production smoke run #36 failed before this audit because `https://fuelvoice.vercel.app/api/health` did not converge to the exact main commit. Its homepage/station smoke steps were skipped. This is recorded as pre-existing operational evidence, not attributed to UX changes.
+          EOF
+
+          cat > ux-audit/baseline/README.md <<EOF
+          # UX audit Phase 0 baseline
+
+          Product baseline: `$UX_AUDIT_BASELINE_SHA`
+
+          Screenshots are deterministic Playwright captures using the repository's explicit E2E mock flag and mocked external station/geocoding sources. Product code is unchanged relative to the baseline commit; only the audit harness/workflow exists on the audit branch.
+
+          Widths: 375, 768, 1280, 1920 px.
+
+          State coverage includes signed-out/signed-in, autocomplete focus/results, hover, nearby loading/empty/error, station loading/error, review form and validation, admin authorization states, and 404.
+
+          Each `manifest-<width>.json` records first-viewport elements and their bounding boxes, focus state, horizontal overflow, console errors, and page errors. This is used to audit what is visible together without relying on memory.
+          EOF
+
+      - name: Upload baseline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-audit-phase-0-baseline-${{ github.run_attempt }}
+          path: ux-audit/baseline
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Commit baseline evidence to audit branch
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -d ux-audit/baseline ]; then
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ux-audit/baseline
+
+          if git diff --cached --quiet; then
+            echo "No baseline evidence changed."
+            exit 0
+          fi
+
+          git commit -m "chore(ux-audit): capture Phase 0 baseline [skip ci]"
+          git push origin HEAD:ux-audit-2026-10-04
+
+      - name: Enforce audit harness health
+        if: always()
+        shell: bash
+        env:
+          INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          BROWSER_OUTCOME: ${{ steps.browser.outcome }}
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+          TYPECHECK_OUTCOME: ${{ steps.typecheck.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          CAPTURE_OUTCOME: ${{ steps.capture.outcome }}
+        run: |
+          test "$INSTALL_OUTCOME" = success
+          test "$BROWSER_OUTCOME" = success
+          test "$LINT_OUTCOME" = success
+          test "$TYPECHECK_OUTCOME" = success
+          test "$BUILD_OUTCOME" = success
+          test "$CAPTURE_OUTCOME" = success

@@ -427,12 +427,12 @@ Browser Back/Forward works through ordinary Next.js navigation. No custom histor
 
 **Before:** query data defaults can visually resemble valid zero/empty results; query failures have no explicit recovery.
 
-**After:** render stable loading skeleton/status, explicit error message with retry, and only render zero/empty content once the corresponding query is successfully resolved.
+**After:** handle the three datasets independently. Reports, reviews and users each get their own loading, error/retry, success and empty state. Stats must never present a loading query as a real zero; each value shows a lightweight loading placeholder until its source resolves. A reports failure must not suppress successful reviews/users, and vice versa.
 
 **Rationale:** visibility of system status; prevents false “nothing to moderate” interpretations.  
 **Risk:** medium; no data-fetch contract changes, but combined query state must be handled carefully.  
 **Files:** `src/app/admin/page.tsx`.  
-**Acceptance:** slow/error tests show unambiguous state and retry; successful content unchanged.
+**Acceptance:** slow/error tests can fail each dataset independently; only that section shows error/retry, successfully resolved sections stay usable, and zero/empty copy appears only after a successful query.
 
 ### P2 — Admin authorization recovery
 
@@ -603,7 +603,7 @@ The repository does not currently contain axe. To satisfy the explicit Phase 4 r
 
 - **`@axe-core/playwright` as a devDependency only**, installed for automated WCAG checks in Playwright. It does not enter the production runtime bundle.
 
-Final accessibility tests will run `AxeBuilder` against home, Search default/results/no-results, station default/review form/error, admin authorization/admin content, and 404 at representative mobile and desktop widths. Any serious or critical violation fails the final audit; all moderate/minor findings must be either fixed or recorded with evidence and rationale. Keyboard-only tests are separate and cannot be substituted by axe.
+Final accessibility tests will run `AxeBuilder` against home, Search default/results/no-results, station default/review form/error, admin authorization/admin content, and 404 at representative mobile and desktop widths. Any axe violation fails the final audit unless it is demonstrated to be a false positive or is explicitly placed in `Needs my decision` with evidence. Serious/critical findings are highlighted as release blockers, but moderate/minor findings are not silently accepted. Keyboard-only tests are separate and cannot be substituted by axe.
 
 ## 18. Per-change screenshot-diff contract
 
@@ -624,3 +624,50 @@ Every product change must recapture all four widths. The following scenario allo
 | Footer hit area | footer geometry only |
 
 For each implementation commit, results are stored under `ux-audit/after/<change-id>/` with a short diff note naming expected and unexpected changes. A screenshot being different is not itself failure; an **unexplained difference outside the approved area** is.
+
+
+## 19. Phase 3 per-commit quality gate
+
+Every **product-code** change is one independently reviewable commit. Before proceeding to the next change, the remote audit/PR workflow must execute:
+
+1. `npm run lint`
+2. `npm run typecheck`
+3. `npm run build`
+4. the repository's existing Playwright E2E suite
+5. the four-width audit recapture for the affected states
+
+Because this session's local container cannot resolve npm/GitHub, GitHub Actions is the authoritative executable record. A change does not advance merely because source inspection looks correct. If one of the required checks fails, that change is fixed or reverted before the next UX change.
+
+The commit message must state the user-visible problem and why the change is being made. Audit tooling/documentation commits are kept separate from product-code commits.
+
+## 20. Phase 4 aggressive final-test matrix
+
+| Test | Width/state coverage | Pass condition |
+| --- | --- | --- |
+| Primary search flow | 375, 768, 1280, 1920; home and /search | focus/type/results/selection reaches correct station with no exception or duplicate navigation |
+| Search no-results | all four widths | visible no-results panel, keyboard escape/clear works, no overflow |
+| Nearby discovery | all four widths; success/loading/empty/error | stable layout, truthful feedback, retry/search escape available where designed |
+| Station loading/error | all four widths | no document overflow; error recovery and retry remain operable |
+| Station review | all four widths; signed out/in/open/validation | auth gating unchanged; rating keyboard/pointer operation works; validation announced |
+| Complaint actions | all four widths | official destinations remain reachable; fixed mobile bar does not obscure terminal content |
+| Admin authorization | 375 and desktop | auth loading is announced; signed-out direct sign-in works; non-admin recovery remains explicit |
+| Admin data slow network | 375 and desktop; each query delayed independently | each section shows its own loading state; no fake zero/empty data |
+| Admin data error | 375 and desktop; reports/reviews/users failed one at a time | only failed section shows error/retry; successful sections remain usable |
+| Rapid repeated mutation clicks | review publish/reaction and existing admin mutations where pending state is exposed | pending controls prevent duplicate UI-triggered mutation; no double toast/state corruption |
+| Refresh mid-flow | station, open review route state, admin | route reconstructs or shows explicit loading/auth state; never blank/crashed |
+| Back/Forward | home/search → station → Back → Forward | correct route/history and no client exception; no new custom-history behavior |
+| Keyboard-only | global header, search autocomplete, station actions, rating, review controls, complaint links, admin actions | visible focus throughout; no keyboard trap; Escape closes disclosures; radio arrow keys work |
+| Theme | representative public/admin/404 in light and dark | no contrast/a11y regression and no theme-specific overflow |
+| Axe | representative route/state set in Section 17 | zero unexplained violations |
+| Screenshot comparison | all four widths | differences are limited to the Section 18 allowlist; unexplained collateral changes are reverted/redone |
+
+### Admin query state contract
+
+The admin route's three React Query sources are reviewed independently:
+
+- **Reports:** loading placeholder → report list or confirmed empty state; error panel has a reports-only retry.
+- **Reviews:** loading placeholder → recent-review list or confirmed empty state; error panel has a reviews-only retry.
+- **Users:** loading placeholder → user table or confirmed empty state; error panel has a users-only retry.
+- **Stats:** each number renders only from a successfully resolved source; a loading/error source is never represented as numeric zero.
+
+Retries use existing React Query refetch/invalidation behavior. No Firestore contract, query shape, route, role check, or mutation semantics may change.

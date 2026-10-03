@@ -11,7 +11,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { getStation, getOrCreateStation } from '@/lib/firebase/firestore';
+import { getStation } from '@/lib/firebase/firestore';
 import { getStationByOsmId } from '@/lib/api/overpass';
 import { ratingToTrustValue, TRUST_SCORE_MIN_REVIEWS } from '@/lib/trust/trustScore';
 import { ConsumerComplaint } from '@/components/station/ConsumerComplaint';
@@ -329,7 +329,7 @@ async function fetchStation(stationId: string): Promise<Station> {
   const lng = element.lon ?? element.center?.lon;
   if (lat === undefined || lng === undefined) throw new Error('Station has no usable coordinates');
 
-  return getOrCreateStation({
+  return {
     id: stationId,
     name: tags.name || tags.brand || tags.operator || 'Fuel Station',
     brand: tags.brand || tags.operator || '',
@@ -354,7 +354,19 @@ async function fetchStation(stationId: string): Promise<Station> {
     openingHours: tags.opening_hours || '',
     fuelTypes: extractFuelTypes(tags),
     osmTags: tags,
-  });
+    avgRating: 0,
+    reviewCount: 0,
+    complaintCount: 0,
+    scores: {
+      fuelQuality: 0,
+      service: 0,
+      staffBehaviour: 0,
+      cleanliness: 0,
+      washroom: 0,
+      airFilling: 0,
+    },
+    lastUpdated: new Date().toISOString(),
+  };
 }
 
 function extractFuelTypes(tags: Record<string, string>): string[] {

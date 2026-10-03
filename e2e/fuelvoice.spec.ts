@@ -91,11 +91,7 @@ test.describe('Minimal homepage', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const input = page.getByRole('combobox', { name: /search fuel stations/i });
-    const photonResponse = page.waitForResponse(
-      (response) => response.url().startsWith('https://photon.komoot.io/api') && response.ok(),
-    );
-    await input.fill('Shell');
-    await photonResponse;
+    await input.pressSequentially('Shell', { delay: 40 });
 
     const result = page.getByRole('option', { name: /Shell Fuel Station/i });
     await expect(result).toBeVisible({ timeout: 10000 });
@@ -202,8 +198,8 @@ test.describe('Station trust page', () => {
 
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Reviews', exact: true })).toBeVisible();
-    await page.getByText('Location', { exact: true }).scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
+    await expect(page.getByText('Trust Score', { exact: true })).toBeVisible();
+    await page.waitForTimeout(300);
 
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);

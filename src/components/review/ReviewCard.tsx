@@ -1,285 +1,389 @@
 /**
- * Review Card Component
- * 
- * Premium card design for displaying individual reviews.
- * Includes avatar, rating, tags, like button, and report action.
+ * Review card focused on evidence, not social noise.
  */
 
 'use client';
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
 import { StarRating } from '@/components/ui/StarRating';
 import { useAuth } from '@/hooks/useAuth';
-import { useToggleLike } from '@/hooks/useReviews';
+import {
+  useDeleteReview,
+  useToggleReviewReaction,
+  useUpdateReview,
+} from '@/hooks/useReviews';
 import { useToast } from '@/components/ui/Toast';
-import { createReport } from '@/lib/firebase/firestore';
+import { sanitizeText } from '@/lib/utils/sanitize';
 import { timeAgo } from '@/lib/utils/format';
-import { REVIEW_TAGS, type ReviewTag } from '@/types/review';
-import type { Review } from '@/types/review';
-import { REPORT_REASONS, type ReportReason } from '@/types/user';
+import { isReviewOwner } from '@/lib/firebase/reviewRepository';
+import {
+  COMPLAINT_CATEGORIES,
+  type ComplaintCategory,
+  type Review,
+  type ReviewFormData,
+  type ReviewReaction,
+} from '@/types/review';
 
 interface ReviewCardProps {
   review: Review;
-  isLiked?: boolean;
   stationId: string;
+  initialReaction?: ReviewReaction | null;
 }
 
-export function ReviewCard({ review, isLiked: initialIsLiked = false, stationId }: ReviewCardProps) {
+function legacyForm(review: Review): ReviewFormData {
+  return {
+    rating: review.rating,
+    content: review.content || '',
+    complaintCategories: review.complaintCategories || [],
+    title: review.title || '',
+    fuelQuality: review.fuelQuality || 0,
+    service: review.service || 0,
+    staffBehaviour: review.staffBehaviour || 0,
+    cleanliness: review.cleanliness || 0,
+    washroom: review.washroom || 0,
+    airFilling: review.airFilling || 0,
+    tags: review.tags || [],
+    isAnonymous: false,
+    suggestions: review.suggestions || '',
+  };
+}
+
+export function ReviewCard({ review, stationId, initialReaction = null }: ReviewCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const toggleLikeMutation = useToggleLike();
-  const [likeOverride, setLikeOverride] = useState<{ liked: boolean; count: number } | null>(null);
-  const [showReportDialog, setShowReportDialog] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const isLiked = likeOverride?.liked ?? initialIsLiked;
-  const likeCount = likeOverride?.count ?? Math.max(0, review.likeCount || 0);
+  const reactionMutation = useToggleReviewReaction(stationId);
+  const updateMutation = useUpdateReview(stationId);
+  const deleteMutation = useDeleteReview(stationId);
 
-  const handleLike = async () => {
+  const [reaction, setReaction] = useState<ReviewReaction | null>(initialReaction);
+  const [helpfulCount, setHelpfulCount] = useState(Math.max(0, review.helpfulCount || review.likeCount || 0));
+  const [notHelpfulCount, setNotHelpfulCount] = useState(Math.max(0, review.notHelpfulCount || 0));
+  const [showLowQuality, setShowLowQuality] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editForm, setEditForm] = useState<ReviewFormData>(() => legacyForm(review));
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [editError, setEditError] = useState('');
+
+  const isOwner = Boolean(user && isReviewOwner(review.id, stationId, user.uid));
+  const totalReactions = helpfulCount + notHelpfulCount;
+  const isLowQuality = totalReactions >= 5 && notHelpfulCount / totalReactions >= 0.65;
+  const edited = review.updatedAt.toMillis() - review.createdAt.toMillis() > 1000;
+
+  const applyOptimisticReaction = (next: ReviewReaction | null) => {
+    let helpful = helpfulCount;
+    let notHelpful = notHelpfulCount;
+
+    if (reaction === 'helpful') helpful = Math.max(0, helpful - 1);
+    if (reaction === 'not-helpful') notHelpful = Math.max(0, notHelpful - 1);
+    if (next === 'helpful') helpful += 1;
+    if (next === 'not-helpful') notHelpful += 1;
+
+    setHelpfulCount(helpful);
+    setNotHelpfulCount(notHelpful);
+    setReaction(next);
+  };
+
+  const handleReaction = async (nextReaction: ReviewReaction) => {
     if (!user) {
-      toast('Please sign in to like reviews', 'info');
+      toast('Sign in to mark reviews helpful or not helpful', 'info');
+      return;
+    }
+    if (reactionMutation.isPending) return;
+
+    const previousReaction = reaction;
+    const previousHelpful = helpfulCount;
+    const previousNotHelpful = notHelpfulCount;
+    const optimisticNext = previousReaction === nextReaction ? null : nextReaction;
+    applyOptimisticReaction(optimisticNext);
+
+    try {
+      const result = await reactionMutation.mutateAsync({
+        reviewId: review.id,
+        userId: user.uid,
+        reaction: nextReaction,
+      });
+      setReaction(result);
+    } catch {
+      setReaction(previousReaction);
+      setHelpfulCount(previousHelpful);
+      setNotHelpfulCount(previousNotHelpful);
+      toast('Could not update your reaction', 'error');
+    }
+  };
+
+  const toggleEditCategory = (category: ComplaintCategory) => {
+    setEditForm((current) => ({
+      ...current,
+      complaintCategories: current.complaintCategories.includes(category)
+        ? current.complaintCategories.filter((item) => item !== category)
+        : [...current.complaintCategories, category],
+    }));
+  };
+
+  const saveEdit = async () => {
+    if (!user) return;
+    setEditError('');
+
+    if (editForm.rating < 1 || editForm.rating > 5) {
+      setEditError('Choose a rating from 1 to 5.');
+      return;
+    }
+    if (editForm.rating <= 2 && editForm.complaintCategories.length === 0) {
+      setEditError('Choose at least one complaint category for a 1-2 rating.');
       return;
     }
 
-    if (toggleLikeMutation.isPending) return;
-    const previousLiked = isLiked;
-    const previousCount = likeCount;
-    const optimisticCount = Math.max(0, previousCount + (previousLiked ? -1 : 1));
-    setLikeOverride({ liked: !previousLiked, count: optimisticCount });
-
     try {
-      const nextLiked = await toggleLikeMutation.mutateAsync({ reviewId: review.id, userId: user.uid });
-      setLikeOverride({ liked: nextLiked, count: optimisticCount });
-    } catch {
-      setLikeOverride({ liked: previousLiked, count: previousCount });
-      toast('Failed to update like', 'error');
-    }
-  };
-
-  const handleReport = async (reason: ReportReason) => {
-    if (!user) return;
-
-    try {
-      await createReport(review.id, stationId, user.uid, reason, '');
-      toast('Report submitted. Thank you for keeping FuelVoice safe.', 'success');
-      setShowReportDialog(false);
+      await updateMutation.mutateAsync({
+        reviewId: review.id,
+        userId: user.uid,
+        formData: {
+          ...editForm,
+          content: sanitizeText(editForm.content.trim()),
+          complaintCategories: editForm.rating <= 2 ? editForm.complaintCategories : [],
+          isAnonymous: false,
+        },
+      });
+      setShowEdit(false);
+      toast('Review updated', 'success');
     } catch (error) {
-      toast(error instanceof Error ? error.message : 'Failed to submit report', 'error');
+      setEditError(error instanceof Error ? error.message : 'Could not update the review');
     }
   };
 
-  const handleShare = async () => {
-    const url = `${window.location.origin}/station/${stationId}#review-${review.id}`;
+  const deleteReview = async () => {
+    if (!user) return;
+    if (deleteReason.trim().length < 10) {
+      toast('Deletion reason must be at least 10 characters', 'info');
+      return;
+    }
+
     try {
-      if (navigator.share) {
-        await navigator.share({ title: review.title, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        toast('Link copied to clipboard', 'success');
-      }
-    } catch {
-      // User cancelled share
+      await deleteMutation.mutateAsync({
+        reviewId: review.id,
+        userId: user.uid,
+        reason: deleteReason,
+      });
+      toast('Review removed', 'success');
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Could not remove the review', 'error');
     }
   };
 
-  const isLongContent = review.content.length > 300;
+  if (isLowQuality && !showLowQuality) {
+    return (
+      <div className="review-card-muted" id={`review-${review.id}`}>
+        <div>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Review collapsed</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-tertiary)]">
+            At least 65% of 5+ reactions marked this review Not helpful.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowLowQuality(true)}
+          className="secondary-action shrink-0"
+        >
+          Show review
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="card p-5 sm:p-6"
-      id={`review-${review.id}`}
-    >
-      {/* Header: Avatar + Name + Rating + Time */}
+    <article className="review-card" id={`review-${review.id}`}>
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0">
-          {review.userPhoto && !review.isAnonymous ? (
-            <Image
-              src={review.userPhoto}
-              alt={review.userName}
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-sm">
-              {review.isAnonymous ? '?' : review.userName[0]?.toUpperCase()}
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-              {review.isAnonymous ? 'Anonymous' : review.userName}
-            </span>
-            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              {timeAgo(review.createdAt)}
-            </span>
-            {review.isFeatured && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-accent-500/10 text-accent-600">
-                ⭐ Featured
-              </span>
-            )}
+        {review.userPhoto ? (
+          <Image
+            src={review.userPhoto}
+            alt=""
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--bg-tertiary)] text-sm font-bold text-[var(--text-primary)]">
+            {review.userName[0]?.toUpperCase() || 'U'}
           </div>
-          <div className="mt-1">
+        )}
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-sm font-semibold text-[var(--text-primary)]">{review.userName}</span>
+            <span className="text-xs text-[var(--text-tertiary)]">{timeAgo(review.createdAt)}</span>
+            {edited && <span className="text-xs text-[var(--text-tertiary)]">Edited</span>}
+          </div>
+          <div className="mt-1.5">
             <StarRating value={review.rating} size="sm" />
           </div>
         </div>
-      </div>
 
-      {/* Title */}
-      {review.title && (
-        <h3 className="mt-3 font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-          {review.title}
-        </h3>
-      )}
-
-      {/* Content */}
-      <p
-        className="mt-2 text-sm leading-relaxed whitespace-pre-line"
-        style={{ color: 'var(--text-secondary)' }}
-      >
-        {isLongContent && !expanded ? review.content.slice(0, 300) + '…' : review.content}
-      </p>
-      {isLongContent && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-xs font-medium text-brand-500 hover:text-brand-600 mt-1 transition-colors"
-        >
-          {expanded ? 'Show less' : 'Read more'}
-        </button>
-      )}
-
-      {/* Category scores */}
-      {(review.fuelQuality > 0 || review.service > 0 || review.cleanliness > 0) && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {review.fuelQuality > 0 && <ScoreBadge label="Fuel Quality" score={review.fuelQuality} />}
-          {review.service > 0 && <ScoreBadge label="Service" score={review.service} />}
-          {review.cleanliness > 0 && <ScoreBadge label="Cleanliness" score={review.cleanliness} />}
-          {review.staffBehaviour > 0 && <ScoreBadge label="Staff" score={review.staffBehaviour} />}
-        </div>
-      )}
-
-      {/* Tags */}
-      {review.tags && review.tags.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {review.tags.map((tag) => {
-            const tagInfo = REVIEW_TAGS[tag as ReviewTag];
-            if (!tagInfo) return null;
-            const colorClasses = {
-              red: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
-              amber: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-              green: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-              blue: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-            };
-            return (
-              <span
-                key={tag}
-                className={`px-2 py-0.5 rounded-full text-xs font-medium border ${colorClasses[tagInfo.color]}`}
-              >
-                {tagInfo.label}
-              </span>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Actions: Like, Share, Report */}
-      <div className="mt-4 flex items-center gap-3 pt-3 border-t" style={{ borderColor: 'var(--border-secondary)' }}>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={handleLike}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-            isLiked
-              ? 'bg-brand-500/10 text-brand-500'
-              : 'hover:bg-surface-100 dark:hover:bg-surface-700'
-          }`}
-          style={!isLiked ? { color: 'var(--text-secondary)' } : undefined}
-          aria-label={isLiked ? 'Unlike review' : 'Like review'}
-          disabled={toggleLikeMutation.isPending}
-        >
-          <svg className="w-4 h-4" fill={isLiked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-          </svg>
-          {likeCount > 0 && likeCount}
-        </motion.button>
-
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-surface-100 dark:hover:bg-surface-700"
-          style={{ color: 'var(--text-secondary)' }}
-          aria-label="Share review"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-          </svg>
-          Share
-        </button>
-
-        <button
-          onClick={() => {
-            if (!user) {
-              toast('Please sign in to report reviews', 'info');
-              return;
-            }
-            setShowReportDialog(true);
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-surface-100 dark:hover:bg-surface-700 ml-auto"
-          style={{ color: 'var(--text-tertiary)' }}
-          aria-label="Report review"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Report Dialog */}
-      {showReportDialog && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="mt-3 p-4 rounded-xl border"
-          style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}
-        >
-          <p className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-            Why are you reporting this review?
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {REPORT_REASONS.map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => handleReport(value as ReportReason)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30"
-                style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-primary)' }}
-              >
-                {label}
-              </button>
-            ))}
+        {isOwner && (
+          <div className="flex shrink-0 gap-1">
             <button
-              onClick={() => setShowReportDialog(false)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-surface-100 dark:hover:bg-surface-700"
-              style={{ color: 'var(--text-tertiary)' }}
+              type="button"
+              onClick={() => setShowEdit((value) => !value)}
+              className="review-icon-button"
+              aria-label="Edit your review"
             >
-              Cancel
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="m4 20 4.2-1 9.9-9.9-3.2-3.2L5 15.8 4 20Z" strokeLinejoin="round" />
+                <path d="m13.8 7 3.2 3.2" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDelete((value) => !value)}
+              className="review-icon-button hover:text-rose-400"
+              aria-label="Delete your review"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7M7 7l1 13h8l1-13" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           </div>
-        </motion.div>
-      )}
-    </motion.div>
-  );
-}
+        )}
+      </div>
 
-function ScoreBadge({ label, score }: { label: string; score: number }) {
-  return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium"
-      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-    >
-      {label}: {score}/5
-    </span>
+      {review.complaintCategories.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {review.complaintCategories.map((category) => (
+            <span key={category} className="complaint-chip">
+              {COMPLAINT_CATEGORIES[category]}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {review.content && (
+        <p className="mt-4 whitespace-pre-line text-sm leading-6 text-[var(--text-secondary)]">
+          {review.content}
+        </p>
+      )}
+
+      {showEdit && isOwner && (
+        <div className="mt-5 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Edit review</p>
+          <div className="mt-3">
+            <StarRating
+              value={editForm.rating}
+              onChange={(rating) => setEditForm((current) => ({
+                ...current,
+                rating,
+                complaintCategories: rating <= 2 ? current.complaintCategories : [],
+              }))}
+              size="md"
+            />
+          </div>
+
+          {editForm.rating > 0 && editForm.rating <= 2 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(Object.entries(COMPLAINT_CATEGORIES) as [ComplaintCategory, string][]).map(([category, label]) => {
+                const selected = editForm.complaintCategories.includes(category);
+                return (
+                  <button
+                    type="button"
+                    key={category}
+                    onClick={() => toggleEditCategory(category)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                      selected
+                        ? 'border-white bg-white text-black'
+                        : 'border-[var(--border-primary)] text-[var(--text-secondary)]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <textarea
+            value={editForm.content}
+            onChange={(event) => setEditForm((current) => ({ ...current, content: event.target.value }))}
+            maxLength={2000}
+            rows={4}
+            placeholder="Add context (optional)"
+            className="mt-4 w-full resize-none rounded-xl border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--border-strong)]"
+          />
+
+          {editError && <p className="mt-2 text-xs text-rose-400">{editError}</p>}
+
+          <div className="mt-4 flex justify-end gap-2">
+            <button type="button" onClick={() => setShowEdit(false)} className="secondary-action">Cancel</button>
+            <button
+              type="button"
+              onClick={saveEdit}
+              disabled={updateMutation.isPending}
+              className="primary-action disabled:opacity-50"
+            >
+              {updateMutation.isPending ? 'Saving…' : 'Save changes'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showDelete && isOwner && (
+        <div className="mt-5 rounded-2xl border border-rose-500/20 bg-rose-500/[0.06] p-4">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Remove this review?</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            Tell us why. The reason is kept for audit purposes and is not shown publicly.
+          </p>
+          <textarea
+            value={deleteReason}
+            onChange={(event) => setDeleteReason(event.target.value)}
+            minLength={10}
+            maxLength={500}
+            rows={2}
+            placeholder="Reason for deletion, at least 10 characters"
+            className="mt-3 w-full resize-none rounded-xl border border-rose-500/20 bg-[var(--bg-primary)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-rose-400"
+          />
+          <div className="mt-3 flex justify-end gap-2">
+            <button type="button" onClick={() => setShowDelete(false)} className="secondary-action">Keep review</button>
+            <button
+              type="button"
+              onClick={deleteReview}
+              disabled={deleteMutation.isPending || deleteReason.trim().length < 10}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-rose-500 px-4 text-sm font-bold text-white disabled:opacity-40"
+            >
+              {deleteMutation.isPending ? 'Removing…' : 'Remove review'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-[var(--border-secondary)] pt-4">
+        <button
+          type="button"
+          onClick={() => handleReaction('helpful')}
+          disabled={reactionMutation.isPending}
+          className={`reaction-button ${reaction === 'helpful' ? 'reaction-button-active' : ''}`}
+        >
+          Helpful
+          {helpfulCount > 0 && <span>{helpfulCount}</span>}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleReaction('not-helpful')}
+          disabled={reactionMutation.isPending}
+          className={`reaction-button ${reaction === 'not-helpful' ? 'reaction-button-active' : ''}`}
+        >
+          Not helpful
+          {notHelpfulCount > 0 && <span>{notHelpfulCount}</span>}
+        </button>
+
+        {isLowQuality && showLowQuality && (
+          <button
+            type="button"
+            onClick={() => setShowLowQuality(false)}
+            className="ml-auto text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+          >
+            Collapse review
+          </button>
+        )}
+      </div>
+    </article>
   );
 }

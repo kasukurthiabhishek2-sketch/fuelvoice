@@ -206,8 +206,6 @@ test.describe('Station trust page', () => {
 });
 
 test.describe('Mobile station actions', () => {
-  test.skip(({ browserName }) => browserName !== 'webkit' && browserName !== 'chromium', 'Browser coverage guard');
-
   test('keeps review and complaint actions reachable', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile', 'Mobile-only layout');
 

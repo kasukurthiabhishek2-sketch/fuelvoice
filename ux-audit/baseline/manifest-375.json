@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-03T18:41:11.238Z",
+  "capturedAt": "2026-10-03T18:46:09.962Z",
   "baselineCommit": "a9b7f0dbf6c9a081f1c2f21f6d687e597dd4a442",
   "viewport": {
     "width": 375,
@@ -2386,10 +2386,9 @@
       "scenario": "station-keyboard-focus",
       "route": "/station/node_6254336890",
       "screenshot": "ux-audit/baseline/screenshots/375-station-keyboard-focus.jpg",
-      "status": "error",
+      "status": "ok",
       "consoleErrors": [],
       "pageErrors": [],
-      "error": "locator.waitFor: Error: strict mode violation: getByRole('link', { name: 'Get directions' }) resolved to 2 elements:\n    1) <a target=\"_blank\" class=\"primary-action\" rel=\"noopener noreferrer\" href=\"https://www.google.com/maps/dir/?api=1&destination=17.3887027,78.4753829\">Get directions</a> aka getByRole('link', { name: 'Get directions' }).first()\n    2) <a target=\"_blank\" rel=\"noopener noreferrer\" class=\"secondary-action shrink-0\" href=\"https://www.google.com/maps/dir/?api=1&destination=17.3887027,78.4753829\">Get directions</a> aka getByRole('link', { name: 'Get directions' }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for getByRole('link', { name: 'Get directions' }) to be visible\u001b[22m\n",
       "viewport": {
         "url": "/station/node_6254336890",
         "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
@@ -2399,9 +2398,9 @@
         "scrollHeight": 5945,
         "horizontalOverflow": false,
         "activeElement": {
-          "tag": "body",
+          "tag": "a",
           "ariaLabel": null,
-          "text": "FuelVoiceSearchSign InSearchShareShellMapped stationShell Fuel StationAbids Road, Hyderabad, Telangana, INGet directions"
+          "text": "Get directions"
         },
         "visible": [
           {
@@ -3249,6 +3248,732 @@
             "y": 751,
             "width": 71,
             "height": 24
+          }
+        ]
+      }
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "scenario": "home-light-theme",
+      "route": "/",
+      "screenshot": "ux-audit/baseline/screenshots/375-home-light-theme.jpg",
+      "status": "ok",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "viewport": {
+        "url": "/",
+        "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+        "viewportWidth": 375,
+        "viewportHeight": 812,
+        "scrollWidth": 375,
+        "scrollHeight": 2368,
+        "horizontalOverflow": false,
+        "activeElement": {
+          "tag": "body",
+          "ariaLabel": null,
+          "text": "FuelVoiceSearchSign InFuel station trust, without the noise.Know the stationbefore you trust it.FuelVoice brings custome"
+        },
+        "visible": [
+          {
+            "tag": "header",
+            "role": null,
+            "text": "FuelVoiceSearchSign In",
+            "x": 0,
+            "y": 0,
+            "width": 375,
+            "height": 75
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "FuelVoice home",
+            "x": 16,
+            "y": 20,
+            "width": 119,
+            "height": 34
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "Search fuel stations",
+            "x": 155,
+            "y": 17,
+            "width": 42,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Switch to dark mode",
+            "x": 203,
+            "y": 17,
+            "width": 40,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Sign in with Google",
+            "x": 249,
+            "y": 18,
+            "width": 110,
+            "height": 38
+          },
+          {
+            "tag": "main",
+            "role": null,
+            "text": "Fuel station trust, without the noise.Know the stationbefore you trust it.FuelVoice brings customer reviews, a single Trust Score, and verified official complaint routes together o",
+            "x": 0,
+            "y": 75,
+            "width": 375,
+            "height": 2132
+          },
+          {
+            "tag": "section",
+            "role": null,
+            "text": "Fuel station trust, without the noise.Know the stationbefore you trust it.FuelVoice brings customer reviews, a single Trust Score, and verified official complaint routes together o",
+            "x": 0,
+            "y": 75,
+            "width": 375,
+            "height": 1016
+          },
+          {
+            "tag": "h1",
+            "role": null,
+            "text": "Know the stationbefore you trust it.",
+            "x": 16,
+            "y": 180,
+            "width": 343,
+            "height": 195
+          },
+          {
+            "tag": "input",
+            "role": "combobox",
+            "text": "Search fuel stations",
+            "x": 23,
+            "y": 530,
+            "width": 329,
+            "height": 57
+          }
+        ]
+      }
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "scenario": "search-light-theme",
+      "route": "/search",
+      "screenshot": "ux-audit/baseline/screenshots/375-search-light-theme.jpg",
+      "status": "ok",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "viewport": {
+        "url": "/search",
+        "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+        "viewportWidth": 375,
+        "viewportHeight": 812,
+        "scrollWidth": 375,
+        "scrollHeight": 1029,
+        "horizontalOverflow": false,
+        "activeElement": {
+          "tag": "body",
+          "ariaLabel": null,
+          "text": "FuelVoiceSearchSign InStation searchFind the station.Then judge it by the evidence.Search by station name, brand, locali"
+        },
+        "visible": [
+          {
+            "tag": "header",
+            "role": null,
+            "text": "FuelVoiceSearchSign In",
+            "x": 0,
+            "y": 0,
+            "width": 375,
+            "height": 75
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "FuelVoice home",
+            "x": 16,
+            "y": 20,
+            "width": 119,
+            "height": 34
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "Search fuel stations",
+            "x": 155,
+            "y": 17,
+            "width": 42,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Switch to dark mode",
+            "x": 203,
+            "y": 17,
+            "width": 40,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Sign in with Google",
+            "x": 249,
+            "y": 18,
+            "width": 110,
+            "height": 38
+          },
+          {
+            "tag": "main",
+            "role": null,
+            "text": "Station searchFind the station.Then judge it by the evidence.Search by station name, brand, locality, or city. FuelVoice does not request your location just to make search work.Sea",
+            "x": 0,
+            "y": 75,
+            "width": 375,
+            "height": 793
+          },
+          {
+            "tag": "section",
+            "role": null,
+            "text": "Station searchFind the station.Then judge it by the evidence.Search by station name, brand, locality, or city. FuelVoice does not request your location just to make search work.Sea",
+            "x": 0,
+            "y": 75,
+            "width": 375,
+            "height": 793
+          },
+          {
+            "tag": "h1",
+            "role": null,
+            "text": "Find the station.Then judge it by the evidence.",
+            "x": 16,
+            "y": 168,
+            "width": 343,
+            "height": 108
+          },
+          {
+            "tag": "input",
+            "role": "combobox",
+            "text": "Search fuel stations",
+            "x": 23,
+            "y": 419,
+            "width": 329,
+            "height": 57
+          }
+        ]
+      }
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "scenario": "station-light-theme",
+      "route": "/station/node_6254336890",
+      "screenshot": "ux-audit/baseline/screenshots/375-station-light-theme.jpg",
+      "status": "ok",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "viewport": {
+        "url": "/station/node_6254336890",
+        "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+        "viewportWidth": 375,
+        "viewportHeight": 812,
+        "scrollWidth": 375,
+        "scrollHeight": 5945,
+        "horizontalOverflow": false,
+        "activeElement": {
+          "tag": "body",
+          "ariaLabel": null,
+          "text": "FuelVoiceSearchSign InSearchShareShellMapped stationShell Fuel StationAbids Road, Hyderabad, Telangana, INGet directions"
+        },
+        "visible": [
+          {
+            "tag": "header",
+            "role": null,
+            "text": "FuelVoiceSearchSign In",
+            "x": 0,
+            "y": 0,
+            "width": 375,
+            "height": 75
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "FuelVoice home",
+            "x": 16,
+            "y": 20,
+            "width": 119,
+            "height": 34
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "Search fuel stations",
+            "x": 155,
+            "y": 17,
+            "width": 42,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Switch to dark mode",
+            "x": 203,
+            "y": 17,
+            "width": 40,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Sign in with Google",
+            "x": 249,
+            "y": 18,
+            "width": 110,
+            "height": 38
+          },
+          {
+            "tag": "main",
+            "role": null,
+            "text": "SearchShareShellMapped stationShell Fuel StationAbids Road, Hyderabad, Telangana, INGet directionsRead reviewsTrust ScoreInsufficient data0 of 5 reviews neededCustomer experiencesR",
+            "x": 0,
+            "y": 75,
+            "width": 375,
+            "height": 5709
+          },
+          {
+            "tag": "section",
+            "role": null,
+            "text": "SearchShareShellMapped stationShell Fuel StationAbids Road, Hyderabad, Telangana, INGet directionsRead reviewsTrust ScoreInsufficient data0 of 5 reviews needed",
+            "x": 0,
+            "y": 75,
+            "width": 375,
+            "height": 483
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "Search",
+            "x": 16,
+            "y": 103,
+            "width": 68,
+            "height": 36
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Share",
+            "x": 299,
+            "y": 103,
+            "width": 60,
+            "height": 36
+          },
+          {
+            "tag": "h1",
+            "role": null,
+            "text": "Shell Fuel Station",
+            "x": 16,
+            "y": 215,
+            "width": 343,
+            "height": 38
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "Get directions",
+            "x": 16,
+            "y": 317,
+            "width": 135,
+            "height": 45
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "Read reviews",
+            "x": 159,
+            "y": 317,
+            "width": 131,
+            "height": 45
+          },
+          {
+            "tag": "main",
+            "role": null,
+            "text": "Customer experiencesReviewsRisk-heavy experiences appear first by default. Filter by issue when you need something specific.Risk firstNewestMost helpfulAll issuesFuel qualityQuanti",
+            "x": 16,
+            "y": 590,
+            "width": 343,
+            "height": 5050
+          },
+          {
+            "tag": "section",
+            "role": null,
+            "text": "Customer experiencesReviewsRisk-heavy experiences appear first by default. Filter by issue when you need something specific.Risk firstNewestMost helpfulAll issuesFuel qualityQuanti",
+            "x": 16,
+            "y": 590,
+            "width": 343,
+            "height": 3225
+          },
+          {
+            "tag": "h2",
+            "role": null,
+            "text": "Reviews",
+            "x": 16,
+            "y": 614,
+            "width": 193,
+            "height": 32
+          },
+          {
+            "tag": "div",
+            "role": "group",
+            "text": "Review sort order",
+            "x": 16,
+            "y": 734,
+            "width": 343,
+            "height": 44
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Risk first",
+            "x": 16,
+            "y": 734,
+            "width": 77,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Newest",
+            "x": 101,
+            "y": 734,
+            "width": 72,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Most helpful",
+            "x": 181,
+            "y": 734,
+            "width": 99,
+            "height": 40
+          },
+          {
+            "tag": "div",
+            "role": "group",
+            "text": "Filter reviews by issue",
+            "x": 16,
+            "y": 790,
+            "width": 343,
+            "height": 44
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "All issues",
+            "x": 16,
+            "y": 790,
+            "width": 82,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Fuel quality",
+            "x": 106,
+            "y": 790,
+            "width": 93,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Quantity / short-filling",
+            "x": 207,
+            "y": 790,
+            "width": 152,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Pricing / billing",
+            "x": 367,
+            "y": 790,
+            "width": 112,
+            "height": 40
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "Write a review",
+            "x": 12,
+            "y": 756,
+            "width": 163,
+            "height": 46
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "File a complaint",
+            "x": 184,
+            "y": 756,
+            "width": 179,
+            "height": 46
+          }
+        ]
+      }
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "scenario": "admin-light-theme",
+      "route": "/admin",
+      "screenshot": "ux-audit/baseline/screenshots/375-admin-light-theme.jpg",
+      "status": "ok",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "viewport": {
+        "url": "/admin",
+        "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+        "viewportWidth": 375,
+        "viewportHeight": 812,
+        "scrollWidth": 582,
+        "scrollHeight": 1524,
+        "horizontalOverflow": true,
+        "activeElement": {
+          "tag": "body",
+          "ariaLabel": null,
+          "text": "FuelVoiceSearchTAdmin PanelAdmin📝2Total Reviews🚩1Pending Reports👥2Total Users🚩 Pending Reports (1)spamless than a mi"
+        },
+        "visible": [
+          {
+            "tag": "header",
+            "role": null,
+            "text": "FuelVoiceSearchT",
+            "x": 0,
+            "y": 0,
+            "width": 375,
+            "height": 75
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "FuelVoice home",
+            "x": 16,
+            "y": 20,
+            "width": 119,
+            "height": 34
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "Search fuel stations",
+            "x": 221,
+            "y": 17,
+            "width": 42,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Switch to dark mode",
+            "x": 269,
+            "y": 17,
+            "width": 40,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "User menu",
+            "x": 315,
+            "y": 15,
+            "width": 44,
+            "height": 44
+          },
+          {
+            "tag": "main",
+            "role": null,
+            "text": "Admin PanelAdmin📝2Total Reviews🚩1Pending Reports👥2Total Users🚩 Pending Reports (1)spamless than a minute agoAcceptDismiss📝 Recent ReviewsTest User🙈 Hide⭐ FeatureThe fuel qual",
+            "x": 0,
+            "y": 75,
+            "width": 375,
+            "height": 1288
+          },
+          {
+            "tag": "h1",
+            "role": null,
+            "text": "Admin Panel",
+            "x": 16,
+            "y": 99,
+            "width": 144,
+            "height": 32
+          },
+          {
+            "tag": "h2",
+            "role": null,
+            "text": "🚩 Pending Reports (1)",
+            "x": 37,
+            "y": 650,
+            "width": 524,
+            "height": 24
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Accept",
+            "x": 50,
+            "y": 751,
+            "width": 67,
+            "height": 24
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Dismiss",
+            "x": 125,
+            "y": 751,
+            "width": 71,
+            "height": 24
+          }
+        ]
+      }
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "scenario": "not-found-light-theme",
+      "route": "/ux-audit-intentional-404-light",
+      "screenshot": "ux-audit/baseline/screenshots/375-not-found-light-theme.jpg",
+      "status": "ok",
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "pageErrors": [],
+      "viewport": {
+        "url": "/ux-audit-intentional-404-light",
+        "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+        "viewportWidth": 375,
+        "viewportHeight": 812,
+        "scrollWidth": 375,
+        "scrollHeight": 812,
+        "horizontalOverflow": false,
+        "activeElement": {
+          "tag": "body",
+          "ariaLabel": null,
+          "text": "FuelVoiceSearchSign In🔍Page Not FoundThe page you're looking for doesn't exist or has been moved.← Back to HomeFuelVoic"
+        },
+        "visible": [
+          {
+            "tag": "header",
+            "role": null,
+            "text": "FuelVoiceSearchSign In",
+            "x": 0,
+            "y": 0,
+            "width": 375,
+            "height": 75
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "FuelVoice home",
+            "x": 16,
+            "y": 20,
+            "width": 119,
+            "height": 34
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "Search fuel stations",
+            "x": 155,
+            "y": 17,
+            "width": 42,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Switch to dark mode",
+            "x": 203,
+            "y": 17,
+            "width": 40,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Sign in with Google",
+            "x": 249,
+            "y": 18,
+            "width": 110,
+            "height": 38
+          },
+          {
+            "tag": "main",
+            "role": null,
+            "text": "🔍Page Not FoundThe page you're looking for doesn't exist or has been moved.← Back to Home",
+            "x": 0,
+            "y": 75,
+            "width": 375,
+            "height": 576
+          },
+          {
+            "tag": "h1",
+            "role": null,
+            "text": "Page Not Found",
+            "x": 16,
+            "y": 283,
+            "width": 343,
+            "height": 36
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "← Back to Home",
+            "x": 106,
+            "y": 395,
+            "width": 163,
+            "height": 44
+          },
+          {
+            "tag": "footer",
+            "role": null,
+            "text": "FuelVoiceReviews and verified complaint paths for fuel stations worldwide.Search stationsOpenStreetMap",
+            "x": 0,
+            "y": 651,
+            "width": 375,
+            "height": 161
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "FuelVoice",
+            "x": 16,
+            "y": 688,
+            "width": 67,
+            "height": 17
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "Search stations",
+            "x": 16,
+            "y": 764,
+            "width": 92,
+            "height": 16
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "OpenStreetMap",
+            "x": 128,
+            "y": 764,
+            "width": 96,
+            "height": 16
           }
         ]
       }

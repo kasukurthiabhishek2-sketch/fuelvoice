@@ -6,6 +6,6 @@ Screenshots are deterministic Playwright captures using the repository's explici
 
 Widths: 375, 768, 1280, 1920 px.
 
-State coverage includes signed-out/signed-in, autocomplete focus/results, hover, nearby loading/empty/error, station loading/error, review form and validation, admin authorization states, and 404.
+State coverage includes signed-out/signed-in, dark/light themes, autocomplete focus/results, hover, nearby loading/empty/error, station loading/error, review form and validation, admin authorization states, and 404.
 
 Each  records first-viewport elements and their bounding boxes, focus state, horizontal overflow, console errors, and page errors. This is used to audit what is visible together without relying on memory.

@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const STATION_ID = 'node_6254336890';
-const OUTPUT = path.join(process.cwd(), 'ux-audit', 'baseline');
+const OUTPUT_RELATIVE = process.env.UX_AUDIT_OUTPUT || path.join('ux-audit', 'baseline');
+const OUTPUT = path.join(process.cwd(), OUTPUT_RELATIVE);
 const SCREENSHOTS = path.join(OUTPUT, 'screenshots');
 
 const widths = [
@@ -596,7 +597,7 @@ async function capture(
   await installNetwork(page, network);
 
   const fileName = `${viewport.width}-${scenario.name}.jpg`;
-  const screenshot = path.join('ux-audit', 'baseline', 'screenshots', fileName);
+  const screenshot = path.join(OUTPUT_RELATIVE, 'screenshots', fileName);
   const diskScreenshot = path.join(SCREENSHOTS, fileName);
 
   const entry: CaptureEntry = {

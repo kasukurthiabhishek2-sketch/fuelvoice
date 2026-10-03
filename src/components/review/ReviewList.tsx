@@ -1,16 +1,20 @@
 /**
- * Review List with sorting controls.
- * Displays reviews for a station with sort options.
+ * Risk-first station review feed with category filtering.
  */
 
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { useReviews, useUserLikes } from '@/hooks/useReviews';
 import { useAuth } from '@/hooks/useAuth';
+import { useReviews, useUserReviewReactions } from '@/hooks/useReviews';
 import { ReviewCard } from './ReviewCard';
 import { SkeletonCard } from '@/components/ui/Skeleton';
-import { REVIEW_SORT_OPTIONS, type ReviewSortOption } from '@/types/review';
+import {
+  COMPLAINT_CATEGORIES,
+  REVIEW_SORT_OPTIONS,
+  type ComplaintCategory,
+  type ReviewSortOption,
+} from '@/types/review';
 
 interface ReviewListProps {
   stationId: string;
@@ -26,101 +30,102 @@ export function ReviewList({ stationId }: ReviewListProps) {
     isLoading,
     sortBy,
     setSortBy,
+    category,
+    setCategory,
   } = useReviews(stationId);
 
-  const reviewIds = reviews.map(r => r.id);
-  const { data: likedSet } = useUserLikes(reviewIds, user?.uid);
-
+  const reviewIds = reviews.map((review) => review.id);
+  const { data: reactions } = useUserReviewReactions(reviewIds, user?.uid);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!hasMore || isLoading || isFetchingNextPage) return;
+    const target = sentinelRef.current;
+    if (!target) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          fetchNextPage();
-        }
+        if (entries[0]?.isIntersecting) fetchNextPage();
       },
-      { threshold: 0.1 }
+      { rootMargin: '320px 0px', threshold: 0.01 },
     );
-
-    const sentinel = sentinelRef.current;
-    if (sentinel) {
-      observer.observe(sentinel);
-    }
-
-    return () => {
-      if (sentinel) {
-        observer.unobserve(sentinel);
-      }
-    };
-  }, [hasMore, fetchNextPage, isLoading, isFetchingNextPage]);
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, isLoading, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div>
-      {/* Sort controls */}
-      {(reviews.length > 0 || isLoading) && (
-        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
-          {REVIEW_SORT_OPTIONS.map((opt) => (
+      <div className="review-controls">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {REVIEW_SORT_OPTIONS.map((option) => (
             <button
-              key={opt.value}
-              onClick={() => setSortBy(opt.value as ReviewSortOption)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                sortBy === opt.value
-                  ? 'bg-brand-500/10 text-brand-500 border-brand-500/30'
-                  : 'hover:bg-surface-100 dark:hover:bg-surface-700'
-              }`}
-              style={sortBy !== opt.value ? { color: 'var(--text-secondary)', borderColor: 'var(--border-primary)' } : undefined}
+              key={option.value}
+              type="button"
+              onClick={() => setSortBy(option.value as ReviewSortOption)}
+              className={`review-filter-pill ${sortBy === option.value ? 'review-filter-pill-active' : ''}`}
             >
-              {opt.label}
+              {option.label}
             </button>
           ))}
         </div>
-      )}
 
-      {/* Loading */}
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          <button
+            type="button"
+            onClick={() => setCategory(null)}
+            className={`review-filter-pill ${category === null ? 'review-filter-pill-active' : ''}`}
+          >
+            All issues
+          </button>
+          {(Object.entries(COMPLAINT_CATEGORIES) as [ComplaintCategory, string][]).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setCategory(value)}
+              className={`review-filter-pill ${category === value ? 'review-filter-pill-active' : ''}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {isLoading && (
-        <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+        <div className="mt-4 space-y-3">
+          {Array.from({ length: 3 }).map((_, index) => <SkeletonCard key={index} />)}
         </div>
       )}
 
-      {/* Reviews */}
       {!isLoading && reviews.length > 0 && (
-        <div className="space-y-4">
+        <div className="mt-4 space-y-3">
           {reviews.map((review) => (
             <ReviewCard
               key={review.id}
               review={review}
-              isLiked={likedSet?.has(review.id) || false}
               stationId={stationId}
+              initialReaction={reactions?.get(review.id) || null}
             />
           ))}
         </div>
       )}
 
-      {/* Sentinel for infinite scroll */}
-      <div ref={sentinelRef} className="h-4 w-full" />
-
-      {/* Loading more indicators */}
-      {isFetchingNextPage && (
-        <div className="space-y-4 mt-4">
-          <SkeletonCard />
+      {!isLoading && reviews.length === 0 && (
+        <div className="empty-review-state">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">
+            {category ? 'No reviews match this issue yet.' : 'No reviews yet.'}
+          </p>
+          <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+            {category
+              ? 'Try another complaint category or view all reviews.'
+              : 'When someone shares an experience, it will appear here without requiring visitors to sign in.'}
+          </p>
         </div>
       )}
 
-      {/* Empty state */}
-      {!isLoading && reviews.length === 0 && (
-        <div className="card p-8 text-center">
-          <div className="text-4xl mb-3">📝</div>
-          <h3 className="font-semibold text-base mb-1" style={{ color: 'var(--text-primary)' }}>
-            No Reviews Yet
-          </h3>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Be the first to review this station and help the community!
-          </p>
-        </div>
+      <div ref={sentinelRef} className="h-6" aria-hidden="true" />
+
+      {isFetchingNextPage && (
+        <div className="mt-3"><SkeletonCard /></div>
       )}
     </div>
   );

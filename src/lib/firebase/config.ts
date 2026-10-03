@@ -1,13 +1,13 @@
 /**
  * Firebase Client SDK Configuration
- * 
- * This file initializes the Firebase client-side SDK.
- * All NEXT_PUBLIC_ env vars are safe to expose — they're project identifiers, not secrets.
- * Security is enforced via Firestore Security Rules, not by hiding these keys.
+ *
+ * Firestore is initialized eagerly because public station/review data uses it
+ * immediately. Authentication is lazy so anonymous/read-only visitors do not
+ * start Firebase Auth iframe/network work until auth is actually needed.
  */
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -20,13 +20,15 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || 'G-DUMMY',
 };
 
-/** Singleton Firebase app — prevent re-initialization in hot reload */
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-/** Firebase Authentication instance */
-export const auth = getAuth(app);
+let authInstance: Auth | null = null;
 
-/** Firestore Database instance */
+export function getFirebaseAuth(): Auth {
+  if (!authInstance) authInstance = getAuth(app);
+  return authInstance;
+}
+
 export const db = getFirestore(app);
 
 export default app;

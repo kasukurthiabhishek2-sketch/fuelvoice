@@ -1,58 +1,81 @@
 /**
- * Review types — represents a user review for a fuel station
+ * Review domain types.
+ *
+ * Public station pages use a 0-100 Trust Score. Individual reviews retain a
+ * private 1-5 rating input and explicit complaint categories for negative
+ * experiences. Legacy fields remain available while older documents are
+ * migrated away from the original category-rating/like model.
  */
 
 import { Timestamp } from 'firebase/firestore';
 
+export type ComplaintCategory =
+  | 'fuel-quality'
+  | 'short-filling'
+  | 'pricing-billing'
+  | 'staff-behavior'
+  | 'payment-issue'
+  | 'facilities'
+  | 'safety'
+  | 'other';
+
+export const COMPLAINT_CATEGORIES: Record<ComplaintCategory, string> = {
+  'fuel-quality': 'Fuel quality',
+  'short-filling': 'Quantity / short-filling',
+  'pricing-billing': 'Pricing / billing',
+  'staff-behavior': 'Staff behavior',
+  'payment-issue': 'Payment issue',
+  facilities: 'Facilities',
+  safety: 'Safety',
+  other: 'Other',
+};
+
+export type ReviewReaction = 'helpful' | 'not-helpful';
+
 export interface Review {
-  /** Auto-generated Firestore document ID */
   id: string;
-  /** Station ID (OSM format: "type_osmId") */
   stationId: string;
   /** Legacy reviewer UID. New public review documents intentionally omit this. */
   userId?: string;
-  /** Denormalized display name (for fast reads) */
   userName: string;
-  /** Denormalized profile photo URL */
   userPhoto: string;
-  /** Review title */
-  title: string;
-  /** Review body text (sanitized) */
-  content: string;
-  /** Overall rating (1-5) */
   rating: number;
-  /** Category ratings (1-5 each) */
-  fuelQuality: number;
-  service: number;
-  staffBehaviour: number;
-  cleanliness: number;
-  washroom: number;
-  airFilling: number;
-  /** Issue tags */
-  tags: ReviewTag[];
-  /** Whether the reviewer chose to be anonymous */
-  isAnonymous: boolean;
-  /** Denormalized like count */
-  likeCount: number;
-  /** Denormalized report count */
-  reportCount: number;
-  /** Hidden by admin (still in DB, not displayed) */
+  /** Optional written context. */
+  content: string;
+  /** Required for 1-2 star reviews; optional otherwise. */
+  complaintCategories: ComplaintCategory[];
+  /** Reviewer account creation timestamp, denormalized for credibility weighting. */
+  reviewerJoinedAt?: Timestamp;
+  helpfulCount: number;
+  notHelpfulCount: number;
   isHidden: boolean;
-  /** Featured by admin (highlighted) */
   isFeatured: boolean;
-  /** Suggestions text */
-  suggestions: string;
-  /** Creation timestamp */
   createdAt: Timestamp;
-  /** Last update timestamp */
   updatedAt: Timestamp;
+
+  // Legacy compatibility fields. New reviews write neutral defaults so old
+  // admin/helpers keep working until they are retired.
+  title: string;
+  fuelQuality: number;
+  service: number;
+  staffBehaviour: number;
+  cleanliness: number;
+  washroom: number;
+  airFilling: number;
+  tags: ReviewTag[];
+  isAnonymous: boolean;
+  likeCount: number;
+  reportCount: number;
+  suggestions: string;
 }
 
-/** Form data for creating/editing a review (without server-set fields) */
 export interface ReviewFormData {
-  title: string;
-  content: string;
   rating: number;
+  content: string;
+  complaintCategories: ComplaintCategory[];
+
+  // Legacy compatibility fields.
+  title: string;
   fuelQuality: number;
   service: number;
   staffBehaviour: number;
@@ -64,7 +87,6 @@ export interface ReviewFormData {
   suggestions: string;
 }
 
-/** Predefined issue tags */
 export type ReviewTag =
   | 'fraud'
   | 'overcharging'
@@ -77,27 +99,30 @@ export type ReviewTag =
   | 'fast-service'
   | 'good-quality';
 
-/** Tag metadata for display */
 export const REVIEW_TAGS: Record<ReviewTag, { label: string; color: 'red' | 'amber' | 'green' | 'blue' }> = {
-  'fraud': { label: 'Fraud', color: 'red' },
-  'overcharging': { label: 'Overcharging', color: 'red' },
+  fraud: { label: 'Fraud', color: 'red' },
+  overcharging: { label: 'Overcharging', color: 'red' },
   'short-measure': { label: 'Short Measure', color: 'red' },
-  'adulteration': { label: 'Adulteration', color: 'red' },
+  adulteration: { label: 'Adulteration', color: 'red' },
   'poor-service': { label: 'Poor Service', color: 'amber' },
   'rude-staff': { label: 'Rude Staff', color: 'amber' },
-  'clean': { label: 'Clean', color: 'green' },
+  clean: { label: 'Clean', color: 'green' },
   'well-maintained': { label: 'Well Maintained', color: 'green' },
   'fast-service': { label: 'Fast Service', color: 'green' },
   'good-quality': { label: 'Good Quality', color: 'blue' },
 };
 
-/** Sort options for review listing */
-export type ReviewSortOption = 'newest' | 'oldest' | 'highest' | 'lowest' | 'most-liked';
+export type ReviewSortOption =
+  | 'risk-first'
+  | 'newest'
+  | 'most-helpful'
+  | 'oldest'
+  | 'highest'
+  | 'lowest'
+  | 'most-liked';
 
 export const REVIEW_SORT_OPTIONS: { value: ReviewSortOption; label: string }[] = [
-  { value: 'newest', label: 'Newest First' },
-  { value: 'oldest', label: 'Oldest First' },
-  { value: 'highest', label: 'Highest Rated' },
-  { value: 'lowest', label: 'Lowest Rated' },
-  { value: 'most-liked', label: 'Most Liked' },
+  { value: 'risk-first', label: 'Risk first' },
+  { value: 'newest', label: 'Newest' },
+  { value: 'most-helpful', label: 'Most helpful' },
 ];

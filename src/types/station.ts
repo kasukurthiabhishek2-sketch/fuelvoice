@@ -41,7 +41,9 @@ export interface Station {
   avgRating: number;
   /** Total review count */
   reviewCount: number;
-  /** Number of complaint reports */
+  /** Public 0-100 Trust Score. A value is meaningful only at 5+ reviews. */
+  trustScore?: number;
+  /** Number of negative reviews (1-2 rating), retained as an internal aggregate. */
   complaintCount: number;
   /** Scores by category (1-5 average) */
   scores: StationScores;
@@ -70,6 +72,7 @@ export interface StationSummary {
   lng: number;
   avgRating: number;
   reviewCount: number;
+  trustScore?: number;
   distance?: number;
 }
 

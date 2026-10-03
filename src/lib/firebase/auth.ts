@@ -13,7 +13,7 @@ import {
   User,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import { auth, db } from './config';
+import { getFirebaseAuth, db } from './config';
 import type { UserProfile } from '@/types/user';
 
 const googleProvider = new GoogleAuthProvider();
@@ -50,19 +50,19 @@ export async function getOrCreateUserProfile(user: User): Promise<UserProfile> {
  * Creates a Firestore user profile on first login.
  */
 export async function signInWithGoogle(): Promise<User> {
-  const result = await signInWithPopup(auth, googleProvider);
+  const result = await signInWithPopup(getFirebaseAuth(), googleProvider);
   await getOrCreateUserProfile(result.user);
   return result.user;
 }
 
 /** Sign out the current user */
 export async function signOut(): Promise<void> {
-  await firebaseSignOut(auth);
+  await firebaseSignOut(getFirebaseAuth());
 }
 
 /** Subscribe to auth state changes */
 export function onAuthChange(callback: (user: User | null) => void) {
-  return onAuthStateChanged(auth, callback);
+  return onAuthStateChanged(getFirebaseAuth(), callback);
 }
 
 /** Get the current user's Firestore profile */

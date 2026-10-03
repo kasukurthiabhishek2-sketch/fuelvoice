@@ -1,8 +1,8 @@
 /**
- * Station Profile Page
+ * Station page.
  *
- * Shows station details, map, reviews, complaint guidance, and clear primary
- * actions without changing the underlying data or review behavior.
+ * Designed for direct search-engine landings: identity, Trust Score and reviews
+ * appear before maps and secondary station metadata.
  */
 
 'use client';
@@ -10,70 +10,67 @@
 import React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getStation, getOrCreateStation } from '@/lib/firebase/firestore';
 import { getStationByOsmId } from '@/lib/api/overpass';
-import { StationMap } from '@/components/station/StationMapDynamic';
+import { ratingToTrustValue, TRUST_SCORE_MIN_REVIEWS } from '@/lib/trust/trustScore';
 import { ConsumerComplaint } from '@/components/station/ConsumerComplaint';
+import { LazyStationMap } from '@/components/station/LazyStationMap';
 import { ReviewForm } from '@/components/review/ReviewForm';
 import { ReviewList } from '@/components/review/ReviewList';
-import { StarRating } from '@/components/ui/StarRating';
 import { SkeletonPage } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { useGeolocation } from '@/hooks/useGeolocation';
 import { getBrand } from '@/lib/constants/brands';
-import { formatRating } from '@/lib/utils/format';
 import type { Station } from '@/types/station';
 
 export default function StationPage() {
   const params = useParams();
   const stationId = params.id as string;
   const { toast } = useToast();
-  const { latitude, longitude } = useGeolocation();
 
-  const { data: station, isLoading, error, refetch, isFetching } = useQuery({
+  const {
+    data: station,
+    isLoading,
+    error,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ['station', stationId],
     queryFn: () => fetchStation(stationId),
-    enabled: !!stationId,
+    enabled: Boolean(stationId),
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   if (isLoading) return <SkeletonPage />;
 
   if (error || !station) {
-    const unavailable = error instanceof Error && /provider|timed out|rate-limited|temporarily/i.test(error.message);
+    const unavailable = error instanceof Error
+      && /provider|timed out|rate-limited|temporarily/i.test(error.message);
 
     return (
-      <div className="mx-auto max-w-4xl px-4 py-20 text-center">
-        <div className="surface-panel mx-auto max-w-xl p-8 sm:p-10">
-          <div className={`mx-auto grid h-14 w-14 place-items-center rounded-2xl ${unavailable ? 'bg-amber-500/10 text-amber-500' : 'bg-[var(--bg-tertiary)] text-[var(--text-tertiary)]'}`}>
-            {unavailable ? (
-              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M12 4 21 20H3L12 4Z" strokeLinejoin="round" />
-                <path d="M12 9v5M12 17.2v.1" strokeLinecap="round" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <circle cx="11" cy="11" r="6.5" />
-                <path d="m16 16 4 4" strokeLinecap="round" />
-              </svg>
-            )}
-          </div>
-
-          <h1 className="mt-5 text-2xl font-black tracking-[-0.035em]" style={{ color: 'var(--text-primary)' }}>
-            {unavailable ? 'Station Data Temporarily Unavailable' : 'Station Not Found'}
-          </h1>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
-            {unavailable
-              ? 'OpenStreetMap station data could not be loaded right now. No substitute station data is being shown.'
-              : 'This station does not appear to exist.'}
+      <div className="app-frame py-20 text-center">
+        <div className="station-error-panel mx-auto max-w-xl">
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+            {unavailable ? 'Source unavailable' : 'Station unavailable'}
           </p>
-
+          <h1 className="mt-3 text-2xl font-bold tracking-[-0.04em] text-[var(--text-primary)]">
+            {unavailable ? 'Station data could not be loaded.' : 'We could not find this station.'}
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+            {unavailable
+              ? 'The mapped-station provider is not responding. FuelVoice will not substitute invented station data.'
+              : 'The station ID may be invalid or no longer available from the mapped source.'}
+          </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <Link href="/search" className="secondary-action">Back to search</Link>
+            <Link href="/search" className="secondary-action">Search stations</Link>
             {unavailable && (
-              <button type="button" onClick={() => refetch()} disabled={isFetching} className="primary-action disabled:opacity-50">
+              <button
+                type="button"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="primary-action disabled:opacity-50"
+              >
                 {isFetching ? 'Retrying…' : 'Retry'}
               </button>
             )}
@@ -84,269 +81,187 @@ export default function StationPage() {
   }
 
   const brand = getBrand(station.brand);
-  const safeWebsite = getSafeWebsite(station.website);
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}`;
+  const safeWebsite = getSafeWebsite(station.website);
+  const trustScore = station.reviewCount >= TRUST_SCORE_MIN_REVIEWS
+    ? Math.round(station.trustScore ?? ratingToTrustValue(station.avgRating))
+    : null;
 
   const handleShare = async () => {
     const url = window.location.href;
-
     try {
       if (navigator.share) {
-        await navigator.share({
-          title: station.name,
-          text: `Check out ${station.name} on FuelVoice`,
-          url,
-        });
+        await navigator.share({ title: station.name, url });
       } else {
         await navigator.clipboard.writeText(url);
-        toast('Link copied!', 'success');
+        toast('Station link copied', 'success');
       }
     } catch {
-      // User cancelled the platform share sheet.
+      // Native share sheet was dismissed.
     }
   };
 
   return (
-    <div className="pb-16 sm:pb-20">
-      <section className="hero-surface border-b border-[var(--border-secondary)]">
-        <div className="mx-auto max-w-7xl px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8 lg:px-8">
-          <Link
-            href="/search"
-            className="inline-flex items-center gap-2 text-xs font-bold transition-colors hover:text-brand-500"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="m15 6-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Back to station search
-          </Link>
+    <div className="station-page pb-28 lg:pb-20">
+      <section className="station-hero">
+        <div className="app-frame py-7 sm:py-9 lg:py-12">
+          <div className="flex items-center justify-between gap-4">
+            <Link href="/search" className="station-back-link">
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m15 6-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Search
+            </Link>
+            <button type="button" onClick={handleShare} className="station-back-link">
+              Share
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M7 12v7h10v-7M12 4v11M8.5 7.5 12 4l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="surface-panel relative mt-5 overflow-hidden p-5 sm:p-7 lg:p-8"
-          >
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-500 via-accent-500 to-brand-500" aria-hidden="true" />
-
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  {station.brand && (
-                    <span
-                      className="rounded-xl px-2.5 py-1.5 text-xs font-bold"
-                      style={{ background: brand.bgColor, color: brand.color }}
-                    >
-                      {brand.name}
-                    </span>
-                  )}
-                  <span className="info-chip">OpenStreetMap listing</span>
-                </div>
-
-                <h1 className="mt-4 max-w-4xl text-3xl font-black tracking-[-0.045em] sm:text-4xl lg:text-5xl" style={{ color: 'var(--text-primary)' }}>
-                  {station.name}
-                </h1>
-
-                <div className="mt-3 flex max-w-3xl items-start gap-2 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
-                  <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z" strokeLinejoin="round" />
-                    <circle cx="12" cy="10" r="2" />
-                  </svg>
-                  <span>{station.address || 'Address details are not available for this mapped station.'}</span>
-                </div>
-
-                <div className="mt-6 flex flex-wrap gap-3">
-                  {station.reviewCount > 0 ? (
-                    <div className="flex items-center gap-3 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3">
-                      <span className="text-3xl font-black text-brand-500">{formatRating(station.avgRating)}</span>
-                      <div>
-                        <StarRating value={station.avgRating} size="sm" />
-                        <p className="mt-1 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                          {station.reviewCount} review{station.reviewCount === 1 ? '' : 's'}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3">
-                      <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>No community rating yet</p>
-                      <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>You can be the first to review this station.</p>
-                    </div>
-                  )}
-
-                  {station.complaintCount > 0 && (
-                    <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3">
-                      <p className="text-xs font-bold text-rose-500">
-                        {station.complaintCount} complaint{station.complaintCount === 1 ? '' : 's'} reported
-                      </p>
-                      <p className="mt-1 text-[11px] text-rose-500/80">Open complaint guidance below before deciding what to do next.</p>
-                    </div>
-                  )}
-                </div>
+          <div className="mt-8 grid gap-7 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                {station.brand && (
+                  <span
+                    className="station-brand-pill"
+                    style={{ '--brand-pill': brand.color } as React.CSSProperties}
+                  >
+                    {brand.name}
+                  </span>
+                )}
+                <span className="station-source-pill">Mapped station</span>
               </div>
 
-              <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">
+              <h1 className="mt-4 max-w-4xl text-[2.35rem] font-semibold leading-[1.02] tracking-[-0.055em] text-[var(--text-primary)] sm:text-5xl lg:text-[3.8rem]">
+                {station.name}
+              </h1>
+
+              <p className="mt-4 max-w-3xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
+                {station.address || 'Mapped location available. Address details have not been published for this station.'}
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-2">
                 <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="primary-action">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z" strokeLinejoin="round" />
-                    <circle cx="12" cy="10" r="2" />
-                  </svg>
                   Get directions
                 </a>
-                <button type="button" onClick={handleShare} className="secondary-action">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9">
-                    <circle cx="18" cy="5" r="2.5" />
-                    <circle cx="6" cy="12" r="2.5" />
-                    <circle cx="18" cy="19" r="2.5" />
-                    <path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5" />
-                  </svg>
-                  Share station
-                </button>
+                <a href="#reviews" className="secondary-action">Read reviews</a>
               </div>
             </div>
-          </motion.div>
+
+            <div className="trust-score-panel" aria-label={trustScore === null ? 'Trust Score unavailable' : `Trust Score ${trustScore} out of 100`}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Trust Score</p>
+              {trustScore === null ? (
+                <>
+                  <p className="mt-3 text-xl font-semibold tracking-[-0.035em] text-[var(--text-primary)]">Insufficient data</p>
+                  <p className="mt-2 text-xs leading-5 text-[var(--text-tertiary)]">
+                    {station.reviewCount} of {TRUST_SCORE_MIN_REVIEWS} reviews needed
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="mt-2 flex items-end gap-1">
+                    <span className="text-6xl font-medium tracking-[-0.065em] text-white">{trustScore}</span>
+                    <span className="pb-2 text-sm font-semibold text-white/45">/100</span>
+                  </div>
+                  <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                    {station.reviewCount} review{station.reviewCount === 1 ? '' : 's'}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_330px] lg:px-8">
-        <main className="min-w-0 space-y-6">
-          <section>
-            <div className="mb-3 flex items-end justify-between gap-4">
-              <div>
-                <p className="section-kicker">Location</p>
-                <h2 className="mt-2 text-xl font-black tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>Where this station is</h2>
-              </div>
-              <span className="hidden text-xs sm:block" style={{ color: 'var(--text-tertiary)' }}>
-                {station.lat.toFixed(5)}, {station.lng.toFixed(5)}
-              </span>
-            </div>
-            <div className="map-shell p-2">
-              <StationMap
-                lat={station.lat}
-                lng={station.lng}
-                name={station.name}
-                userLat={latitude}
-                userLng={longitude}
-              />
-            </div>
-          </section>
-
-          <section className="card p-5 sm:p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="section-kicker">Station profile</p>
-                <h2 className="mt-2 text-xl font-black tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>Station Details</h2>
-              </div>
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/10 text-brand-500">
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M6.5 4.5h7.5v15H6.5z" strokeLinejoin="round" />
-                  <path d="M8.5 8h3.5M14 8.5h2.2l1.8 2.1V17a1.5 1.5 0 0 0 3 0v-5.7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <DetailRow label="Brand" value={station.brand || 'Not available'} />
-              <DetailRow label="Operator" value={station.operator || 'Not available'} />
-              <DetailRow label="Phone" value={station.phone || 'Not available'} isLink={!!station.phone} href={`tel:${station.phone}`} />
-              <DetailRow label="Website" value={safeWebsite?.label || 'Not available'} isLink={!!safeWebsite} href={safeWebsite?.href} />
-              <DetailRow label="Opening Hours" value={station.openingHours || 'Not available'} />
-              <DetailRow label="Coordinates" value={`${station.lat.toFixed(5)}, ${station.lng.toFixed(5)}`} />
-            </div>
-
-            {station.fuelTypes?.length > 0 && (
-              <div className="mt-5 border-t border-[var(--border-secondary)] pt-5">
-                <p className="text-xs font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--text-tertiary)' }}>Mapped fuel types</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {station.fuelTypes.map((fuelType) => (
-                    <span key={fuelType} className="info-chip">{fuelType}</span>
-                  ))}
+      <div className="app-frame py-8 sm:py-10">
+        <div className="mx-auto max-w-4xl">
+          <main className="min-w-0">
+            <section id="reviews" className="scroll-mt-28">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Customer experiences</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                    Reviews
+                  </h2>
                 </div>
+                {station.reviewCount > 0 && (
+                  <span className="text-xs font-semibold text-[var(--text-tertiary)]">
+                    {station.reviewCount} total
+                  </span>
+                )}
               </div>
-            )}
-          </section>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
+                Risk-heavy experiences appear first by default. Filter by issue when you need something specific.
+              </p>
 
-          {station.reviewCount > 0 && (
-            <section className="card p-5 sm:p-6">
-              <div>
-                <p className="section-kicker">Community signal</p>
-                <h2 className="mt-2 text-xl font-black tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>Category Scores</h2>
-                <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  See where the overall rating comes from instead of relying on one number.
-                </p>
-              </div>
-
-              <div className="mt-5 grid gap-x-6 gap-y-5 sm:grid-cols-2">
-                <ScoreBar label="Fuel Quality" score={station.scores.fuelQuality} />
-                <ScoreBar label="Service" score={station.scores.service} />
-                <ScoreBar label="Staff Behaviour" score={station.scores.staffBehaviour} />
-                <ScoreBar label="Cleanliness" score={station.scores.cleanliness} />
-                <ScoreBar label="Washroom" score={station.scores.washroom} />
-                <ScoreBar label="Air Filling" score={station.scores.airFilling} />
+              <div className="mt-5">
+                <ReviewList stationId={stationId} />
               </div>
             </section>
-          )}
 
-          <section>
-            <div className="mb-4">
-              <p className="section-kicker">Contribute</p>
-              <h2 className="mt-2 text-xl font-black tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>Share your experience</h2>
-              <p className="mt-1 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
-                Add useful detail for the next driver, especially around fuel quality, service, and facilities.
-              </p>
-            </div>
-            <ReviewForm stationId={stationId} stationName={station.name} />
-          </section>
+            <section className="mt-8">
+              <ReviewForm stationId={stationId} stationName={station.name} />
+            </section>
 
-          <section>
-            <div className="mb-4 flex items-end justify-between gap-4">
+            <section className="mt-10">
+              <ConsumerComplaint
+                lat={station.lat}
+                lng={station.lng}
+                brand={station.brand}
+                countryCode={station.addressComponents?.countryCode}
+                showMobileBar
+              />
+            </section>
+
+            <section className="station-secondary-section mt-12">
               <div>
-                <p className="section-kicker">Community</p>
-                <h2 className="mt-2 text-xl font-black tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>Reviews</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Station details</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                  Useful details, after the reviews.
+                </h2>
               </div>
-              {station.reviewCount > 0 && (
-                <span className="info-chip">{station.reviewCount} total</span>
-              )}
+
+              <dl className="mt-6 grid gap-px overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--border-primary)] sm:grid-cols-2">
+                <DetailRow label="Brand" value={station.brand || 'Not available'} />
+                <DetailRow label="Operator" value={station.operator || 'Not available'} />
+                <DetailRow label="Opening hours" value={station.openingHours || 'Not available'} />
+                <DetailRow label="Phone" value={station.phone || 'Not available'} href={station.phone ? `tel:${station.phone}` : undefined} />
+                <DetailRow
+                  label="Website"
+                  value={safeWebsite?.label || 'Not available'}
+                  href={safeWebsite?.href}
+                  external
+                />
+                <DetailRow label="Fuel types" value={station.fuelTypes.length ? station.fuelTypes.join(' · ') : 'Not available'} />
+              </dl>
+
+              <div className="mt-8">
+                <div className="mb-3 flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">Location</p>
+                    <p className="mt-1 text-xs text-[var(--text-tertiary)]">Interactive map loads only when you reach it.</p>
+                  </div>
+                  <a
+                    href={directionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  >
+                    Directions ↗
+                  </a>
+                </div>
+                <LazyStationMap lat={station.lat} lng={station.lng} name={station.name} />
+              </div>
+            </section>
+            <div className="station-quiet-note mt-8">
+              Station identity and mapped facts come from OpenStreetMap. Customer experiences and Trust Score are FuelVoice community data.
             </div>
-            <ReviewList stationId={stationId} />
-          </section>
-        </main>
-
-        <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-          <ConsumerComplaint
-            lat={station.lat}
-            lng={station.lng}
-            countryCode={station.addressComponents?.countryCode}
-          />
-
-          <div className="card p-5">
-            <p className="section-kicker">Next step</p>
-            <h3 className="mt-2 text-base font-black" style={{ color: 'var(--text-primary)' }}>Quick Actions</h3>
-            <p className="mt-1 text-xs leading-5" style={{ color: 'var(--text-secondary)' }}>
-              Navigate, share, or verify the public source without hunting around the page.
-            </p>
-
-            <div className="mt-4 space-y-2">
-              <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="primary-action w-full">
-                Get directions
-              </a>
-              <button type="button" onClick={handleShare} className="secondary-action w-full">
-                Share station
-              </button>
-              <a
-                href={`https://www.openstreetmap.org/?mlat=${station.lat}&mlon=${station.lng}#map=18/${station.lat}/${station.lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="secondary-action w-full"
-              >
-                Open source map
-              </a>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-4 text-xs leading-5" style={{ color: 'var(--text-secondary)' }}>
-            <strong style={{ color: 'var(--text-primary)' }}>Data note:</strong> station identity and mapped metadata come from OpenStreetMap. Review scores and complaint counts are FuelVoice community data.
-          </div>
-        </aside>
+          </main>
+        </div>
       </div>
+
     </div>
   );
 }
@@ -354,60 +269,31 @@ export default function StationPage() {
 function DetailRow({
   label,
   value,
-  isLink,
   href,
+  external = false,
 }: {
   label: string;
   value: string;
-  isLink?: boolean;
   href?: string;
+  external?: boolean;
 }) {
-  const unavailable = value === 'Not available';
-
   return (
-    <div className="rounded-2xl border border-[var(--border-secondary)] bg-[var(--bg-secondary)] p-4">
-      <span className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--text-tertiary)' }}>
-        {label}
-      </span>
-      {isLink && href ? (
-        <a
-          href={href}
-          target={href.startsWith('http') ? '_blank' : undefined}
-          rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-          className="mt-1 block truncate text-sm font-bold text-brand-500 transition-colors hover:text-brand-600"
-        >
-          {value}
-        </a>
-      ) : (
-        <span
-          className="mt-1 block truncate text-sm font-bold"
-          style={{ color: unavailable ? 'var(--text-tertiary)' : 'var(--text-primary)' }}
-        >
-          {value}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function ScoreBar({ label, score }: { label: string; score: number }) {
-  const pct = score > 0 ? (score / 5) * 100 : 0;
-
-  return (
-    <div>
-      <div className="mb-2 flex justify-between gap-3">
-        <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{label}</span>
-        <span className="text-xs font-black" style={{ color: 'var(--text-primary)' }}>{score > 0 ? score.toFixed(1) : '—'}</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--bg-tertiary)' }}>
-        <motion.div
-          initial={{ width: 0 }}
-          whileInView={{ width: `${pct}%` }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="h-full rounded-full bg-gradient-to-r from-brand-500 to-accent-500"
-        />
-      </div>
+    <div className="bg-[var(--bg-card)] p-4">
+      <dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">{label}</dt>
+      <dd className="mt-1.5 min-w-0 text-sm font-semibold text-[var(--text-primary)]">
+        {href ? (
+          <a
+            href={href}
+            target={external ? '_blank' : undefined}
+            rel={external ? 'noopener noreferrer' : undefined}
+            className="block truncate underline decoration-white/15 underline-offset-4 hover:decoration-white/50"
+          >
+            {value}
+          </a>
+        ) : (
+          <span className="block truncate">{value}</span>
+        )}
+      </dd>
     </div>
   );
 }
@@ -429,14 +315,13 @@ async function fetchStation(stationId: string): Promise<Station> {
   const match = /^(node|way|relation)_([1-9][0-9]*)$/.exec(stationId);
   if (!match) throw new Error('Invalid station ID');
 
-  const [, osmType, osmIdText] = match;
-  const osmId = Number(osmIdText);
-  if (!Number.isSafeInteger(osmId)) throw new Error('Invalid station ID');
-
   const cached = await getStation(stationId);
   if (cached) return cached;
 
-  const element = await getStationByOsmId(osmType, osmId);
+  const osmId = Number(match[2]);
+  if (!Number.isSafeInteger(osmId)) throw new Error('Invalid station ID');
+
+  const element = await getStationByOsmId(match[1], osmId);
   if (!element) throw new Error('Station not found on OpenStreetMap');
 
   const tags = element.tags || {};
@@ -444,19 +329,17 @@ async function fetchStation(stationId: string): Promise<Station> {
   const lng = element.lon ?? element.center?.lon;
   if (lat === undefined || lng === undefined) throw new Error('Station has no usable coordinates');
 
-  const addressParts = [
-    tags['addr:street'],
-    tags['addr:city'],
-    tags['addr:state'],
-    tags['addr:country'],
-  ].filter(Boolean);
-
   return getOrCreateStation({
     id: stationId,
     name: tags.name || tags.brand || tags.operator || 'Fuel Station',
     brand: tags.brand || tags.operator || '',
     operator: tags.operator || '',
-    address: addressParts.join(', '),
+    address: [
+      tags['addr:street'],
+      tags['addr:city'],
+      tags['addr:state'],
+      tags['addr:country'],
+    ].filter(Boolean).join(', '),
     addressComponents: {
       street: tags['addr:street'],
       city: tags['addr:city'],

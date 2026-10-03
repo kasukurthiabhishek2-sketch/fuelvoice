@@ -1,19 +1,25 @@
 /**
- * Review Form Component
- * Multi-step form for creating a review with category ratings, tags, and anonymous option.
+ * Compact review composer.
+ *
+ * A rating is required. Written context is optional. Ratings of 1-2 require at
+ * least one explicit complaint category; FuelVoice never infers complaint type.
  */
 
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { StarRating } from '@/components/ui/StarRating';
-import { useAuth } from '@/hooks/useAuth';
-import { useCreateReview, useHasUserReviewed } from '@/hooks/useReviews';
-import { useToast } from '@/components/ui/Toast';
-import { sanitizeText, validateReviewContent, validateReviewTitle } from '@/lib/utils/sanitize';
-import { REVIEW_TAGS, type ReviewTag, type ReviewFormData } from '@/types/review';
 import { LoginButton } from '@/components/auth/LoginButton';
+import { useAuth } from '@/hooks/useAuth';
+import { useCreateReview, useUserActiveReviewCount } from '@/hooks/useReviews';
+import { useToast } from '@/components/ui/Toast';
+import { sanitizeText } from '@/lib/utils/sanitize';
+import {
+  COMPLAINT_CATEGORIES,
+  type ComplaintCategory,
+  type ReviewFormData,
+} from '@/types/review';
+import { MAX_ACTIVE_REVIEWS_PER_STATION } from '@/lib/firebase/reviewRepository';
 
 interface ReviewFormProps {
   stationId: string;
@@ -22,169 +28,226 @@ interface ReviewFormProps {
 }
 
 const INITIAL_FORM: ReviewFormData = {
-  title: '', content: '', rating: 0, fuelQuality: 0, service: 0,
-  staffBehaviour: 0, cleanliness: 0, washroom: 0, airFilling: 0,
-  tags: [], isAnonymous: false, suggestions: '',
+  rating: 0,
+  content: '',
+  complaintCategories: [],
+  title: '',
+  fuelQuality: 0,
+  service: 0,
+  staffBehaviour: 0,
+  cleanliness: 0,
+  washroom: 0,
+  airFilling: 0,
+  tags: [],
+  isAnonymous: false,
+  suggestions: '',
 };
 
 export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProps) {
   const { user, profile } = useAuth();
   const { toast } = useToast();
-  const mutation = useCreateReview(stationId);
-  const { data: hasReviewed } = useHasUserReviewed(stationId, user?.uid);
+  const createReview = useCreateReview(stationId);
+  const { data: activeCount = 0, isLoading: countLoading } = useUserActiveReviewCount(stationId, user?.uid);
   const [form, setForm] = useState<ReviewFormData>(INITIAL_FORM);
   const [isOpen, setIsOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const remaining = Math.max(0, MAX_ACTIVE_REVIEWS_PER_STATION - activeCount);
+
   if (!user) {
     return (
-      <div className="card p-6 text-center">
-        <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>Sign in to leave a review</p>
-        <LoginButton />
+      <div id="write-review" className="review-composer-shell scroll-mt-28 p-5 sm:p-6">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">Share your experience</p>
+        <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+          Reading is open to everyone. Sign in only when you want to add a review.
+        </p>
+        <div className="mt-4"><LoginButton /></div>
       </div>
     );
   }
 
   if (profile?.isBanned) {
     return (
-      <div className="card p-6 text-center">
-        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-          Reviews are unavailable for this account.
+      <div id="write-review" className="review-composer-shell scroll-mt-28 p-5 sm:p-6">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">Reviews are unavailable for this account.</p>
+      </div>
+    );
+  }
+
+  if (!countLoading && remaining === 0) {
+    return (
+      <div id="write-review" className="review-composer-shell scroll-mt-28 p-5 sm:p-6">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">You have 3 active reviews for this station.</p>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          Delete one of your reviews to free a slot.
         </p>
       </div>
     );
   }
 
-  if (hasReviewed) {
-    return (
-      <div className="card p-6 text-center">
-        <div className="text-3xl mb-2">✅</div>
-        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>You&apos;ve already reviewed this station</p>
-      </div>
-    );
-  }
-
-  const toggleTag = (tag: ReviewTag) => {
-    setForm(p => ({ ...p, tags: p.tags.includes(tag) ? p.tags.filter(t => t !== tag) : [...p.tags, tag] }));
+  const setRating = (rating: number) => {
+    setForm((current) => ({
+      ...current,
+      rating,
+      complaintCategories: rating <= 2 ? current.complaintCategories : [],
+    }));
+    setErrors((current) => ({ ...current, rating: '', categories: '' }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const errs: Record<string, string> = {};
-    if (form.rating === 0) errs.rating = 'Please select a rating';
-    const te = validateReviewTitle(form.title); if (te) errs.title = te;
-    const ce = validateReviewContent(form.content); if (ce) errs.content = ce;
-    setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+  const toggleCategory = (category: ComplaintCategory) => {
+    setForm((current) => ({
+      ...current,
+      complaintCategories: current.complaintCategories.includes(category)
+        ? current.complaintCategories.filter((item) => item !== category)
+        : [...current.complaintCategories, category],
+    }));
+    setErrors((current) => ({ ...current, categories: '' }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const nextErrors: Record<string, string> = {};
+
+    if (form.rating < 1 || form.rating > 5) nextErrors.rating = 'Choose a rating from 1 to 5.';
+    if (form.content.length > 2000) nextErrors.content = 'Keep the review under 2000 characters.';
+    if (form.rating <= 2 && form.complaintCategories.length === 0) {
+      nextErrors.categories = 'Choose at least one complaint category.';
+    }
+
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) return;
 
     try {
-      await mutation.mutateAsync({
+      await createReview.mutateAsync({
         userId: user.uid,
-        userName: profile?.displayName || user.displayName || 'User',
+        userName: profile?.displayName || user.displayName || 'FuelVoice user',
         userPhoto: profile?.photoURL || user.photoURL || '',
-        formData: { ...form, title: sanitizeText(form.title), content: sanitizeText(form.content), suggestions: sanitizeText(form.suggestions) },
+        formData: {
+          ...form,
+          content: sanitizeText(form.content.trim()),
+          isAnonymous: false,
+        },
       });
-      toast('Review submitted!', 'success');
       setForm(INITIAL_FORM);
-      setErrors({});
       setIsOpen(false);
+      toast('Review published', 'success');
       onSuccess?.();
-    } catch { toast('Failed to submit review', 'error'); }
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Could not publish the review', 'error');
+    }
   };
 
   return (
-    <div>
-      {!isOpen && (
-        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={() => setIsOpen(true)}
-          className="w-full py-4 px-6 rounded-2xl font-semibold text-sm text-white bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 shadow-md hover:shadow-lg transition-all">
-          ✍️ Write a Review for {stationName}
-        </motion.button>
+    <div id="write-review" className="scroll-mt-28">
+      {!isOpen ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="review-composer-shell group flex w-full items-center justify-between gap-4 p-5 text-left transition hover:border-[var(--border-strong)] sm:p-6"
+        >
+          <div>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Write a review</p>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Rate this station and add context if it helps. {countLoading ? '' : `${remaining} review slot${remaining === 1 ? '' : 's'} remaining.`}
+            </p>
+          </div>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-black transition-transform group-hover:translate-x-0.5">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M14 7l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </button>
+      ) : (
+        <form onSubmit={handleSubmit} className="review-composer-shell p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-lg font-bold tracking-[-0.03em] text-[var(--text-primary)]">Review {stationName}</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">Your rating is used in the station Trust Score.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--border-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              aria-label="Close review form"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m7 7 10 10M17 7 7 17" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="mt-6">
+            <label className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Your rating</label>
+            <div className="mt-3"><StarRating value={form.rating} onChange={setRating} size="lg" /></div>
+            {errors.rating && <p className="mt-2 text-xs text-rose-400">{errors.rating}</p>}
+          </div>
+
+          {form.rating > 0 && form.rating <= 2 && (
+            <div className="mt-6">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+                What went wrong?
+              </p>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">Choose every category that applies.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(Object.entries(COMPLAINT_CATEGORIES) as [ComplaintCategory, string][]).map(([value, label]) => {
+                  const selected = form.complaintCategories.includes(value);
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => toggleCategory(value)}
+                      className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                        selected
+                          ? 'border-white bg-white text-black'
+                          : 'border-[var(--border-primary)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.categories && <p className="mt-2 text-xs text-rose-400">{errors.categories}</p>}
+            </div>
+          )}
+
+          <div className="mt-6">
+            <label htmlFor="review-content" className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+              Add context <span className="normal-case tracking-normal">(optional)</span>
+            </label>
+            <textarea
+              id="review-content"
+              value={form.content}
+              onChange={(event) => setForm((current) => ({ ...current, content: event.target.value }))}
+              placeholder="What should another customer know?"
+              rows={4}
+              maxLength={2000}
+              className="mt-3 w-full resize-none rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3 text-sm leading-6 text-[var(--text-primary)] outline-none transition focus:border-[var(--border-strong)]"
+            />
+            <div className="mt-2 flex items-center justify-between gap-3">
+              {errors.content ? <p className="text-xs text-rose-400">{errors.content}</p> : <span />}
+              <span className="text-xs text-[var(--text-tertiary)]">{form.content.length}/2000</span>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="secondary-action"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={createReview.isPending}
+              className="primary-action disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {createReview.isPending ? 'Publishing…' : 'Publish review'}
+            </button>
+          </div>
+        </form>
       )}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            onSubmit={handleSubmit} className="card p-6 space-y-5 overflow-hidden">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Write a Review</h3>
-              <button type="button" onClick={() => setIsOpen(false)} className="p-1 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700" aria-label="Close">
-                <svg className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>Overall Rating *</label>
-              <StarRating value={form.rating} onChange={v => setForm({ ...form, rating: v })} size="lg" />
-              {errors.rating && <p className="text-xs text-danger-500 mt-1">{errors.rating}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="review-title" className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>Title *</label>
-              <input id="review-title" type="text" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
-                placeholder="Sum up your experience" maxLength={100}
-                className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:border-brand-500 transition-colors"
-                style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-primary)', color: 'var(--text-primary)' }} />
-              {errors.title && <p className="text-xs text-danger-500 mt-1">{errors.title}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="review-content" className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>Your Review *</label>
-              <textarea id="review-content" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })}
-                placeholder="Describe your experience…" rows={4} maxLength={2000}
-                className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:border-brand-500 resize-none transition-colors"
-                style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-primary)', color: 'var(--text-primary)' }} />
-              <div className="flex justify-between mt-1">
-                {errors.content && <p className="text-xs text-danger-500">{errors.content}</p>}
-                <p className="text-xs ml-auto" style={{ color: 'var(--text-tertiary)' }}>{form.content.length}/2000</p>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Category Ratings <span className="text-xs font-normal" style={{ color: 'var(--text-tertiary)' }}>(optional)</span></p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {([['Fuel Quality','fuelQuality'],['Service','service'],['Staff','staffBehaviour'],['Cleanliness','cleanliness'],['Washroom','washroom'],['Air Filling','airFilling']] as const).map(([label, key]) => (
-                  <div key={key} className="flex items-center justify-between gap-2 p-2 rounded-lg" style={{ background: 'var(--bg-secondary)' }}>
-                    <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
-                    <StarRating value={form[key]} onChange={v => setForm({ ...form, [key]: v })} size="sm" />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Tags <span className="text-xs font-normal" style={{ color: 'var(--text-tertiary)' }}>(optional)</span></p>
-              <div className="flex flex-wrap gap-2">
-                {(Object.entries(REVIEW_TAGS) as [ReviewTag, { label: string; color: string }][]).map(([tag, info]) => (
-                  <button key={tag} type="button" onClick={() => toggleTag(tag)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.tags.includes(tag) ? 'bg-brand-500/10 text-brand-500 border-brand-500/30' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
-                    style={!form.tags.includes(tag) ? { color: 'var(--text-secondary)', borderColor: 'var(--border-primary)' } : undefined}>
-                    {info.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setForm({ ...form, isAnonymous: !form.isAnonymous })}
-                className={`relative w-10 h-6 rounded-full transition-colors ${form.isAnonymous ? 'bg-brand-500' : 'bg-surface-300 dark:bg-surface-600'}`}
-                role="switch" aria-checked={form.isAnonymous} aria-label="Post anonymously">
-                <motion.div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow"
-                  animate={{ left: form.isAnonymous ? 18 : 2 }} transition={{ type: 'spring', stiffness: 500, damping: 30 }} />
-              </button>
-              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Post anonymously</span>
-            </div>
-
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setIsOpen(false)}
-                className="px-5 py-2.5 rounded-xl text-sm font-medium border hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
-                style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-primary)' }}>Cancel</button>
-              <motion.button whileTap={{ scale: 0.99 }} type="submit" disabled={mutation.isPending}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 disabled:opacity-50 transition-all">
-                {mutation.isPending ? 'Submitting…' : 'Submit Review'}
-              </motion.button>
-            </div>
-          </motion.form>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

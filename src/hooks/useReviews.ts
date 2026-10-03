@@ -1,60 +1,61 @@
 /**
- * useReviews Hook
- * 
- * Manages review data for a station including:
- * - Paginated fetching with TanStack Query
- * - Sort order management
- * - Review creation
- * - Optimistic like updates
+ * Review queries and mutations for the trust-first station experience.
  */
 
 'use client';
 
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
-import {
-  getReviews,
-  createReview,
-  toggleLike,
-  hasUserReviewed,
-  getUserLikes,
-} from '@/lib/firebase/firestore';
-import type { ReviewFormData, ReviewSortOption } from '@/types/review';
-import type { DocumentSnapshot } from 'firebase/firestore';
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import type { DocumentSnapshot } from 'firebase/firestore';
+import {
+  createReviewV2,
+  deleteReviewV2,
+  getReviewsV2,
+  getUserActiveReviewCount,
+  getUserReviewReactions,
+  toggleReviewReaction,
+  updateReviewV2,
+} from '@/lib/firebase/reviewRepository';
+import type {
+  ComplaintCategory,
+  ReviewFormData,
+  ReviewReaction,
+  ReviewSortOption,
+} from '@/types/review';
 
 export function useReviews(stationId: string) {
-  const [sortBy, setSortBy] = useState<ReviewSortOption>('newest');
+  const [sortBy, setSortBy] = useState<ReviewSortOption>('risk-first');
+  const [category, setCategory] = useState<ComplaintCategory | null>(null);
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: ['reviews', stationId, sortBy],
-    queryFn: ({ pageParam }) => getReviews(stationId, sortBy, 20, pageParam),
+  const queryResult = useInfiniteQuery({
+    queryKey: ['reviews', stationId, sortBy, category],
+    queryFn: ({ pageParam }) => getReviewsV2(stationId, sortBy, 20, pageParam, category),
     initialPageParam: undefined as DocumentSnapshot | undefined,
     getNextPageParam: (lastPage) => lastPage.lastDoc || undefined,
-    enabled: !!stationId,
+    enabled: Boolean(stationId),
     placeholderData: keepPreviousData,
+    staleTime: 30_000,
   });
 
-  const reviews = data ? data.pages.flatMap((page) => page.reviews) : [];
-
   return {
-    reviews,
-    hasMore: hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error,
+    reviews: queryResult.data ? queryResult.data.pages.flatMap((page) => page.reviews) : [],
+    hasMore: queryResult.hasNextPage,
+    fetchNextPage: queryResult.fetchNextPage,
+    isFetchingNextPage: queryResult.isFetchingNextPage,
+    isLoading: queryResult.isLoading,
+    error: queryResult.error,
+    refetch: queryResult.refetch,
     sortBy,
     setSortBy,
-    refetch,
+    category,
+    setCategory,
   };
+}
+
+function invalidateReviewSurface(queryClient: ReturnType<typeof useQueryClient>, stationId: string, userId?: string) {
+  queryClient.invalidateQueries({ queryKey: ['reviews', stationId] });
+  queryClient.invalidateQueries({ queryKey: ['station', stationId] });
+  if (userId) queryClient.invalidateQueries({ queryKey: ['review-capacity', stationId, userId] });
 }
 
 export function useCreateReview(stationId: string) {
@@ -71,42 +72,85 @@ export function useCreateReview(stationId: string) {
       userName: string;
       userPhoto: string;
       formData: ReviewFormData;
-    }) => createReview(stationId, userId, userName, userPhoto, formData),
-    onSuccess: () => {
-      // Invalidate reviews cache to refetch
-      queryClient.invalidateQueries({ queryKey: ['reviews', stationId] });
-      queryClient.invalidateQueries({ queryKey: ['station', stationId] });
+    }) => createReviewV2(stationId, userId, userName, userPhoto, formData),
+    onSuccess: (_result, variables) => {
+      invalidateReviewSurface(queryClient, stationId, variables.userId);
     },
   });
 }
 
-export function useToggleLike() {
+export function useUpdateReview(stationId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ reviewId, userId }: { reviewId: string; userId: string }) =>
-      toggleLike(reviewId, userId),
-    onSuccess: () => {
-      // Invalidate to refetch updated like counts
-      queryClient.invalidateQueries({ queryKey: ['reviews'] });
-      queryClient.invalidateQueries({ queryKey: ['user-likes'] });
+    mutationFn: ({
+      reviewId,
+      userId,
+      formData,
+    }: {
+      reviewId: string;
+      userId: string;
+      formData: ReviewFormData;
+    }) => updateReviewV2(reviewId, stationId, userId, formData),
+    onSuccess: (_result, variables) => {
+      invalidateReviewSurface(queryClient, stationId, variables.userId);
     },
   });
 }
 
-export function useUserLikes(reviewIds: string[], userId: string | undefined) {
-  return useQuery({
-    queryKey: ['user-likes', userId, ...reviewIds],
-    queryFn: () => getUserLikes(reviewIds, userId!),
-    enabled: !!userId && reviewIds.length > 0,
-    staleTime: 30 * 1000, // 30 seconds
+export function useDeleteReview(stationId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      reviewId,
+      userId,
+      reason,
+    }: {
+      reviewId: string;
+      userId: string;
+      reason: string;
+    }) => deleteReviewV2(reviewId, stationId, userId, reason),
+    onSuccess: (_result, variables) => {
+      invalidateReviewSurface(queryClient, stationId, variables.userId);
+    },
   });
 }
 
-export function useHasUserReviewed(stationId: string, userId: string | undefined) {
+export function useToggleReviewReaction(stationId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      reviewId,
+      userId,
+      reaction,
+    }: {
+      reviewId: string;
+      userId: string;
+      reaction: ReviewReaction;
+    }) => toggleReviewReaction(reviewId, userId, reaction),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['reviews', stationId] });
+      queryClient.invalidateQueries({ queryKey: ['review-reactions', variables.userId] });
+    },
+  });
+}
+
+export function useUserReviewReactions(reviewIds: string[], userId?: string) {
   return useQuery({
-    queryKey: ['has-reviewed', stationId, userId],
-    queryFn: () => hasUserReviewed(stationId, userId!),
-    enabled: !!stationId && !!userId,
+    queryKey: ['review-reactions', userId, ...reviewIds],
+    queryFn: () => getUserReviewReactions(reviewIds, userId!),
+    enabled: Boolean(userId && reviewIds.length),
+    staleTime: 30_000,
+  });
+}
+
+export function useUserActiveReviewCount(stationId: string, userId?: string) {
+  return useQuery({
+    queryKey: ['review-capacity', stationId, userId],
+    queryFn: () => getUserActiveReviewCount(stationId, userId!),
+    enabled: Boolean(stationId && userId),
+    staleTime: 30_000,
   });
 }

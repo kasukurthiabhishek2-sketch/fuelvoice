@@ -56,13 +56,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser({
           uid: 'test-user-123',
           displayName: mockVal === 'admin' ? 'Test Admin' : 'Test User',
-          photoURL: 'https://lh3.googleusercontent.com/a/ACg8ocKD6k78CQfNv1nsWh1CVLzzRQusp8Cl7vuewBvCtcdfyeiVmFazwA=s96-c',
+          photoURL: '',
           email: mockVal === 'admin' ? 'admin@example.com' : 'test@example.com',
         } as unknown as User);
         setProfile({
           uid: 'test-user-123',
           displayName: mockVal === 'admin' ? 'Test Admin' : 'Test User',
-          photoURL: 'https://lh3.googleusercontent.com/a/ACg8ocKD6k78CQfNv1nsWh1CVLzzRQusp8Cl7vuewBvCtcdfyeiVmFazwA=s96-c',
+          photoURL: '',
           role: mockVal === 'admin' ? 'admin' : 'user',
           createdAt: Timestamp.now(),
           reviewCount: 5,

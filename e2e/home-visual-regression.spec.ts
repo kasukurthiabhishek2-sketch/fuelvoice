@@ -106,6 +106,27 @@ test.describe('Station-first visual regression', () => {
     });
   });
 
+  test('light theme keeps homepage surfaces coherent', async ({ page }, testInfo) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const toggle = page.getByRole('button', { name: /switch to light mode/i });
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    await expect(page.locator('html')).not.toHaveClass(/dark/);
+
+    const heroBackground = await page.locator('.minimal-home').evaluate((element) => getComputedStyle(element).backgroundColor);
+    const inputBackground = await page.getByRole('combobox', { name: /search fuel stations/i }).evaluate((element) => getComputedStyle(element).backgroundColor);
+
+    expect(heroBackground).not.toBe('rgb(8, 9, 10)');
+    expect(inputBackground).not.toBe('rgb(17, 19, 21)');
+
+    await page.screenshot({
+      path: screenshotPath(testInfo, 'homepage-light-theme'),
+      fullPage: false,
+      caret: 'initial',
+    });
+  });
+
   test('station page prioritizes trust and review evidence', async ({ page }, testInfo) => {
     await page.addInitScript(() => {
       localStorage.setItem('fuelvoice:mock_user', 'true');

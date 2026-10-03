@@ -32,7 +32,7 @@ env:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -44,21 +44,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium webkit
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Type check
-        run: npm run typecheck
-
-      - name: Production build
-        run: npm run build
-
-      - name: Existing Playwright E2E
-        run: npm run test:e2e -- --grep-invert "capture UX baseline"
-
+      # Normal repository CI runs lint, typecheck, build, dependency/rules checks,
+      # and the existing Playwright suite for this same PR commit. This workflow
+      # owns only the deterministic UX evidence so the gates run in parallel.
       - name: Capture all audit states at four widths
         env:
           UX_AUDIT_OUTPUT: ux-audit/current

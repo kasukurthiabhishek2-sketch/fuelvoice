@@ -114,11 +114,12 @@ test.describe('Station-first visual regression', () => {
     await toggle.click();
     await expect(page.locator('html')).not.toHaveClass(/dark/);
 
-    const heroBackground = await page.locator('.minimal-home').evaluate((element) => getComputedStyle(element).backgroundColor);
-    const inputBackground = await page.getByRole('combobox', { name: /search fuel stations/i }).evaluate((element) => getComputedStyle(element).backgroundColor);
-
-    expect(heroBackground).not.toBe('rgb(8, 9, 10)');
-    expect(inputBackground).not.toBe('rgb(17, 19, 21)');
+    await expect.poll(
+      () => page.locator('.minimal-home').evaluate((element) => getComputedStyle(element).backgroundColor),
+    ).not.toBe('rgb(8, 9, 10)');
+    await expect.poll(
+      () => page.getByRole('combobox', { name: /search fuel stations/i }).evaluate((element) => getComputedStyle(element).backgroundColor),
+    ).not.toBe('rgb(17, 19, 21)');
 
     await page.screenshot({
       path: screenshotPath(testInfo, 'homepage-light-theme'),

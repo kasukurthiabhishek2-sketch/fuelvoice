@@ -30,18 +30,13 @@ export function ConsumerComplaint({
   countryCode: initialCode = '',
   showMobileBar = false,
 }: ConsumerComplaintProps) {
-  const [detectedCountryCode, setDetectedCountryCode] = useState(initialCode);
+  const [detectedCountryCode, setDetectedCountryCode] = useState('');
   const [detecting, setDetecting] = useState(!initialCode);
 
   useEffect(() => {
-    if (initialCode) {
-      setDetectedCountryCode(initialCode);
-      setDetecting(false);
-      return;
-    }
+    if (initialCode) return;
 
     let active = true;
-    setDetecting(true);
     reverseGeocode(lat, lng)
       .then((result) => {
         if (active) setDetectedCountryCode(result?.countryCode || '');
@@ -58,10 +53,11 @@ export function ConsumerComplaint({
     };
   }, [lat, lng, initialCode]);
 
+  const resolvedCountryCode = initialCode || detectedCountryCode;
   const brandRoute = useMemo(() => getVerifiedBrandComplaintRoute(brand), [brand]);
   const governmentRoute = useMemo(
-    () => getGovernmentComplaintRoute(detectedCountryCode),
-    [detectedCountryCode],
+    () => getGovernmentComplaintRoute(resolvedCountryCode),
+    [resolvedCountryCode],
   );
   const primaryRoute = brandRoute || governmentRoute;
 

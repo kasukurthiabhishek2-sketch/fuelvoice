@@ -16,18 +16,18 @@ interface HeroProps {
 
 export function Hero({ userLat, userLng }: HeroProps) {
   return (
-    <section className="minimal-home">
+    <section className="minimal-home" aria-labelledby="home-title">
       <div className="minimal-home-grid" aria-hidden="true" />
       <div className="app-frame relative flex min-h-[calc(100svh-74px)] items-center py-16 sm:py-20">
         <div className="mx-auto w-full max-w-4xl text-center">
           <p className="home-kicker">Fuel station trust, without the noise.</p>
 
-          <h1 className="mx-auto mt-6 max-w-4xl text-[3.2rem] font-medium leading-[0.95] tracking-[-0.065em] text-white sm:text-[4.7rem] lg:text-[6rem]">
+          <h1 id="home-title" className="home-title mx-auto mt-6 max-w-4xl text-[3.2rem] font-medium leading-[0.95] tracking-[-0.065em] sm:text-[4.7rem] lg:text-[6rem]">
             Know the station
-            <span className="block text-white/42">before you trust it.</span>
+            <span className="home-title-muted block">before you trust it.</span>
           </h1>
 
-          <p className="mx-auto mt-7 max-w-2xl text-[15px] leading-7 text-white/58 sm:text-lg sm:leading-8">
+          <p className="home-copy mx-auto mt-7 max-w-2xl text-[15px] leading-7 sm:text-lg sm:leading-8">
             FuelVoice brings customer reviews, a single Trust Score, and verified official complaint routes together on each station page.
           </p>
 
@@ -54,9 +54,9 @@ export function Hero({ userLat, userLng }: HeroProps) {
 function HomeSignal({ number, title, copy }: { number: string; title: string; copy: string }) {
   return (
     <div className="home-signal">
-      <span className="text-[10px] font-bold tracking-[0.14em] text-white/25">{number}</span>
-      <p className="mt-3 text-sm font-semibold text-white/88">{title}</p>
-      <p className="mt-1.5 text-xs leading-5 text-white/42">{copy}</p>
+      <span className="home-signal-number">{number}</span>
+      <p className="home-signal-title">{title}</p>
+      <p className="home-signal-copy">{copy}</p>
     </div>
   );
 }

@@ -44,12 +44,12 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
   const showDenied = permissionState === 'denied';
 
   return (
-    <section className="scroll-mt-24 py-16 sm:py-20 lg:py-24" id="nearby-stations">
+    <section className="nearby-section scroll-mt-24 py-16 sm:py-20 lg:py-24" id="nearby-stations">
       <div className="app-frame">
         <div className="mb-9 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="max-w-3xl">
             <p className="eyebrow">Around you</p>
-            <h2 className="mt-4 text-3xl font-black tracking-[-0.05em] sm:text-4xl lg:text-[2.8rem]" style={{ color: 'var(--text-primary)' }}>
+            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.045em] sm:text-4xl lg:text-[2.8rem]" style={{ color: 'var(--text-primary)' }}>
               Nearby Fuel Stations, without the clutter.
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 sm:text-base" style={{ color: 'var(--text-secondary)' }}>
@@ -162,7 +162,7 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
                             )}
                           </div>
 
-                          <h3 className={`mt-3 truncate font-black tracking-[-0.035em] transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-300 ${featured ? 'text-xl sm:text-2xl' : 'text-[15px]'}`} style={{ color: 'var(--text-primary)' }}>
+                          <h3 className={`mt-3 truncate font-semibold tracking-[-0.03em] transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-300 ${featured ? 'text-xl sm:text-2xl' : 'text-[15px]'}`} style={{ color: 'var(--text-primary)' }}>
                             {station.name}
                           </h3>
                         </div>

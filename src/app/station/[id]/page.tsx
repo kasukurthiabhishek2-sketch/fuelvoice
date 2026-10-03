@@ -165,7 +165,10 @@ export default function StationPage() {
                     <span className="text-6xl font-medium tracking-[-0.065em] text-white">{trustScore}</span>
                     <span className="pb-2 text-sm font-semibold text-white/45">/100</span>
                   </div>
-                  <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                  <div className="trust-meter" aria-hidden="true">
+                    <span style={{ width: `${trustScore}%` }} />
+                  </div>
+                  <p className="mt-2 text-xs text-[var(--text-tertiary)]">
                     {station.reviewCount} review{station.reviewCount === 1 ? '' : 's'}
                   </p>
                 </>

@@ -58,24 +58,26 @@ export function ReviewList({ stationId }: ReviewListProps) {
   return (
     <div>
       <div className="review-controls">
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Review sort order">
           {REVIEW_SORT_OPTIONS.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => setSortBy(option.value as ReviewSortOption)}
               className={`review-filter-pill ${sortBy === option.value ? 'review-filter-pill-active' : ''}`}
+              aria-pressed={sortBy === option.value}
             >
               {option.label}
             </button>
           ))}
         </div>
 
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter reviews by issue">
           <button
             type="button"
             onClick={() => setCategory(null)}
             className={`review-filter-pill ${category === null ? 'review-filter-pill-active' : ''}`}
+            aria-pressed={category === null}
           >
             All issues
           </button>
@@ -85,6 +87,7 @@ export function ReviewList({ stationId }: ReviewListProps) {
               type="button"
               onClick={() => setCategory(value)}
               className={`review-filter-pill ${category === value ? 'review-filter-pill-active' : ''}`}
+              aria-pressed={category === value}
             >
               {label}
             </button>

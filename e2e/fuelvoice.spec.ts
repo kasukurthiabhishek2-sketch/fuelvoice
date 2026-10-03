@@ -449,6 +449,27 @@ test.describe('Mobile station actions', () => {
   });
 });
 
+test.describe('Admin responsiveness', () => {
+  test('contains authenticated admin content inside a 375px viewport', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fuelvoice:mock_user', 'admin');
+      localStorage.setItem('fuelvoice-theme', 'dark');
+    });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { name: 'Admin Panel' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Pending Reports/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Users/ })).toBeVisible();
+
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+  });
+});
+
 test.describe('Fallbacks and metadata', () => {
   test('invalid station IDs fail clearly without invented station data', async ({ page }) => {
     await page.goto('/station/invalid_0', { waitUntil: 'domcontentloaded' });

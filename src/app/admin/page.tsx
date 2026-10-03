@@ -65,16 +65,16 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
+    <div className="grid min-w-0 gap-8 lg:grid-cols-2">
       {/* Stats */}
-      <div className="lg:col-span-2 grid gap-4 sm:grid-cols-3">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-3 lg:col-span-2">
         <StatCard label="Total Reviews" value={reviews?.length || 0} icon="📝" />
         <StatCard label="Pending Reports" value={reports?.length || 0} icon="🚩" />
         <StatCard label="Total Users" value={users?.length || 0} icon="👥" />
       </div>
 
       {/* Pending Reports */}
-      <div className="card p-5">
+      <div className="card min-w-0 p-5">
         <h2 className="font-bold text-base mb-4" style={{ color: 'var(--text-primary)' }}>🚩 Pending Reports ({reports?.length || 0})</h2>
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {reports?.map((r: Report) => (
@@ -92,17 +92,17 @@ export default function AdminPage() {
       </div>
 
       {/* Recent Reviews */}
-      <div className="card p-5">
+      <div className="card min-w-0 p-5">
         <h2 className="font-bold text-base mb-4" style={{ color: 'var(--text-primary)' }}>📝 Recent Reviews</h2>
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {reviews?.map((r: Review) => (
             <div key={r.id} className={`p-3 rounded-xl border ${r.isHidden ? 'opacity-50' : ''}`} style={{ borderColor: 'var(--border-primary)' }}>
-              <div className="flex justify-between items-start">
+              <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{r.userName}</p>
                   <StarRating value={r.rating} size="sm" />
                 </div>
-                <div className="flex gap-1">
+                <div className="flex flex-wrap gap-1 sm:justify-end">
                   <button onClick={() => handleHideReview(r.id, r.isHidden)} className="px-2 py-1 rounded text-xs font-medium hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors" style={{ color: 'var(--text-secondary)' }}>
                     {r.isHidden ? '👁️ Show' : '🙈 Hide'}
                   </button>
@@ -118,10 +118,10 @@ export default function AdminPage() {
       </div>
 
       {/* Users */}
-      <div className="lg:col-span-2 card p-5">
+      <div className="card min-w-0 p-5 lg:col-span-2">
         <h2 className="font-bold text-base mb-4" style={{ color: 'var(--text-primary)' }}>👥 Users</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="max-w-full overflow-x-auto overscroll-x-contain">
+          <table className="w-full min-w-[34rem] text-sm">
             <thead>
               <tr style={{ color: 'var(--text-tertiary)' }}>
                 <th className="text-left py-2 font-medium">Name</th>

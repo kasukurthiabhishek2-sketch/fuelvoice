@@ -95,6 +95,15 @@ test.describe('Station-first visual regression', () => {
       fullPage: false,
       caret: 'initial',
     });
+
+    const nearby = page.locator('#nearby-stations');
+    await nearby.scrollIntoViewIfNeeded();
+    await expect(nearby.getByRole('heading', { name: /Nearby Fuel Stations/i })).toBeVisible();
+    await page.screenshot({
+      path: screenshotPath(testInfo, 'nearby-stations'),
+      fullPage: false,
+      caret: 'initial',
+    });
   });
 
   test('station page prioritizes trust and review evidence', async ({ page }, testInfo) => {

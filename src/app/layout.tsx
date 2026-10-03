@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     default: 'FuelVoice — Honest Petrol Pump & Gas Station Reviews',
     template: '%s | FuelVoice',
   },
-  description: 'Community-driven platform for honest fuel station reviews. Discover quality petrol pumps, report fraud, and make informed choices about fuel quality and service worldwide.',
+  description: 'Check fuel station Trust Scores and customer reviews, then reach verified official complaint channels when something goes wrong.',
   keywords: ['petrol pump reviews', 'gas station reviews', 'fuel station', 'fuel quality', 'consumer complaints', 'petrol bunk'],
   authors: [{ name: 'FuelVoice Community' }],
   openGraph: {
@@ -27,12 +27,12 @@ export const metadata: Metadata = {
     locale: 'en_US',
     siteName: 'FuelVoice',
     title: 'FuelVoice — Honest Petrol Pump & Gas Station Reviews',
-    description: 'Community-driven platform for honest fuel station reviews worldwide.',
+    description: 'Trust Scores, customer reviews, and verified official complaint routes for fuel stations worldwide.',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'FuelVoice — Honest Fuel Station Reviews',
-    description: 'Community-driven platform for honest fuel station reviews worldwide.',
+    description: 'Trust Scores, customer reviews, and verified official complaint routes for fuel stations worldwide.',
   },
   robots: {
     index: true,
@@ -53,19 +53,12 @@ export default function RootLayout({
             __html: `
               try {
                 const t = localStorage.getItem('fuelvoice-theme');
-                const followsSystem = !t || t === 'system';
-                const isDark = t === 'dark' || (followsSystem && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                const isDark = !t || t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
                 document.documentElement.classList.toggle('dark', isDark);
               } catch {}
             `,
           }}
         />
-        <link rel="preconnect" href="https://api.maptiler.com" crossOrigin="" />
-        <link rel="dns-prefetch" href="https://api.maptiler.com" />
-        <link rel="preconnect" href="https://a.tile.openstreetmap.org" crossOrigin="" />
-        <link rel="dns-prefetch" href="https://b.tile.openstreetmap.org" />
-        <link rel="dns-prefetch" href="https://c.tile.openstreetmap.org" />
-        <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossOrigin="" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛽</text></svg>" />
       </head>
       <body className="min-h-full flex flex-col antialiased" style={{ fontFamily: 'var(--font-inter, Inter, system-ui, sans-serif)' }}>

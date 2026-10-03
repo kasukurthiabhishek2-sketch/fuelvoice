@@ -241,6 +241,7 @@ export async function getReviewsV2(
   const constraints: QueryConstraint[] = [
     where('stationId', '==', stationId),
     where('isHidden', '==', false),
+    where('isAnonymous', '==', false),
   ];
   if (category) constraints.push(where('complaintCategories', 'array-contains', category));
 
@@ -282,6 +283,7 @@ async function getAllVisibleReviews(stationId: string): Promise<Review[]> {
       collection(db, 'reviews'),
       where('stationId', '==', stationId),
       where('isHidden', '==', false),
+      where('isAnonymous', '==', false),
     ),
   );
   return snapshot.docs

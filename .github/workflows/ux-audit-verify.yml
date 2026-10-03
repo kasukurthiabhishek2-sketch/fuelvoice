@@ -57,7 +57,7 @@ jobs:
         run: npm run build
 
       - name: Existing Playwright E2E
-        run: npm run test:e2e
+        run: npm run test:e2e -- --grep-invert "capture UX baseline"
 
       - name: Capture all audit states at four widths
         env:

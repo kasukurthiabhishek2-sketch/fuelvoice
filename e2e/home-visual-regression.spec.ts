@@ -87,7 +87,8 @@ test.describe('Station-first visual regression', () => {
 
     await expect(page.locator('.leaflet-container')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: /Nearby Fuel Stations/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Shell Fuel Station/i })).toBeVisible();
+    const stationCard = page.locator(`a[href="/station/${STATION_ID}"]`);
+    await expect(stationCard.getByRole('heading', { name: 'Shell Fuel Station' })).toBeVisible();
 
     await page.screenshot({
       path: screenshotPath(testInfo, 'homepage'),

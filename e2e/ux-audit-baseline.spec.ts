@@ -21,7 +21,8 @@ type NetworkMode =
   | 'nearby-error'
   | 'station-loading'
   | 'station-error'
-  | 'search-loading'\n  | 'search-empty';
+  | 'search-loading'
+  | 'search-empty';
 
 interface CaptureEntry {
   width: number;

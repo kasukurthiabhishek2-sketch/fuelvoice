@@ -7,7 +7,7 @@
  */
 
 import type { OverpassElement, StationSummary } from '@/types/station';
-import { canUseE2EMocks } from '@/lib/testing/e2e';
+import { canUseE2EGuestDataMocks, canUseE2EMocks } from '@/lib/testing/e2e';
 
 const OVERPASS_API_DIRECT = 'https://overpass-api.de/api/interpreter';
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -20,7 +20,7 @@ function getOverpassUrl(): string {
 function isMockMode(): boolean {
   if (!canUseE2EMocks()) return false;
   const value = localStorage.getItem('fuelvoice:mock_user');
-  return value === 'true' || value === 'admin';
+  return value === 'true' || value === 'admin' || canUseE2EGuestDataMocks();
 }
 
 async function postOverpass(query: string): Promise<{ elements?: OverpassElement[] }> {

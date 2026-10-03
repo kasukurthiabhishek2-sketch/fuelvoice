@@ -27,7 +27,7 @@ import {
 import { db } from './config';
 import { getOrCreateStation } from './firestore';
 import { getStationByOsmId } from '@/lib/api/overpass';
-import { canUseE2EMocks } from '@/lib/testing/e2e';
+import { canUseE2EGuestDataMocks, canUseE2EMocks } from '@/lib/testing/e2e';
 import { calculateTrustScore } from '@/lib/trust/trustScore';
 import type {
   ComplaintCategory,
@@ -43,7 +43,7 @@ const PAGE_SIZE = 20;
 function isMockMode(): boolean {
   if (!canUseE2EMocks() || typeof window === 'undefined') return false;
   const value = localStorage.getItem('fuelvoice:mock_user');
-  return value === 'true' || value === 'admin';
+  return value === 'true' || value === 'admin' || canUseE2EGuestDataMocks();
 }
 
 function normalizeReview(id: string, raw: Record<string, unknown>): Review {
@@ -241,6 +241,7 @@ export async function getReviewsV2(
   const constraints: QueryConstraint[] = [
     where('stationId', '==', stationId),
     where('isHidden', '==', false),
+    where('isAnonymous', '==', false),
   ];
   if (category) constraints.push(where('complaintCategories', 'array-contains', category));
 
@@ -282,6 +283,7 @@ async function getAllVisibleReviews(stationId: string): Promise<Review[]> {
       collection(db, 'reviews'),
       where('stationId', '==', stationId),
       where('isHidden', '==', false),
+      where('isAnonymous', '==', false),
     ),
   );
   return snapshot.docs

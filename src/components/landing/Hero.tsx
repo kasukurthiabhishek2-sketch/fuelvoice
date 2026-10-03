@@ -1,14 +1,20 @@
 /**
- * Minimal search-first homepage.
+ * Minimal search-first homepage hero.
  *
- * No geolocation, station API, or map work starts on the landing page.
+ * Location-aware discovery is rendered below this hero so search remains the
+ * immediate action while nearby stations can load progressively.
  */
 
 'use client';
 
 import { SearchBar } from '@/components/search/SearchBar';
 
-export function Hero() {
+interface HeroProps {
+  userLat?: number | null;
+  userLng?: number | null;
+}
+
+export function Hero({ userLat, userLng }: HeroProps) {
   return (
     <section className="minimal-home">
       <div className="minimal-home-grid" aria-hidden="true" />
@@ -28,6 +34,8 @@ export function Hero() {
           <div className="home-search-shell mx-auto mt-9 max-w-3xl text-left">
             <SearchBar
               variant="hero"
+              userLat={userLat}
+              userLng={userLng}
               placeholder="Search a fuel station, brand, locality, or city"
             />
           </div>

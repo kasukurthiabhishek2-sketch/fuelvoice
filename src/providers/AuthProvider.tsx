@@ -13,7 +13,7 @@ import type { User } from 'firebase/auth';
 import { onAuthChange, signInWithGoogle, signOut, getUserProfile, getOrCreateUserProfile } from '@/lib/firebase/auth';
 import type { UserProfile } from '@/types/user';
 import { Timestamp } from 'firebase/firestore';
-import { canUseE2EMocks } from '@/lib/testing/e2e';
+import { canUseE2EGuestDataMocks, canUseE2EMocks } from '@/lib/testing/e2e';
 
 interface AuthContextValue {
   /** Firebase user object (null if not logged in) */
@@ -47,6 +47,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Local mocks are always available in development and are available in the
     // optimized Playwright build only when the explicit CI build flag is set.
+    if (canUseE2EGuestDataMocks()) {
+      const timer = window.setTimeout(() => setLoading(false), 0);
+      return () => window.clearTimeout(timer);
+    }
+
     const mockVal = canUseE2EMocks()
       ? localStorage.getItem('fuelvoice:mock_user')
       : null;

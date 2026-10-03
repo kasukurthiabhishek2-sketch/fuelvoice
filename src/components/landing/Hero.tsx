@@ -1,7 +1,8 @@
 /**
- * Minimal search-first homepage.
+ * Minimal search-first homepage hero.
  *
- * No geolocation, station API, or map work starts on the landing page.
+ * Location-aware discovery is rendered below this hero so search remains the
+ * immediate action while nearby stations can load progressively.
  */
 
 'use client';

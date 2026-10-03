@@ -66,9 +66,9 @@ test.describe('Station-first visual regression', () => {
 
     await expect(page.getByText('Trust Score', { exact: true })).toBeVisible();
     await expect(page.getByText('82', { exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Reviews', exact: true })).toBeVisible();
 
-    const reviewHeading = await page.getByRole('heading', { name: 'Reviews' }).boundingBox();
+    const reviewHeading = await page.getByRole('heading', { name: 'Reviews', exact: true }).boundingBox();
     const detailsHeading = await page.getByRole('heading', { name: /Useful details/i }).boundingBox();
     expect(reviewHeading).not.toBeNull();
     expect(detailsHeading).not.toBeNull();

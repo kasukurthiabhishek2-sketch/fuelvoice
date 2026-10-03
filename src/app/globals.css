@@ -681,10 +681,11 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
-  border-bottom: 1px solid var(--border-secondary);
-  background: color-mix(in srgb, var(--bg-primary) 92%, transparent);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 78%, transparent);
+  background: color-mix(in srgb, var(--bg-primary) 90%, transparent);
+  box-shadow: 0 10px 34px color-mix(in srgb, var(--text-primary) 4%, transparent);
+  backdrop-filter: blur(20px) saturate(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
 }
 
 .fuelvoice-mark {
@@ -692,10 +693,12 @@ body {
   width: 34px;
   height: 34px;
   place-items: center;
-  border: 1px solid var(--border-primary);
-  border-radius: 10px;
-  background: var(--bg-secondary);
+  border: 1px solid color-mix(in srgb, var(--color-brand-500) 28%, var(--border-primary));
+  border-radius: 11px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--color-brand-500) 12%, var(--bg-secondary)), var(--bg-secondary));
   color: var(--text-primary);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 7%, transparent);
 }
 
 .header-action {
@@ -703,23 +706,25 @@ body {
   min-height: 38px;
   align-items: center;
   gap: .45rem;
+  border: 1px solid transparent;
   border-radius: 10px;
   padding: 0 .75rem;
   color: var(--text-secondary);
   font-size: .78rem;
   font-weight: 700;
-  transition: background-color .18s ease, color .18s ease;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease;
 }
 
 .header-action:hover,
 .header-action-active {
-  background: var(--bg-tertiary);
+  border-color: var(--border-primary);
+  background: color-mix(in srgb, var(--bg-tertiary) 82%, transparent);
   color: var(--text-primary);
 }
 
 .product-footer {
   border-top: 1px solid var(--border-secondary);
-  background: var(--bg-primary);
+  background: color-mix(in srgb, var(--bg-primary) 96%, var(--bg-secondary));
 }
 
 .minimal-home {
@@ -727,63 +732,221 @@ body {
   isolation: isolate;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255,255,255,.055), transparent 28rem),
+    radial-gradient(circle at 50% -6%, color-mix(in srgb, var(--color-brand-500) 13%, transparent), transparent 30rem),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-secondary) 72%, var(--bg-primary)), var(--bg-primary) 70%);
+}
+
+.dark .minimal-home {
+  background:
+    radial-gradient(circle at 50% -6%, rgba(131,165,152,.10), transparent 30rem),
+    radial-gradient(circle at 88% 12%, rgba(125,143,165,.055), transparent 24rem),
     #08090a;
 }
 
 .minimal-home-grid {
   position: absolute;
   inset: 0;
-  opacity: .2;
+  opacity: .42;
   background-image:
-    linear-gradient(to right, rgba(255,255,255,.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,.035) 1px, transparent 1px);
+    linear-gradient(to right, color-mix(in srgb, var(--text-primary) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--text-primary) 5%, transparent) 1px, transparent 1px);
   background-size: 54px 54px;
   mask-image: linear-gradient(to bottom, black, transparent 80%);
   -webkit-mask-image: linear-gradient(to bottom, black, transparent 80%);
   pointer-events: none;
 }
 
+.dark .minimal-home-grid {
+  opacity: .2;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,.035) 1px, transparent 1px);
+}
+
 .home-kicker {
-  color: rgba(255,255,255,.5);
+  color: var(--text-tertiary);
   font-size: .72rem;
   font-weight: 700;
   letter-spacing: .15em;
   text-transform: uppercase;
 }
 
+.dark .home-kicker {
+  color: rgba(255,255,255,.5);
+}
+
+.home-title {
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.home-title-muted {
+  color: color-mix(in srgb, var(--text-primary) 44%, transparent);
+}
+
+.home-copy {
+  color: var(--text-secondary);
+}
+
+.dark .home-title {
+  color: white;
+}
+
+.dark .home-title-muted {
+  color: rgba(255,255,255,.42);
+}
+
+.dark .home-copy {
+  color: rgba(255,255,255,.58);
+}
+
 .home-search-shell {
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 18px;
-  background: rgba(255,255,255,.035);
+  border: 1px solid var(--border-primary);
+  border-radius: 19px;
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
   padding: 6px;
+  box-shadow: var(--shadow-lg);
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.home-search-shell:focus-within {
+  border-color: color-mix(in srgb, var(--color-brand-500) 52%, var(--border-primary));
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-1px);
+}
+
+.dark .home-search-shell {
+  border-color: rgba(255,255,255,.12);
+  background: rgba(255,255,255,.035);
   box-shadow: 0 24px 70px rgba(0,0,0,.42);
 }
 
 .home-search-shell input {
   border-radius: 13px !important;
   border-color: transparent !important;
-  background: #111315 !important;
+  background: var(--bg-card) !important;
   box-shadow: none !important;
 }
 
+.dark .home-search-shell input {
+  background: #111315 !important;
+}
+
 .home-search-shell input:focus {
+  border-color: color-mix(in srgb, var(--color-brand-500) 46%, transparent) !important;
+}
+
+.dark .home-search-shell input:focus {
   border-color: rgba(255,255,255,.18) !important;
 }
 
 .home-signal {
-  border-top: 1px solid rgba(255,255,255,.12);
-  padding: 1rem .25rem 0;
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg-card) 80%, transparent);
+  padding: 1rem;
+  box-shadow: var(--shadow-xs);
+  transition: transform .18s ease, border-color .18s ease, background-color .18s ease;
+}
+
+.home-signal:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  background: var(--bg-card-hover);
+}
+
+.dark .home-signal {
+  border-color: rgba(255,255,255,.10);
+  background: rgba(255,255,255,.025);
+  box-shadow: none;
+}
+
+.dark .home-signal:hover {
+  border-color: rgba(255,255,255,.16);
+  background: rgba(255,255,255,.04);
+}
+
+.home-signal-number {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+}
+
+.home-signal-title {
+  margin-top: .7rem;
+  color: var(--text-primary);
+  font-size: .875rem;
+  font-weight: 650;
+}
+
+.home-signal-copy {
+  margin-top: .35rem;
+  color: var(--text-secondary);
+  font-size: .75rem;
+  line-height: 1.25rem;
+}
+
+.dark .home-signal-number { color: rgba(255,255,255,.28); }
+.dark .home-signal-title { color: rgba(255,255,255,.88); }
+.dark .home-signal-copy { color: rgba(255,255,255,.46); }
+
+.search-workspace {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--color-brand-500) 10%, transparent), transparent 24rem),
+    var(--bg-primary);
+}
+
+.search-workspace::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--text-primary) 3%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--text-primary) 3%, transparent) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: linear-gradient(to bottom, black, transparent 72%);
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent 72%);
+}
+
+.search-workspace > .app-frame {
+  position: relative;
+  z-index: 1;
+}
+
+.search-principles {
+  box-shadow: var(--shadow-sm);
+}
+
+.nearby-section {
+  position: relative;
+  border-top: 1px solid var(--border-secondary);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-secondary) 34%, transparent), transparent 20rem),
+    var(--bg-primary);
+}
+
+.dark .nearby-section {
+  background:
+    radial-gradient(circle at 85% 4%, rgba(131,165,152,.045), transparent 26rem),
+    #08090a;
 }
 
 .station-page {
-  background: var(--bg-primary);
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-brand-500) 5%, transparent), transparent 30rem),
+    var(--bg-primary);
 }
 
 .station-hero {
+  position: relative;
+  overflow: hidden;
   border-bottom: 1px solid var(--border-secondary);
   background:
-    radial-gradient(circle at 82% 0%, rgba(255,255,255,.04), transparent 25rem),
+    radial-gradient(circle at 82% 0%, color-mix(in srgb, var(--color-brand-500) 8%, transparent), transparent 25rem),
     var(--bg-primary);
 }
 
@@ -826,11 +989,28 @@ body {
 
 .trust-score-panel {
   min-height: 168px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid color-mix(in srgb, var(--color-brand-500) 18%, var(--border-primary));
   border-radius: 18px;
-  background: linear-gradient(145deg, #111315, #0b0d0e);
+  background:
+    radial-gradient(circle at 88% 12%, rgba(131,165,152,.11), transparent 8rem),
+    linear-gradient(145deg, #111315, #0b0d0e);
   padding: 1.1rem;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 18px 46px rgba(0,0,0,.16);
+}
+
+.trust-meter {
+  height: 4px;
+  overflow: hidden;
+  margin-top: .85rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+}
+
+.trust-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #67897d, #d9e3de);
 }
 
 .review-controls {
@@ -876,8 +1056,20 @@ body {
 .station-error-panel {
   border: 1px solid var(--border-primary);
   border-radius: 18px;
-  background: var(--bg-card);
-  box-shadow: none;
+  background: color-mix(in srgb, var(--bg-card) 96%, transparent);
+  box-shadow: var(--shadow-xs);
+}
+
+.review-card,
+.review-composer-shell,
+.complaint-panel {
+  transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease;
+}
+
+.review-card:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-sm);
 }
 
 .review-card {
@@ -1078,6 +1270,14 @@ body {
 }
 
 @media (max-width: 640px) {
+  .home-signal {
+    padding: .9rem;
+  }
+
+  .search-workspace::before {
+    background-size: 42px 42px;
+  }
+
   .verified-badge {
     max-width: 116px;
     white-space: normal;

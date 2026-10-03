@@ -140,8 +140,10 @@ test.describe('Minimal homepage', () => {
     await expect(page.getByText('Fuel station trust, without the noise.')).toBeVisible();
 
     await expect(page.getByRole('heading', { name: /Nearby Fuel Stations/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Shell Fuel Station/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /IndianOil Station/i })).toBeVisible();
+    const shellStation = page.locator(`a[href="/station/${STATION_ID}"]`);
+    const indianOilStation = page.locator('a[href="/station/node_6254336891"]');
+    await expect(shellStation.getByRole('heading', { name: 'Shell Fuel Station' })).toBeVisible();
+    await expect(indianOilStation.getByRole('heading', { name: 'IndianOil Station' })).toBeVisible();
 
     expect(ipLocationRequests).toBeGreaterThan(0);
     expect(nearbyRequests).toBeGreaterThan(0);

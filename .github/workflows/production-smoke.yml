@@ -64,3 +64,35 @@ jobs:
           grep -Eq '^HTTP/[0-9.]+ 200' "$headers"
 
           echo "Production homepage returned HTTP 200 with expected FuelVoice markers."
+
+
+      - name: Smoke test exact station source
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          station_json="$(curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
+            --max-time 20 \
+            "$PRODUCTION_URL/api/osm-element?type=node&id=2817379324")"
+
+          printf '%s' "$station_json" | jq -e \
+            '.element.type == "node" and
+             .element.id == 2817379324 and
+             .element.tags.amenity == "fuel"' \
+            >/dev/null
+
+          station_status="$(curl \
+            --silent \
+            --show-error \
+            --location \
+            --max-time 20 \
+            --output /dev/null \
+            --write-out '%{http_code}' \
+            "$PRODUCTION_URL/station/node_2817379324")"
+
+          test "$station_status" = "200"
+          echo "Exact regression station source and page are reachable in production."

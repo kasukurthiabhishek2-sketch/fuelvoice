@@ -7,7 +7,7 @@
  */
 
 import type { OverpassElement, StationSummary } from '@/types/station';
-import { canUseE2EGuestDataMocks, canUseE2EMocks } from '@/lib/testing/e2e';
+import { canUseE2EMocks } from '@/lib/testing/e2e';
 
 const OVERPASS_API_DIRECT = 'https://overpass-api.de/api/interpreter';
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -20,7 +20,34 @@ function getOverpassUrl(): string {
 function isMockMode(): boolean {
   if (!canUseE2EMocks()) return false;
   const value = localStorage.getItem('fuelvoice:mock_user');
-  return value === 'true' || value === 'admin' || canUseE2EGuestDataMocks();
+  return value === 'true' || value === 'admin';
+}
+
+async function getExactStationFromOsmApi(
+  osmType: 'node' | 'way' | 'relation',
+  osmId: number,
+): Promise<OverpassElement | null> {
+  if (typeof window === 'undefined') return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(
+      `/api/osm-element?type=${encodeURIComponent(osmType)}&id=${osmId}`,
+      { signal: controller.signal },
+    );
+
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      throw new Error(`OpenStreetMap station source returned ${response.status}`);
+    }
+
+    const payload = await response.json() as { element?: OverpassElement };
+    return payload.element || null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function postOverpass(query: string): Promise<{ elements?: OverpassElement[] }> {
@@ -121,13 +148,28 @@ export async function getStationByOsmId(
     return null;
   }
 
+  const typedOsmType = osmType as 'node' | 'way' | 'relation';
+
+  try {
+    const direct = await getExactStationFromOsmApi(typedOsmType, osmId);
+    if (direct) return direct;
+  } catch {
+    // Exact lookups use the official OSM API first. If that source is
+    // unavailable, fall back to Overpass so one provider cannot break pages.
+  }
+
   const query = `
     [out:json][timeout:10];
-    ${osmType}(${osmId});
+    ${typedOsmType}(${osmId});
     out body center;
   `;
   const data = await postOverpass(query);
-  return data.elements?.[0] || null;
+  const element = data.elements?.find(
+    (candidate) => candidate.type === typedOsmType && candidate.id === osmId,
+  );
+
+  if (!element || element.tags?.amenity !== 'fuel') return null;
+  return element;
 }
 
 function elementToStationSummary(

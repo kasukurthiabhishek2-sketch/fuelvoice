@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const STATION_ID = 'node_6254336890';
+const REGRESSION_STATION_ID = 'node_2817379324';
 
 const PHOTON_RESPONSE = {
   features: [
@@ -74,6 +75,37 @@ async function installDeterministicNetwork(page: Page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(OVERPASS_NEARBY_RESPONSE),
+    });
+  });
+
+  await page.route('**/api/osm-element**', async (route) => {
+    const url = new URL(route.request().url());
+    const osmId = Number(url.searchParams.get('id'));
+    const isRegressionStation = osmId === 2817379324;
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        element: {
+          type: 'node',
+          id: osmId,
+          lat: isRegressionStation ? 17.4419 : 17.3887027,
+          lon: isRegressionStation ? 78.4983 : 78.4753829,
+          tags: {
+            amenity: 'fuel',
+            name: isRegressionStation ? 'Regression Fuel Station' : 'Fuel Station',
+            brand: 'Shell',
+            operator: 'Shell Retail',
+            'addr:street': isRegressionStation ? 'Regression Road' : 'Abids Road',
+            'addr:city': 'Hyderabad',
+            'addr:state': 'Telangana',
+            'addr:country': 'IN',
+            'addr:country_code': 'IN',
+            opening_hours: '24/7',
+          },
+        },
+      }),
     });
   });
 
@@ -214,6 +246,63 @@ test.describe('Signed-out station loading', () => {
       fullPage: false,
       caret: 'initial',
     });
+  });
+
+
+  test('keeps a real-world station page usable when Overpass is unavailable', async ({ page }, testInfo) => {
+    await enableGuestDataMocks(page);
+
+    await page.unroute('**/api/overpass');
+    await page.route('**/api/overpass', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Simulated Overpass outage' }),
+      });
+    });
+
+    let overpassRequests = 0;
+    page.on('request', (request) => {
+      if (request.url().includes('/api/overpass')) overpassRequests += 1;
+    });
+
+    await page.goto(`/station/${REGRESSION_STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Regression Fuel Station');
+    await expect(page.getByText('Trust Score', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Reviews', exact: true })).toBeVisible();
+    await expect(page.getByText('Station data could not be loaded.')).toHaveCount(0);
+    expect(overpassRequests).toBe(0);
+
+    await page.screenshot({
+      path: `e2e/screenshots/station-overpass-outage-${testInfo.project.name}.png`,
+      fullPage: false,
+      caret: 'initial',
+    });
+  });
+
+  test('falls back to Overpass if the official OSM exact lookup is unavailable', async ({ page }) => {
+    await enableGuestDataMocks(page);
+
+    await page.unroute('**/api/osm-element**');
+    await page.route('**/api/osm-element**', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Simulated OSM API outage' }),
+      });
+    });
+
+    let overpassRequests = 0;
+    page.on('request', (request) => {
+      if (request.url().includes('/api/overpass')) overpassRequests += 1;
+    });
+
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Shell Fuel Station');
+    await expect(page.getByRole('heading', { name: 'Reviews', exact: true })).toBeVisible();
+    expect(overpassRequests).toBeGreaterThan(0);
   });
 });
 

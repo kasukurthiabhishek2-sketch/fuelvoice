@@ -41,7 +41,11 @@ service cloud.firestore {
 
     function reviewSlotIdOwnedByRequester(reviewId) {
       return signedIn() && (
-        reviewId.matches('^(node|way|relation)_[0-9]+__' + request.auth.uid + '
+        reviewId.matches('(node|way|relation)_[0-9]+__' + request.auth.uid) ||
+        reviewId.matches('(node|way|relation)_[0-9]+__' + request.auth.uid + '__(1|2|3)')
+      );
+    }
+
     function hasOwnReview(stationId) {
       return signedIn() && (
         exists(/databases/$(database)/documents/reviews/$(stationId + '__' + request.auth.uid)) ||

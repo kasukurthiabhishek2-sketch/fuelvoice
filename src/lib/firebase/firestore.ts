@@ -30,12 +30,12 @@ import { db } from './config';
 import type { Station, StationScores } from '@/types/station';
 import type { Review, ReviewFormData, ReviewSortOption } from '@/types/review';
 import type { UserProfile, Report, ReportReason } from '@/types/user';
-import { canUseE2EMocks } from '@/lib/testing/e2e';
+import { canUseE2EGuestDataMocks, canUseE2EMocks } from '@/lib/testing/e2e';
 
 const isMockMode = (): boolean => {
   if (!canUseE2EMocks()) return false;
   const mockVal = localStorage.getItem('fuelvoice:mock_user');
-  return mockVal === 'true' || mockVal === 'admin';
+  return mockVal === 'true' || mockVal === 'admin' || canUseE2EGuestDataMocks();
 };
 
 /** Helper to identify plain JS objects (vs SDK classes like FieldValue or Timestamp) */
@@ -207,6 +207,8 @@ export async function getOrCreateStation(stationData: Partial<Station> & { id: s
 
 /** Get a station by ID */
 export async function getStation(stationId: string): Promise<Station | null> {
+  if (canUseE2EGuestDataMocks()) return null;
+
   if (isMockMode()) {
     return {
       id: stationId,

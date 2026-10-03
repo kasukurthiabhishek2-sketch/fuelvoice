@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-03T18:47:15.174Z",
+  "capturedAt": "2026-10-03T19:03:16.058Z",
   "baselineCommit": "a9b7f0dbf6c9a081f1c2f21f6d687e597dd4a442",
   "viewport": {
     "width": 1280,
@@ -1471,6 +1471,122 @@
             "y": 502,
             "width": 754,
             "height": 62
+          }
+        ]
+      }
+    },
+    {
+      "width": 1280,
+      "height": 900,
+      "scenario": "search-no-results",
+      "route": "/search",
+      "screenshot": "ux-audit/baseline/screenshots/1280-search-no-results.jpg",
+      "status": "ok",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "viewport": {
+        "url": "/search",
+        "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+        "viewportWidth": 1280,
+        "viewportHeight": 900,
+        "scrollWidth": 1280,
+        "scrollHeight": 1010,
+        "horizontalOverflow": false,
+        "activeElement": {
+          "tag": "input",
+          "ariaLabel": "Search fuel stations",
+          "text": ""
+        },
+        "visible": [
+          {
+            "tag": "header",
+            "role": null,
+            "text": "FuelVoiceSearchSign In",
+            "x": 0,
+            "y": 0,
+            "width": 1280,
+            "height": 75
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "FuelVoice home",
+            "x": 32,
+            "y": 20,
+            "width": 119,
+            "height": 34
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "text": "Search fuel stations",
+            "x": 990,
+            "y": 17,
+            "width": 96,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Switch to light mode",
+            "x": 1092,
+            "y": 17,
+            "width": 40,
+            "height": 40
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Sign in with Google",
+            "x": 1138,
+            "y": 18,
+            "width": 110,
+            "height": 38
+          },
+          {
+            "tag": "main",
+            "role": null,
+            "text": "Station searchFind the station.Then judge it by the evidence.Search by station name, brand, locality, or city. FuelVoice does not request your location just to make search work.Sea",
+            "x": 0,
+            "y": 75,
+            "width": 1280,
+            "height": 826
+          },
+          {
+            "tag": "section",
+            "role": null,
+            "text": "Station searchFind the station.Then judge it by the evidence.Search by station name, brand, locality, or city. FuelVoice does not request your location just to make search work.Sea",
+            "x": 0,
+            "y": 75,
+            "width": 1280,
+            "height": 826
+          },
+          {
+            "tag": "h1",
+            "role": null,
+            "text": "Find the station.Then judge it by the evidence.",
+            "x": 192,
+            "y": 208,
+            "width": 768,
+            "height": 180
+          },
+          {
+            "tag": "input",
+            "role": "combobox",
+            "text": "Search fuel stations",
+            "x": 199,
+            "y": 502,
+            "width": 754,
+            "height": 62
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "text": "Clear search",
+            "x": 836,
+            "y": 517,
+            "width": 32,
+            "height": 32
           }
         ]
       }

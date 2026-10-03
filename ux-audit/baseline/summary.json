@@ -1,6 +1,6 @@
 {
   "baselineCommit": "a9b7f0dbf6c9a081f1c2f21f6d687e597dd4a442",
-  "branchHeadAtCapture": "6abbeaaa06306d60a02d7139adb7185dd61e2724",
+  "branchHeadAtCapture": "febe50c1d9f7486f6281f7cdf57efdb953ea893e",
   "widths": [
     375,
     768,
@@ -8,9 +8,9 @@
     1920
   ],
   "manifestCount": 4,
-  "screenshotCount": 108,
+  "screenshotCount": 112,
   "status": {
-    "ok": 108
+    "ok": 112
   },
   "scenarioErrors": [],
   "consoleErrorCount": 36,

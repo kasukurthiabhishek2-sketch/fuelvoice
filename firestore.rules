@@ -229,7 +229,7 @@ service cloud.firestore {
         request.resource.data.reportCount == 0 &&
         request.resource.data.title == '' &&
         request.resource.data.fuelQuality == 0 &&
-        request.resource.data.service == 0 &&
+        request.resource.data.get('service', 0) == 0 &&
         request.resource.data.staffBehaviour == 0 &&
         request.resource.data.cleanliness == 0 &&
         request.resource.data.washroom == 0 &&

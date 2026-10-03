@@ -91,10 +91,14 @@ test.describe('Minimal homepage', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    const photonResponse = page.waitForResponse(
+      (response) => response.url().startsWith('https://photon.komoot.io/api') && response.ok(),
+    );
     await input.fill('Shell');
+    await photonResponse;
 
     const result = page.getByRole('option', { name: /Shell Fuel Station/i });
-    await expect(result).toBeVisible({ timeout: 5000 });
+    await expect(result).toBeVisible({ timeout: 10000 });
     await result.click();
 
     await expect(page).toHaveURL(new RegExp(`/station/${STATION_ID}$`));
@@ -122,9 +126,9 @@ test.describe('Station trust page', () => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Mock Fuel Station');
     await expect(page.getByText('Trust Score', { exact: true })).toBeVisible();
     await expect(page.getByText('82', { exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Reviews', exact: true })).toBeVisible();
 
-    const reviewsBox = await page.getByRole('heading', { name: 'Reviews' }).boundingBox();
+    const reviewsBox = await page.getByRole('heading', { name: 'Reviews', exact: true }).boundingBox();
     const detailsBox = await page.getByRole('heading', { name: /Useful details/i }).boundingBox();
     expect(reviewsBox).not.toBeNull();
     expect(detailsBox).not.toBeNull();
@@ -165,14 +169,15 @@ test.describe('Station trust page', () => {
   test('negative reviews require an explicit complaint category while text stays optional', async ({ page }) => {
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
 
-    await page.getByRole('button', { name: 'Write a review', exact: true }).click();
-    await page.getByRole('button', { name: '1 star' }).click();
-    await page.getByRole('button', { name: 'Publish review' }).click();
+    const composer = page.locator('#write-review');
+    await composer.getByRole('button', { name: /^Write a review/ }).click();
+    await composer.getByRole('button', { name: '1 star', exact: true }).click();
+    await composer.getByRole('button', { name: 'Publish review', exact: true }).click();
 
-    await expect(page.getByText('Choose at least one complaint category.')).toBeVisible();
+    await expect(composer.getByText('Choose at least one complaint category.')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Fuel quality', exact: true }).click();
-    await page.getByRole('button', { name: 'Publish review' }).click();
+    await composer.getByRole('button', { name: 'Fuel quality', exact: true }).click();
+    await composer.getByRole('button', { name: 'Publish review', exact: true }).click();
 
     await expect(page.getByText('Review published')).toBeVisible();
   });
@@ -196,7 +201,7 @@ test.describe('Station trust page', () => {
     page.on('pageerror', (error) => pageErrors.push(error.message));
 
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Reviews', exact: true })).toBeVisible();
     await page.getByText('Location', { exact: true }).scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
 

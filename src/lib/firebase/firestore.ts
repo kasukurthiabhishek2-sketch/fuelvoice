@@ -242,9 +242,9 @@ export async function getStation(stationId: string): Promise<Station | null> {
   const stationSnap = await getDoc(stationRef);
   if (!stationSnap.exists()) return null;
 
-  const station = normalizeStation(stationSnap.id, stationSnap.data());
-  if (!Number.isFinite(station.lat) || !Number.isFinite(station.lng)) return null;
-  return station;
+  const raw = stationSnap.data();
+  if (!Number.isFinite(raw.lat) || !Number.isFinite(raw.lng)) return null;
+  return normalizeStation(stationSnap.id, raw);
 }
 
 // ────────────────────────────────────────────────────────────────

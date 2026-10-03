@@ -176,7 +176,7 @@ export default function StationPage() {
       </section>
 
       <div className="app-frame py-8 sm:py-10">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-start">
+        <div className="mx-auto max-w-4xl">
           <main className="min-w-0">
             <section id="reviews" className="scroll-mt-28">
               <div className="flex items-end justify-between gap-4">
@@ -205,12 +205,13 @@ export default function StationPage() {
               <ReviewForm stationId={stationId} stationName={station.name} />
             </section>
 
-            <section className="mt-10 lg:hidden">
+            <section className="mt-10">
               <ConsumerComplaint
                 lat={station.lat}
                 lng={station.lng}
                 brand={station.brand}
                 countryCode={station.addressComponents?.countryCode}
+                showMobileBar
               />
             </section>
 
@@ -254,30 +255,13 @@ export default function StationPage() {
                 <LazyStationMap lat={station.lat} lng={station.lng} name={station.name} />
               </div>
             </section>
-          </main>
-
-          <aside className="hidden lg:sticky lg:top-24 lg:block">
-            <ConsumerComplaint
-              lat={station.lat}
-              lng={station.lng}
-              brand={station.brand}
-              countryCode={station.addressComponents?.countryCode}
-            />
-
-            <div className="station-quiet-note mt-4">
+            <div className="station-quiet-note mt-8">
               Station identity and mapped facts come from OpenStreetMap. Customer experiences and Trust Score are FuelVoice community data.
             </div>
-          </aside>
+          </main>
         </div>
       </div>
 
-      <ConsumerComplaint
-        lat={station.lat}
-        lng={station.lng}
-        brand={station.brand}
-        countryCode={station.addressComponents?.countryCode}
-        showMobileBar
-      />
     </div>
   );
 }

@@ -3,14 +3,14 @@
 **Status:** Phase 1 draft, before brutal review  
 **Product baseline:** `a9b7f0dbf6c9a081f1c2f21f6d687e597dd4a442`  
 **Audit branch:** `ux-audit-2026-10-04`  
-**Evidence:** 108 deterministic screenshots, four viewport manifests, source inspection, baseline CI  
+**Evidence:** 112 deterministic screenshots, four viewport manifests, source inspection, baseline CI  
 **Viewports:** 375×812, 768×1024, 1280×900, 1920×1080
 
 ## 1. Method and evidence
 
 This report describes the product that actually rendered from the baseline commit. It does not infer screens from a design system or from intended documentation.
 
-The local ChatGPT execution container could not resolve GitHub/npm, so executable evidence was produced by GitHub Actions from this repository. Phase 0 passed `npm ci`, Chromium installation, `npm run lint`, `npm run typecheck`, `npm run build`, and the deterministic Playwright capture harness. All 108 scenarios rendered; there were zero page exceptions. The 36 console errors are expected network errors from the deliberately simulated 503 and 404 scenarios. See `ux-audit/baseline/test-results.md` and `ux-audit/baseline/summary.json`.
+The local ChatGPT execution container could not resolve GitHub/npm, so executable evidence was produced by GitHub Actions from this repository. Phase 0 passed `npm ci`, Chromium installation, `npm run lint`, `npm run typecheck`, `npm run build`, and the deterministic Playwright capture harness. The supplemented baseline contains 112 deterministic screenshots; every scenario rendered and there were zero page exceptions. The 36 console errors are expected network errors from the deliberately simulated 503 and 404 scenarios. See `ux-audit/baseline/test-results.md` and `ux-audit/baseline/summary.json`.
 
 The baseline screenshot convention is:
 
@@ -23,7 +23,7 @@ The corresponding DOM/viewport measurement evidence is:
 - `ux-audit/baseline/manifest-1280.json`
 - `ux-audit/baseline/manifest-1920.json`
 
-The capture suite covers signed-out and signed-in navigation, an open user menu, search focus/results/loading, nearby loading/empty/error, station loading/error, review composer and validation, keyboard focus, administrator authorization states, 404, hover, and light/dark themes.
+The capture suite covers signed-out and signed-in navigation, an open user menu, search focus/results/loading/no-results, nearby loading/empty/error, station loading/error, review composer and validation, keyboard focus, administrator authorization states, 404, hover, and light/dark themes.
 
 Reference principles used by this audit:
 
@@ -70,7 +70,7 @@ Search is icon-only below the `sm` breakpoint but retains `aria-label="Search fu
 
 **User-menu state.** The signed-in trigger is 44×44. Opening it reveals a 256 px dropdown with identity, review/like counts, optional Admin Panel, and Sign Out. It closes on outside pointer click. It does **not** currently close on Escape or explicitly transfer/restore focus. Its trigger uses `aria-haspopup="true"`, but the popup is not implemented with menu semantics or as a clearly documented disclosure pattern. The copy “5 reviews • 2 likes” also uses legacy “likes” terminology while review actions use “Helpful / Not helpful.” Evidence: `375-home-signed-in-user-menu-open.jpg`; code `src/components/auth/UserMenu.tsx`.
 
-**Hierarchy issue.** On the home page the header Search control and the hero search field are visible in the same first viewport at all four tested widths. They perform related discovery tasks. On 375 px the header Search is at y17 and the hero field at y530; on 1280 px the header Search is at y17 and the hero field at y539. This is redundant on home rather than complementary because the hero already provides the richer direct-search action. On station/admin/404, persistent header Search remains useful.
+**Hierarchy assessment.** On the home page the header Search control and hero search field are visible in the same first viewport at all four tested widths. On 375 px the header Search is at y17 and the hero field at y530; on 1280 px the header Search is at y17 and the hero field at y539. They are related but **complementary**: the global control consistently opens the dedicated `/search` workspace, while the hero combobox supports immediate station selection. Removing the global item only on home would weaken navigation consistency. The plan therefore keeps both and removes the genuinely misleading inert “SEARCH” badge inside the hero field.
 
 ### Footer
 
@@ -152,7 +152,7 @@ Defects: tertiary helper text contrast fails; the desktop “SEARCH” badge is 
 ## 5. Search page — `/search`
 
 **Code:** `src/app/search/page.tsx`, `src/components/search/SearchBar.tsx`.  
-**Evidence:** `*-search-default.jpg`, `*-search-results-open.jpg`, `*-search-loading.jpg`, `*-search-light-theme.jpg`.
+**Evidence:** `*-search-default.jpg`, `*-search-results-open.jpg`, `*-search-loading.jpg`, `*-search-no-results.jpg`, `*-search-light-theme.jpg`.
 
 ### Purpose and layout
 
@@ -172,7 +172,7 @@ No captured search state has document horizontal overflow.
 
 ### Components, states, feedback
 
-The same SearchBar supports focused, searching, results, clear, selected-option, no-results, and Escape states. Loading uses an aria-labelled spinner plus `aria-busy`; successful selection routes to `/station/<id>`. The source component contains an explicit visible no-results panel even though a separate screenshot is not required to prove its presence.
+The same SearchBar supports focused, searching, results, clear, selected-option, no-results, and Escape states. Loading uses an aria-labelled spinner plus `aria-busy`; successful selection routes to `/station/<id>`. The visible no-results panel is now captured deterministically at all four widths in `*-search-no-results.jpg`.
 
 The principle strip consists of:
 - “No location gate” / “Search works without granting location permission.”
@@ -456,38 +456,27 @@ Browser Back/Forward works through ordinary Next.js navigation. No custom histor
 **Files:** `src/app/globals.css`, `src/components/ui/ThemeToggle.tsx`, `src/components/auth/LoginButton.tsx`, admin component styles, Footer.  
 **Acceptance:** no important mobile control under 44×44 unless documented as an inline-link exception; no 375 px overflow.
 
-### P2 — Home duplicate Search affordance
+### P2 — Home search hierarchy: preserve global navigation, remove false affordance
 
-**Before:** header Search and hero station search are simultaneously visible on home at all breakpoints.
+**Before:** header Search and hero station search are simultaneously visible, and the desktop hero field also contains an inert bordered “SEARCH” badge.
 
-**After:** hide the header Search link on `/` while retaining theme/auth; retain header Search on every non-home route.
+**After:** keep the global Search link on every route, including home, because it consistently opens the dedicated workspace. Remove only the inert “SEARCH” badge from the hero SearchBar. Do not create route-specific header behavior.
 
-**Rationale:** one dominant search action on the landing page; persistent global Search remains where the hero is absent.  
-**Risk:** low; route remains reachable through hero autocomplete but the dedicated `/search` route loses its one-click home-header entry. The Nearby “Search another area” still provides a route-level search entry.  
-**Files:** `src/components/layout/Header.tsx`.  
-**Acceptance:** home first viewport has one search affordance; station/admin/404 retain global Search.
-
-### P2 — False “SEARCH” affordance inside hero field
-
-**Before:** desktop hero input ends with an inert bordered `span` reading “Search.”
-
-**After:** remove it and use the space for input/clear/loading only.
-
-**Rationale:** clickable-looking objects should be clickable; search purpose is already explicit.  
+**Rationale:** Nielsen consistency favors stable global navigation. The two real controls are complementary; the misleading third visual affordance is not.  
 **Risk:** very low.  
 **Files:** `src/components/search/SearchBar.tsx`.  
-**Acceptance:** no inert button-like badge; loading/clear controls still align.
+**Acceptance:** global Search remains reachable and identically placed on all routes; the hero field contains only actual input/loading/clear affordances.
 
-### P2 — User menu keyboard/disclosure behavior and terminology
+### P2 — User menu keyboard/disclosure behavior
 
-**Before:** outside click closes the popup, but Escape/focus return are not implemented; “likes” is legacy copy.
+**Before:** outside click closes the popup, but Escape/focus return are not implemented.
 
-**After:** implement a clear disclosure pattern: Escape closes, focus returns to trigger, route/sign-out actions close; use “helpful” terminology consistent with review reactions. Do not invent unavailable profile data.
+**After:** implement a clear disclosure pattern: Escape closes, focus returns to trigger, and route/sign-out actions close. Retain the existing profile counter wording during this pass because the stored `likeCount` field's exact legacy meaning is not proven by the UX layer.
 
-**Rationale:** predictable keyboard behavior and cross-page naming consistency.  
-**Risk:** low/medium; avoid overusing ARIA menu roles unless full menu keyboard semantics are implemented.  
+**Rationale:** predictable keyboard behavior without fabricating data semantics.  
+**Risk:** low/medium; avoid ARIA `menu` roles unless the full menu keyboard model is implemented.  
 **Files:** `src/components/auth/UserMenu.tsx`.  
-**Acceptance:** keyboard test can open, traverse, Escape-close, and regain trigger focus.
+**Acceptance:** keyboard test can open, traverse, Escape-close, and regain trigger focus; displayed counters remain data-compatible.
 
 ### P2 — Admin/404 component-system drift
 
@@ -504,7 +493,7 @@ Browser Back/Forward works through ordinary Next.js navigation. No custom histor
 
 **Before:** dedicated Search says FuelVoice “does not request your location just to make search work,” while home nearby discovery can automatically use approximate IP location. The search claim is technically about permission, but the system behavior is easy to overgeneralize.
 
-**After:** clarify that station search does not require **precise browser-location permission**, and keep home copy explicit that nearby ordering may use approximate area until the user enables precise distance.
+**After:** use the exact Search supporting sentence: “Search by station name, brand, locality, or city. Search does not require precise browser-location permission.” Change the Search principle copy to “Search works without precise location permission.” Keep the existing home Nearby sentence: “Ordered around your approximate area. Precise location improves distance accuracy when you choose to enable it.”
 
 **Rationale:** match between system and real world; privacy clarity.  
 **Risk:** low; copy only.  
@@ -528,7 +517,7 @@ Browser Back/Forward works through ordinary Next.js navigation. No custom histor
 2. Correct StarRating semantics and review-form labels/errors.
 3. Stabilize admin loading/error/auth recovery and responsive layout.
 4. Normalize important hit targets.
-5. Remove misleading/duplicate search affordances.
+5. Remove the misleading inert hero Search badge while preserving global navigation.
 6. Harden user-menu keyboard behavior and terminology.
 7. Bring admin/404/footer/copy into the current product system.
 8. Run aggressive final e2e, keyboard, axe, edge-state, and screenshot-diff verification.
@@ -543,7 +532,7 @@ These items could improve UX but would change functionality or product policy, s
 2. **Admin moderation confirmations.** Requiring a confirmation dialog for Ban/Hide/Dismiss/Accept adds an interaction step and changes moderation flow. The current pass can improve target sizing and feedback, but will not add confirmations without a product decision.
 3. **Navigation-state preservation.** Guaranteeing exact return-to-results/scroll state after station visits would add explicit navigation state rather than styling-only behavior.
 4. **Mobile sticky action priority.** Changing whether “File a complaint” or “Write a review” is visually dominant would express a product priority rather than fix a correctness defect. The existing pair will remain.
-5. **Business/data model semantics for legacy profile likes.** The visible word can be aligned to current “helpful” terminology, but the meaning/storage of `profile.likeCount` will not be redefined.
+5. **Business/data model semantics for legacy profile likes.** The UX layer cannot prove that `profile.likeCount` is equivalent to current Helpful reactions. Its stored meaning, migration, and public label need a product/data decision; this pass will not relabel the counter.
 
 ## 14. Baseline strengths that must not regress
 
@@ -557,3 +546,81 @@ These items could improve UX but would change functionality or product policy, s
 - Both themes work across public/admin routes.
 - No normal home/search/station/404 state has document-level horizontal overflow.
 - Existing URLs, data models, API contracts, review calculations, moderation behavior, and station-fetch logic remain out of scope for change.
+
+
+## 15. Component inventory and disposition
+
+This inventory makes the review mechanically auditable rather than requiring cross-reading of route prose.
+
+| Component | Current role / measured size | Current states | Disposition |
+| --- | --- | --- | --- |
+| Header logo | Home link, 119×34 measured | default | Keep |
+| Header Search | 42×40 at 375; 96×40 at ≥768 | default, current-page on /search | Keep globally; raise hit area toward 44 without changing route |
+| Theme toggle | 40×40 | light/dark | Keep; raise hit area |
+| Compact Sign In | 110×38 measured | default, loading, error toast | Keep behavior; raise hit area |
+| User-menu trigger | 44×44 | closed/open | Keep; add Escape/focus-return disclosure behavior |
+| User-menu popup | 256 px wide | identity, optional admin link, sign-out | Keep; do not invent like/helpful semantics |
+| Hero SearchBar | 329×57 at 375; 754×62 desktop | focus, loading, results, no-results, clear, keyboard active option | Keep; remove inert desktop “SEARCH” badge |
+| Home signal card | passive bordered card | default/hover | Keep |
+| Nearby section | section + station cards | loading, empty, error, result, hover | Keep behavior |
+| Nearby station card | full-card station link | default/hover/focus | Keep |
+| Station Search/Share | 36 px high | default/focus | Raise hit area toward 44 |
+| Station primary/secondary actions | ≥44 px high | default/hover/focus | Keep |
+| Trust Score panel | min-height 138 mobile / 168 desktop | insufficient-data / score | Keep |
+| Review sort/filter pill | 40 px high | selected/unselected | Raise to 44 where layout remains stable |
+| StarRating read-only | five disabled 16 px buttons in measured feed | numeric display | Replace with one static labelled rating representation |
+| StarRating interactive | five 44×44 buttons | unset/hover/selected | Convert semantics to radio model; preserve value/hover |
+| Review card edit/delete icon | 34×34 | closed/open/pending/error | Raise hit area; preserve mutation behavior |
+| Review reaction | min-height 34 | off/on/pending/error toast | Raise hit area; preserve optimistic behavior |
+| Review composer | expandable panel | signed-out, collapsed, open, validation, pending, success toast | Keep flow; improve semantics only |
+| Complaint panel/actions | prominent official-help region | supported/unsupported destinations, mobile fixed bar | Keep |
+| Station map | lazy map shell | unloaded/loading/loaded | Keep |
+| Footer links | ~16–17 px text height | default/hover/focus | Add quiet padded hit area |
+| Admin guard | centered state | auth-loading/signed-out/non-admin | Add labelled loading and direct sign-in recovery |
+| Admin stat card | large summary card | loading/success/error after change | Remove emoji styling; keep values |
+| Admin report/review/user controls | 16–24 px measured | default/pending/success/error via mutations | Raise hit area; preserve action semantics |
+| Admin table | wide tabular content | success/empty/error after change | Contain horizontal scrolling; never widen document |
+| 404 recovery | centered message + 44 px Home action | dark/light | Align with product SVG/action system; add Search secondary |
+
+## 16. Expected flow impact after approved changes
+
+| Flow | Baseline clicks/taps | Expected after | Allowed change |
+| --- | ---: | ---: | --- |
+| Home autocomplete → station | 2 | 2 | No flow-count change |
+| Home nearby → station | 1 | 1 | No flow-count change |
+| Header Search → station | 3 | 3 | Global nav remains available on home and every other route |
+| Search page → station | 2 | 2 | No flow-count change |
+| Station → directions | 1 | 1 | No flow-count change |
+| Station → reviews | 0–1 | 0–1 | No flow-count change |
+| Signed-in review publish | 3–4+ depending on rating | same | Only semantics/labels change |
+| Station → complaint | 1–2 | 1–2 | No flow-count change |
+| Signed-out admin → initiate sign-in | 1 via header, but body action mismatched | 1 in-context | Recovery becomes locally obvious |
+| 404 → home | 1 | 1 | Search becomes an additional 1-click recovery |
+
+## 17. Accessibility test mechanism
+
+The repository does not currently contain axe. To satisfy the explicit Phase 4 requirement, the plan allows exactly one new dependency:
+
+- **`@axe-core/playwright` as a devDependency only**, installed for automated WCAG checks in Playwright. It does not enter the production runtime bundle.
+
+Final accessibility tests will run `AxeBuilder` against home, Search default/results/no-results, station default/review form/error, admin authorization/admin content, and 404 at representative mobile and desktop widths. Any serious or critical violation fails the final audit; all moderate/minor findings must be either fixed or recorded with evidence and rationale. Keyboard-only tests are separate and cannot be substituted by axe.
+
+## 18. Per-change screenshot-diff contract
+
+Every product change must recapture all four widths. The following scenario allowlist defines where visual differences are expected; a difference outside the allowlist is investigated and the change is reverted/redone if it cannot be explained by deterministic content.
+
+| Change | Expected visual-difference scenarios |
+| --- | --- |
+| Contrast tokens | Broad: any scenario containing tertiary text in either theme |
+| Admin overflow + feedback | `admin-*` only |
+| Station loading overflow | `station-loading` only |
+| StarRating semantics | station review states and admin review content; static appearance should remain effectively unchanged |
+| ReviewCard labels/errors | station signed-in/review-form/validation states only |
+| Target sizing | routes containing the adjusted controls; geometry changes must match target classes only |
+| Hero inert Search badge removal | home/search at 768, 1280, 1920; 375 should be visually unchanged |
+| User-menu keyboard hardening | open-menu screenshot should be visually unchanged except any intentional hit-area geometry |
+| 404 consistency | `not-found*` only |
+| Location microcopy | `search-*` text region only |
+| Footer hit area | footer geometry only |
+
+For each implementation commit, results are stored under `ux-audit/after/<change-id>/` with a short diff note naming expected and unexpected changes. A screenshot being different is not itself failure; an **unexplained difference outside the approved area** is.

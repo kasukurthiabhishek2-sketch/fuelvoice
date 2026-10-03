@@ -112,6 +112,14 @@ async function enableMockUser(page: Page) {
   });
 }
 
+async function enableGuestDataMocks(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.removeItem('fuelvoice:mock_user');
+    localStorage.setItem('fuelvoice:mock_guest_data', 'true');
+    localStorage.setItem('fuelvoice-theme', 'dark');
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await installDeterministicNetwork(page);
 });
@@ -168,6 +176,42 @@ test.describe('Minimal homepage', () => {
     await expect(toggle).toBeVisible();
     await toggle.click();
     await expect(page.locator('html')).not.toHaveClass(/dark/);
+  });
+});
+
+test.describe('Signed-out station loading', () => {
+  test('loads an uncached mapped station without requiring a Firestore write', async ({ page }) => {
+    await enableGuestDataMocks(page);
+
+    let firestoreRequests = 0;
+    page.on('request', (request) => {
+      if (request.url().includes('firestore.googleapis.com')) firestoreRequests += 1;
+    });
+
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Fuel Station');
+    await expect(page.getByText('Trust Score', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Reviews', exact: true })).toBeVisible();
+    await expect(page.getByText('Insufficient data', { exact: true })).toBeVisible();
+
+    await page.waitForTimeout(300);
+    expect(firestoreRequests).toBe(0);
+    expect(pageErrors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+
+    await page.screenshot({
+      path: 'e2e/screenshots/station-signed-out-uncached.png',
+      fullPage: false,
+      caret: 'initial',
+    });
   });
 });
 

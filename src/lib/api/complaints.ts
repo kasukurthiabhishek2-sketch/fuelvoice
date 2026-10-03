@@ -1,190 +1,137 @@
 /**
- * Consumer Complaint Portal Links
- * 
- * Maps country codes to relevant consumer protection organizations
- * and complaint filing URLs. Auto-detected via user's geolocation.
+ * Verified complaint destinations.
+ *
+ * Only official brand/operator or government/consumer-protection destinations
+ * belong here. Unknown countries and unverified brands intentionally return no
+ * route rather than sending a frustrated user somewhere questionable.
  */
 
-export interface ComplaintPortal {
+export interface ComplaintRoute {
   name: string;
   description: string;
   url: string;
-  phone?: string;
-  icon: string; // emoji
+  kind: 'brand' | 'government';
+  verified: true;
 }
 
 export interface CountryComplaints {
   country: string;
-  portals: ComplaintPortal[];
+  portals: ComplaintRoute[];
 }
 
-/** Complaint portals by country code (ISO 3166-1 alpha-2, lowercase) */
-const COMPLAINT_PORTALS: Record<string, CountryComplaints> = {
+const GOVERNMENT_ROUTES: Record<string, { country: string; route: ComplaintRoute }> = {
   in: {
     country: 'India',
-    portals: [
-      {
-        name: 'National Consumer Helpline',
-        description: 'Department of Consumer Affairs grievance portal and helpline',
-        url: 'https://consumerhelpline.gov.in/',
-        phone: '1915',
-        icon: '📞',
-      },
-      {
-        name: 'PNGRB Integrated Grievance Portal',
-        description: 'Complaints covering retail fuel stations, CNG/PNG and petroleum services',
-        url: 'https://eportal.pngrb.gov.in/consumerweb/Grievance/grievance',
-        icon: '⚖️',
-      },
-      {
-        name: 'CPGRAMS',
-        description: 'Government public grievance portal, including petroleum and natural gas matters',
-        url: 'https://pgportal.gov.in/',
-        icon: '🏛️',
-      },
-    ],
+    route: {
+      name: 'National Consumer Helpline',
+      description: 'Government of India consumer grievance portal.',
+      url: 'https://consumerhelpline.gov.in/public/',
+      kind: 'government',
+      verified: true,
+    },
   },
   us: {
     country: 'United States',
-    portals: [
-      {
-        name: 'FTC Report Fraud',
-        description: 'Federal Trade Commission — report fraud and scams',
-        url: 'https://reportfraud.ftc.gov',
-        phone: '1-877-382-4357',
-        icon: '🏛️',
-      },
-      {
-        name: 'State Consumer Protection',
-        description: 'Find your state attorney general\'s consumer protection office',
-        url: 'https://www.usa.gov/state-consumer',
-        icon: '⚖️',
-      },
-      {
-        name: 'Better Business Bureau',
-        description: 'File a complaint with the BBB',
-        url: 'https://www.bbb.org/file-a-complaint',
-        icon: '📋',
-      },
-    ],
+    route: {
+      name: 'State consumer protection office',
+      description: 'USAGov directory for official state consumer protection offices.',
+      url: 'https://www.usa.gov/state-consumer',
+      kind: 'government',
+      verified: true,
+    },
   },
   gb: {
     country: 'United Kingdom',
-    portals: [
-      {
-        name: 'Citizens Advice',
-        description: 'Free consumer rights advice and complaint guidance',
-        url: 'https://www.citizensadvice.org.uk/consumer',
-        phone: '0808 223 1133',
-        icon: '🏛️',
-      },
-      {
-        name: 'Trading Standards',
-        description: 'Report unfair trading to local Trading Standards',
-        url: 'https://www.gov.uk/find-local-trading-standards-office',
-        icon: '⚖️',
-      },
-    ],
+    route: {
+      name: 'Consumer rights help',
+      description: 'GOV.UK consumer rights and complaint guidance.',
+      url: 'https://www.gov.uk/consumer-protection-rights',
+      kind: 'government',
+      verified: true,
+    },
   },
   au: {
     country: 'Australia',
-    portals: [
-      {
-        name: 'ACCC',
-        description: 'Australian Competition & Consumer Commission',
-        url: 'https://www.accc.gov.au/contact-us/contact-the-accc',
-        phone: '1300 302 502',
-        icon: '🏛️',
-      },
-      {
-        name: 'Fair Trading',
-        description: 'State/territory fair trading office',
-        url: 'https://www.accc.gov.au/about-us/australian-consumer-law/state-territory-consumer-agencies',
-        icon: '⚖️',
-      },
-    ],
+    route: {
+      name: 'ACCC consumer issue',
+      description: 'Australian Competition and Consumer Commission reporting and complaint guidance.',
+      url: 'https://www.accc.gov.au/about-us/contact-us-or-report-an-issue',
+      kind: 'government',
+      verified: true,
+    },
   },
   ca: {
     country: 'Canada',
-    portals: [
-      {
-        name: 'Competition Bureau',
-        description: 'Report anti-competitive activity or fraud',
-        url: 'https://www.competitionbureau.gc.ca/eic/site/cb-bc.nsf/eng/h_00125.html',
-        phone: '1-800-348-5358',
-        icon: '🏛️',
-      },
-      {
-        name: 'Consumer Protection',
-        description: 'Provincial consumer protection offices',
-        url: 'https://www.canada.ca/en/financial-consumer-agency.html',
-        icon: '⚖️',
-      },
-    ],
-  },
-  de: {
-    country: 'Germany',
-    portals: [
-      {
-        name: 'Verbraucherzentrale',
-        description: 'German Consumer Advice Centre',
-        url: 'https://www.verbraucherzentrale.de',
-        icon: '🏛️',
-      },
-    ],
-  },
-  fr: {
-    country: 'France',
-    portals: [
-      {
-        name: 'DGCCRF',
-        description: 'Direction Générale de la Concurrence — consumer protection',
-        url: 'https://www.economie.gouv.fr/dgccrf/contacter-dgccrf',
-        icon: '🏛️',
-      },
-    ],
+    route: {
+      name: 'Consumer Complaint Roadmap',
+      description: 'Government of Canada guidance to the correct complaint-handling body.',
+      url: 'https://ised-isde.canada.ca/site/office-consumer-affairs/en/complaint-roadmap',
+      kind: 'government',
+      verified: true,
+    },
   },
 };
 
-/** Generic complaint instructions for countries not in our database */
-const GENERIC_COMPLAINTS: CountryComplaints = {
-  country: 'Your Country',
-  portals: [
-    {
-      name: 'Local Consumer Protection',
-      description: 'Contact your national or local consumer protection agency',
-      url: '',
-      icon: '🏛️',
-    },
-    {
-      name: 'Police / Law Enforcement',
-      description: 'For fraud or criminal activity, file a report with local police',
-      url: '',
-      icon: '🚔',
-    },
-    {
-      name: 'Online Consumer Forums',
-      description: 'Post your experience on consumer forums for community support',
-      url: '',
-      icon: '💬',
-    },
-  ],
+const BRAND_ROUTES: Record<string, ComplaintRoute> = {
+  shell: {
+    name: 'Shell customer support',
+    description: 'Official Shell contact and country support directory.',
+    url: 'https://www.shell.com/who-we-are/contact-us.html',
+    kind: 'brand',
+    verified: true,
+  },
+  'indian oil': {
+    name: 'IndianOil customer care',
+    description: 'Official complaints and queries for IndianOil products and petrol pumps.',
+    url: 'https://www.iocl.com/contact-us/',
+    kind: 'brand',
+    verified: true,
+  },
+  iocl: {
+    name: 'IndianOil customer care',
+    description: 'Official complaints and queries for IndianOil products and petrol pumps.',
+    url: 'https://www.iocl.com/contact-us/',
+    kind: 'brand',
+    verified: true,
+  },
+  'hindustan petroleum': {
+    name: 'HPCL retail grievance',
+    description: 'Official public grievance route for HPCL retail fuel services.',
+    url: 'https://www.hindustanpetroleum.com/retailpgr',
+    kind: 'brand',
+    verified: true,
+  },
+  hpcl: {
+    name: 'HPCL retail grievance',
+    description: 'Official public grievance route for HPCL retail fuel services.',
+    url: 'https://www.hindustanpetroleum.com/retailpgr',
+    kind: 'brand',
+    verified: true,
+  },
 };
 
-/**
- * Get complaint portals for a country.
- * @param countryCode - ISO 3166-1 alpha-2 code (lowercase)
- */
-export function getComplaintPortals(countryCode: string): CountryComplaints {
-  return COMPLAINT_PORTALS[countryCode.toLowerCase()] || {
-    ...GENERIC_COMPLAINTS,
-    country: countryCode.toUpperCase(),
-  };
+function normalize(value: string): string {
+  return value.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
-/** Get all supported countries */
+export function getVerifiedBrandComplaintRoute(brand: string): ComplaintRoute | null {
+  if (!brand.trim()) return null;
+  return BRAND_ROUTES[normalize(brand)] || null;
+}
+
+export function getGovernmentComplaintRoute(countryCode: string): ComplaintRoute | null {
+  if (!countryCode.trim()) return null;
+  return GOVERNMENT_ROUTES[normalize(countryCode)]?.route || null;
+}
+
+export function getComplaintPortals(countryCode: string): CountryComplaints | null {
+  const data = GOVERNMENT_ROUTES[normalize(countryCode)];
+  if (!data) return null;
+  return { country: data.country, portals: [data.route] };
+}
+
 export function getSupportedCountries(): { code: string; name: string }[] {
-  return Object.entries(COMPLAINT_PORTALS).map(([code, data]) => ({
+  return Object.entries(GOVERNMENT_ROUTES).map(([code, data]) => ({
     code,
     name: data.country,
   }));

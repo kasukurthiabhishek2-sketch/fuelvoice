@@ -193,13 +193,212 @@ test.describe('Minimal homepage', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await expect(input).toHaveAttribute('aria-autocomplete', 'list');
     await input.pressSequentially('Shell', { delay: 40 });
 
     const result = page.getByRole('option', { name: /Shell Fuel Station/i });
     await expect(result).toBeVisible({ timeout: 10000 });
-    await result.click();
 
-    await expect(page).toHaveURL(new RegExp(`/station/${STATION_ID}$`));
+    await input.press('ArrowDown');
+    await expect(input).toHaveAttribute('aria-activedescendant', `search-result-${STATION_ID}`);
+    await expect(result).toHaveAttribute('aria-selected', 'true');
+
+    await input.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`/station/${STATION_ID}import { expect, test, type Page } from '@playwright/test';
+
+const STATION_ID = 'node_6254336890';
+const REGRESSION_STATION_ID = 'node_2817379324';
+
+const PHOTON_RESPONSE = {
+  features: [
+    {
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [78.4753829, 17.3887027] },
+      properties: {
+        osm_id: 6254336890,
+        osm_type: 'N',
+        osm_key: 'amenity',
+        osm_value: 'fuel',
+        name: 'Shell Fuel Station',
+        city: 'Hyderabad',
+        state: 'Telangana',
+        country: 'India',
+        countrycode: 'IN',
+      },
+    },
+  ],
+};
+
+const OVERPASS_NEARBY_RESPONSE = {
+  elements: [
+    {
+      type: 'node',
+      id: 6254336890,
+      lat: 17.3887027,
+      lon: 78.4753829,
+      tags: {
+        amenity: 'fuel',
+        name: 'Shell Fuel Station',
+        brand: 'Shell',
+        'addr:street': 'Abids Road',
+        'addr:city': 'Hyderabad',
+        'addr:state': 'Telangana',
+        'addr:country': 'IN',
+      },
+    },
+    {
+      type: 'node',
+      id: 6254336891,
+      lat: 17.3901,
+      lon: 78.478,
+      tags: {
+        amenity: 'fuel',
+        name: 'IndianOil Station',
+        brand: 'IndianOil',
+        'addr:city': 'Hyderabad',
+        'addr:state': 'Telangana',
+        'addr:country': 'IN',
+      },
+    },
+  ],
+};
+
+async function installDeterministicNetwork(page: Page) {
+  await page.route('https://ipwho.is/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        latitude: 17.3887027,
+        longitude: 78.4753829,
+      }),
+    });
+  });
+
+  await page.route('**/api/overpass', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(OVERPASS_NEARBY_RESPONSE),
+    });
+  });
+
+  await page.route('**/api/osm-element**', async (route) => {
+    const url = new URL(route.request().url());
+    const osmId = Number(url.searchParams.get('id'));
+    const isRegressionStation = osmId === 2817379324;
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        element: {
+          type: 'node',
+          id: osmId,
+          lat: isRegressionStation ? 17.4419 : 17.3887027,
+          lon: isRegressionStation ? 78.4983 : 78.4753829,
+          tags: {
+            amenity: 'fuel',
+            name: isRegressionStation ? 'Regression Fuel Station' : 'Fuel Station',
+            brand: 'Shell',
+            operator: 'Shell Retail',
+            'addr:street': isRegressionStation ? 'Regression Road' : 'Abids Road',
+            'addr:city': 'Hyderabad',
+            'addr:state': 'Telangana',
+            'addr:country': 'IN',
+            'addr:country_code': 'IN',
+            opening_hours: '24/7',
+          },
+        },
+      }),
+    });
+  });
+
+  await page.route('https://photon.komoot.io/api**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(PHOTON_RESPONSE),
+    });
+  });
+
+  await page.route('https://nominatim.openstreetmap.org/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        display_name: 'Hyderabad, Telangana, India',
+        address: {
+          city: 'Hyderabad',
+          state: 'Telangana',
+          country: 'India',
+          country_code: 'in',
+        },
+      }),
+    });
+  });
+
+  await page.route('https://api.maptiler.com/**', (route) => route.abort());
+  await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
+}
+
+async function enableMockUser(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('fuelvoice:mock_user', 'true');
+    localStorage.setItem('fuelvoice-theme', 'dark');
+  });
+}
+
+async function enableGuestDataMocks(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.removeItem('fuelvoice:mock_user');
+    localStorage.setItem('fuelvoice:mock_guest_data', 'true');
+    localStorage.setItem('fuelvoice-theme', 'dark');
+  });
+}
+
+test.beforeEach(async ({ page }) => {
+  await installDeterministicNetwork(page);
+});
+
+test.describe('Minimal homepage', () => {
+  test('loads nearby stations from approximate location without eager map work', async ({ page }) => {
+    let ipLocationRequests = 0;
+    let nearbyRequests = 0;
+    page.on('request', (request) => {
+      if (request.url().includes('ipwho.is')) ipLocationRequests += 1;
+      if (request.url().includes('/api/overpass')) nearbyRequests += 1;
+    });
+
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Know the station');
+    await expect(page.getByRole('combobox', { name: /search fuel stations/i })).toBeVisible();
+    await expect(page.getByText('Fuel station trust, without the noise.')).toBeVisible();
+
+    await expect(page.getByRole('heading', { name: /Nearby Fuel Stations/i })).toBeVisible();
+    const shellStation = page.locator(`a[href="/station/${STATION_ID}"]`);
+    const indianOilStation = page.locator('a[href="/station/node_6254336891"]');
+    await expect(shellStation.getByRole('heading', { name: 'Shell Fuel Station' })).toBeVisible();
+    await expect(indianOilStation.getByRole('heading', { name: 'IndianOil Station' })).toBeVisible();
+
+    expect(ipLocationRequests).toBeGreaterThan(0);
+    expect(nearbyRequests).toBeGreaterThan(0);
+    await expect(page.locator('.leaflet-container')).toHaveCount(0);
+    await expect(page.locator('#explore-map')).toHaveCount(0);
+
+    await page.screenshot({
+      path: 'e2e/screenshots/home-location-stations.png',
+      fullPage: true,
+      caret: 'initial',
+    });
+  });
+
+  test('autocomplete navigates toward a station page', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+));
   });
 
   test('defaults to dark while preserving the user theme toggle', async ({ page }) => {
@@ -361,13 +560,26 @@ test.describe('Station trust page', () => {
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
 
     const composer = page.locator('#write-review');
-    await composer.getByRole('button', { name: /^Write a review/ }).click();
-    await composer.getByRole('button', { name: '1 star', exact: true }).click();
+    const openComposer = composer.getByRole('button', { name: /^Write a review/ });
+    await expect(openComposer).toHaveAttribute('aria-expanded', 'false');
+    await openComposer.click();
+    await expect(composer.locator('#review-form-panel')).toBeVisible();
+
+    const oneStar = composer.getByRole('button', { name: '1 star', exact: true });
+    const starBox = await oneStar.boundingBox();
+    expect(starBox).not.toBeNull();
+    expect(starBox!.width).toBeGreaterThanOrEqual(44);
+    expect(starBox!.height).toBeGreaterThanOrEqual(44);
+
+    await oneStar.click();
+    await expect(oneStar).toHaveAttribute('aria-pressed', 'true');
     await composer.getByRole('button', { name: 'Publish review', exact: true }).click();
 
     await expect(composer.getByText('Choose at least one complaint category.')).toBeVisible();
 
-    await composer.getByRole('button', { name: 'Fuel quality', exact: true }).click();
+    const fuelQuality = composer.getByRole('button', { name: 'Fuel quality', exact: true });
+    await fuelQuality.click();
+    await expect(fuelQuality).toHaveAttribute('aria-pressed', 'true');
     await composer.getByRole('button', { name: 'Publish review', exact: true }).click();
 
     await expect(page.getByText('Review published')).toBeVisible();
@@ -414,6 +626,8 @@ test.describe('Mobile station actions', () => {
     await expect(write).toBeVisible();
     await expect(complaint).toBeVisible();
     await expect(complaint).toHaveAttribute('href', /shell\.com/);
+    await expect(page.getByRole('link', { name: 'Search fuel stations' })).toBeVisible();
+    await expect(page.locator('.review-controls')).toHaveCSS('position', 'static');
 
     const metrics = await page.evaluate(() => ({
       innerWidth: window.innerWidth,

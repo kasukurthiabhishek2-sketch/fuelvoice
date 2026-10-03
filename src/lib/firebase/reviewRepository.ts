@@ -196,7 +196,7 @@ function mockReviews(stationId: string): Review[] {
       complaintCategories: rating <= 2
         ? [index % 2 === 0 ? 'fuel-quality' : 'short-filling']
         : [],
-      helpfulCount: (index * 3) % 8,
+      helpfulCount: index === 2 ? 1 : (index * 3) % 8,
       notHelpfulCount: index === 2 ? 5 : index % 3,
       reviewerJoinedAt: Timestamp.fromMillis(createdAt.toMillis() - (60 + index * 45) * 86_400_000),
       createdAt,

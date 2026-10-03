@@ -8,6 +8,44 @@ function screenshotPath(testInfo: TestInfo, name: string) {
 }
 
 async function installNetwork(page: Page) {
+  await page.route('https://ipwho.is/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        latitude: 17.3887027,
+        longitude: 78.4753829,
+      }),
+    });
+  });
+
+  await page.route('**/api/overpass', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        elements: [
+          {
+            type: 'node',
+            id: 6254336890,
+            lat: 17.3887027,
+            lon: 78.4753829,
+            tags: {
+              amenity: 'fuel',
+              name: 'Shell Fuel Station',
+              brand: 'Shell',
+              'addr:street': 'Abids Road',
+              'addr:city': 'Hyderabad',
+              'addr:state': 'Telangana',
+              'addr:country': 'IN',
+            },
+          },
+        ],
+      }),
+    });
+  });
+
   await page.route('https://nominatim.openstreetmap.org/**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -27,7 +65,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Station-first visual regression', () => {
-  test('homepage stays minimal, dark and within the first viewport', async ({ page }, testInfo) => {
+  test('homepage keeps the search hero fast while nearby stations load below it', async ({ page }, testInfo) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const heading = page.getByRole('heading', { level: 1 });
@@ -48,6 +86,8 @@ test.describe('Station-first visual regression', () => {
     expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
 
     await expect(page.locator('.leaflet-container')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: /Nearby Fuel Stations/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Shell Fuel Station/i })).toBeVisible();
 
     await page.screenshot({
       path: screenshotPath(testInfo, 'homepage'),

@@ -535,6 +535,56 @@ test.describe('Mobile station actions', () => {
   });
 });
 
+test.describe('Admin query feedback', () => {
+  test('does not show a false reports zero while reports are still loading', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fuelvoice:mock_user', 'admin');
+      localStorage.setItem('fuelvoice-theme', 'dark');
+      localStorage.setItem('fuelvoice:mock_admin_reports', 'slow');
+    });
+
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByText('Loading reports…')).toBeVisible();
+    await expect(page.getByText('No pending reports 🎉')).toHaveCount(0);
+    await expect(page.getByText('Test User', { exact: true })).toBeVisible();
+    await expect(page.getByText('Total Users', { exact: true })).toBeVisible();
+
+    await expect(page.getByRole('heading', { name: '🚩 Pending Reports (1)' })).toBeVisible({ timeout: 8000 });
+  });
+
+  for (const dataset of ['reports', 'reviews', 'users'] as const) {
+    test(`isolates a failed ${dataset} query from successful admin sections`, async ({ page }) => {
+      await page.addInitScript((failedDataset) => {
+        localStorage.setItem('fuelvoice:mock_user', 'admin');
+        localStorage.setItem('fuelvoice-theme', 'dark');
+        localStorage.setItem(`fuelvoice:mock_admin_${failedDataset}`, 'error');
+      }, dataset);
+
+      await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+      const expectedError = {
+        reports: 'Reports could not be loaded.',
+        reviews: 'Reviews could not be loaded.',
+        users: 'Users could not be loaded.',
+      }[dataset];
+
+      await expect(page.getByText(expectedError)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
+
+      if (dataset !== 'reports') {
+        await expect(page.getByText('spam', { exact: true })).toBeVisible();
+      }
+      if (dataset !== 'reviews') {
+        await expect(page.getByText('Great experience', { exact: true })).toBeVisible();
+      }
+      if (dataset !== 'users') {
+        await expect(page.getByText('Spammer Bob', { exact: true })).toBeVisible();
+      }
+    });
+  }
+});
+
 test.describe('Admin responsiveness', () => {
   test('contains authenticated admin content inside a 375px viewport', async ({ page }) => {
     await page.addInitScript(() => {

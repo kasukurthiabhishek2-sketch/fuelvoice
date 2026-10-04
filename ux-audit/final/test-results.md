@@ -1,6 +1,6 @@
 # Phase 4 final test results
 
-Final product commit under test: d0f2d75453cb5a17711c5274da245a9080e21a06
+Final product commit under test: e3b5df0ab5ee9cf2e711f45d97004110f6b87511
 
 | Gate | Outcome |
 | --- | --- |
@@ -13,7 +13,7 @@ Final product commit under test: d0f2d75453cb5a17711c5274da245a9080e21a06
 | 112-state deterministic recapture | success |
 | @axe-core/playwright 4.13.0 CI-only install | success |
 | Chromium aligned to axe Playwright runtime | success |
-| zero-violation axe audit | failure |
+| zero-violation axe audit | success |
 | baseline/final screenshot comparison | success |
 
 @axe-core/playwright@4.13.0 is installed only in this audit workflow. It is not added to production dependencies or the application bundle.

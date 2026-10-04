@@ -2,50 +2,5 @@
   "project": "a11y-375",
   "scenario": "search-empty-light",
   "url": "http://localhost:3000/search",
-  "violations": [
-    {
-      "id": "aria-prohibited-attr",
-      "impact": "serious",
-      "tags": [
-        "cat.aria",
-        "wcag2a",
-        "wcag412",
-        "EN-301-549",
-        "EN-9.4.1.2",
-        "RGAAv4",
-        "RGAA-7.1.1"
-      ],
-      "description": "Ensure ARIA attributes are not prohibited for an element's role",
-      "help": "Elements must only use permitted ARIA attributes",
-      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/aria-prohibited-attr?application=playwright",
-      "nodes": [
-        {
-          "any": [],
-          "all": [],
-          "none": [
-            {
-              "id": "aria-prohibited-attr",
-              "data": {
-                "role": null,
-                "nodeName": "span",
-                "messageKey": "noRoleSingular",
-                "prohibited": [
-                  "aria-label"
-                ]
-              },
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "aria-label attribute cannot be used on a span with no valid role attribute."
-            }
-          ],
-          "impact": "serious",
-          "html": "<span class=\"h-4 w-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent\" aria-label=\"Searching\"></span>",
-          "target": [
-            ".animate-spin"
-          ],
-          "failureSummary": "Fix all of the following:\n  aria-label attribute cannot be used on a span with no valid role attribute."
-        }
-      ]
-    }
-  ]
+  "violations": []
 }

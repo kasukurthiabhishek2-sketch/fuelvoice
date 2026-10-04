@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-04T13:45:43.249Z",
+  "capturedAt": "2026-10-04T13:55:18.435Z",
   "baselineCommit": "unknown",
   "viewport": {
     "width": 768,
@@ -1471,6 +1471,15 @@
             "y": 486,
             "width": 706,
             "height": 62
+          },
+          {
+            "tag": "span",
+            "role": "status",
+            "text": "Searching",
+            "x": 709,
+            "y": 509,
+            "width": 16,
+            "height": 16
           }
         ]
       }

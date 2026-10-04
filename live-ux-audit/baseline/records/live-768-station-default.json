@@ -310,22 +310,17 @@
       }
     ],
     "navigation": {
-      "domContentLoadedMs": 225,
-      "loadMs": 372,
-      "responseStartMs": 46,
+      "domContentLoadedMs": 179,
+      "loadMs": 355,
+      "responseStartMs": 65,
       "transferSize": 5377
     },
-    "resourceCount": 34
+    "resourceCount": 28
   },
   "signals": {
     "consoleErrors": [],
     "pageErrors": [],
-    "failedRequests": [
-      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=0&CI=0&TYPE=xmlhttp&zx=ipen15r2don8&t=1 :: net::ERR_ABORTED",
-      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=6&CI=1&TYPE=xmlhttp&zx=6n8tfbw5vp12&t=1 :: net::ERR_ABORTED",
-      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=8&CI=1&TYPE=xmlhttp&zx=9v5zliwlfypg&t=1 :: net::ERR_ABORTED",
-      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=14&CI=1&TYPE=xmlhttp&zx=xf959z4oqrlc&t=1 :: net::ERR_ABORTED"
-    ],
+    "failedRequests": [],
     "badResponses": []
   },
   "axeViolations": []

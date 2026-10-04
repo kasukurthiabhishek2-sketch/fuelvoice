@@ -9,7 +9,7 @@ Rendered states: 36
 | Document overflow | 0 |
 | Page errors | 0 |
 | Console errors | 4 |
-| Failed requests | 18 |
+| Failed requests | 0 |
 | HTTP 4xx/5xx responses | 4 |
 | Axe violations | 0 |
 | Visible targets below 24px in either dimension | 42 |
@@ -46,98 +46,7 @@ None in audited states.
       "error": "Failed to load resource: the server responded with a status of 404 ()"
     }
   ],
-  "failedRequests": [
-    {
-      "project": "live-375",
-      "scenario": "station-default",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=0&CI=0&TYPE=xmlhttp&zx=ekasdi8kepar&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-375",
-      "scenario": "station-default",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=7&CI=1&TYPE=xmlhttp&zx=u6ewrrhm83fz&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-375",
-      "scenario": "station-default",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=9&CI=1&TYPE=xmlhttp&zx=h06g8za9ghj8&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-375",
-      "scenario": "station-default",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=11&CI=1&TYPE=xmlhttp&zx=pcvwu0uce8ib&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-375",
-      "scenario": "station-default",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=16&CI=1&TYPE=xmlhttp&zx=63ojdgn8e3uj&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-375",
-      "scenario": "station-reviews",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=0&CI=0&TYPE=xmlhttp&zx=ekasdi8kepar&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-375",
-      "scenario": "station-reviews",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=7&CI=1&TYPE=xmlhttp&zx=u6ewrrhm83fz&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-375",
-      "scenario": "station-reviews",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=9&CI=1&TYPE=xmlhttp&zx=h06g8za9ghj8&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-375",
-      "scenario": "station-reviews",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=11&CI=1&TYPE=xmlhttp&zx=pcvwu0uce8ib&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-375",
-      "scenario": "station-reviews",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=16&CI=1&TYPE=xmlhttp&zx=63ojdgn8e3uj&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-768",
-      "scenario": "station-default",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=0&CI=0&TYPE=xmlhttp&zx=ipen15r2don8&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-768",
-      "scenario": "station-default",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=6&CI=1&TYPE=xmlhttp&zx=6n8tfbw5vp12&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-768",
-      "scenario": "station-default",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=8&CI=1&TYPE=xmlhttp&zx=9v5zliwlfypg&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-768",
-      "scenario": "station-default",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=14&CI=1&TYPE=xmlhttp&zx=xf959z4oqrlc&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-768",
-      "scenario": "station-reviews",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=0&CI=0&TYPE=xmlhttp&zx=ipen15r2don8&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-768",
-      "scenario": "station-reviews",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=6&CI=1&TYPE=xmlhttp&zx=6n8tfbw5vp12&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-768",
-      "scenario": "station-reviews",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=8&CI=1&TYPE=xmlhttp&zx=9v5zliwlfypg&t=1 :: net::ERR_ABORTED"
-    },
-    {
-      "project": "live-768",
-      "scenario": "station-reviews",
-      "error": "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=Pwf1RsTUl9u98q3tjisWnKzf32Eo09N7dzxqh7FW7biQiEgbkKD5LQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=zxYycfSN6LCGm-nXy1hqeQ&AID=14&CI=1&TYPE=xmlhttp&zx=xf959z4oqrlc&t=1 :: net::ERR_ABORTED"
-    }
-  ],
+  "failedRequests": [],
   "badResponses": [
     {
       "project": "live-1280",
@@ -186,7 +95,7 @@ None in audited states.
     "width": 67.5,
     "height": 17,
     "x": 32,
-    "y": 1639
+    "y": 2497
   },
   {
     "project": "live-1280",
@@ -197,7 +106,7 @@ None in audited states.
     "width": 67.5,
     "height": 17,
     "x": 32,
-    "y": 1639
+    "y": 2497
   },
   {
     "project": "live-1280",
@@ -307,7 +216,7 @@ None in audited states.
     "width": 67.5,
     "height": 17,
     "x": 320,
-    "y": 1819
+    "y": 2677
   },
   {
     "project": "live-1920",
@@ -318,7 +227,7 @@ None in audited states.
     "width": 67.5,
     "height": 17,
     "x": 320,
-    "y": 1819
+    "y": 2677
   },
   {
     "project": "live-1920",
@@ -428,7 +337,7 @@ None in audited states.
     "width": 67.5,
     "height": 17,
     "x": 16,
-    "y": 2284
+    "y": 2517
   },
   {
     "project": "live-375",
@@ -439,7 +348,7 @@ None in audited states.
     "width": 67.5,
     "height": 17,
     "x": 16,
-    "y": 2284
+    "y": 2517
   },
   {
     "project": "live-375",
@@ -527,7 +436,7 @@ None in audited states.
     "width": 67.5,
     "height": 17,
     "x": 24,
-    "y": 1836
+    "y": 3216
   },
   {
     "project": "live-768",
@@ -538,7 +447,7 @@ None in audited states.
     "width": 67.5,
     "height": 17,
     "x": 24,
-    "y": 1836
+    "y": 3216
   },
   {
     "project": "live-768",

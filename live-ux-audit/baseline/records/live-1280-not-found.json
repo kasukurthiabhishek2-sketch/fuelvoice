@@ -109,9 +109,9 @@
       }
     ],
     "navigation": {
-      "domContentLoadedMs": 111,
-      "loadMs": 243,
-      "responseStartMs": 48,
+      "domContentLoadedMs": 116,
+      "loadMs": 290,
+      "responseStartMs": 68,
       "transferSize": 5156
     },
     "resourceCount": 19

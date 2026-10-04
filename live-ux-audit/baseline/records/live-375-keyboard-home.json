@@ -72,28 +72,6 @@
     {
       "tag": "a",
       "role": null,
-      "name": "Top mapped resultChevronChevron01Address details are not available for this mapped station.200mTrust",
-      "id": "",
-      "width": 343,
-      "height": 354,
-      "outlineWidth": "3px",
-      "outlineStyle": "solid",
-      "boxShadow": "none"
-    },
-    {
-      "tag": "a",
-      "role": null,
-      "name": "Fuel Station02Address details are not available for this mapped station.500mTrust score available af",
-      "id": "",
-      "width": 343,
-      "height": 354,
-      "outlineWidth": "3px",
-      "outlineStyle": "solid",
-      "boxShadow": "none"
-    },
-    {
-      "tag": "a",
-      "role": null,
       "name": "FuelVoice",
       "id": "",
       "width": 67,
@@ -130,7 +108,7 @@
       "name": "FuelVoiceSearchSign InFuel station trust, without the noise.Know the stationbefore you trust it.Fuel",
       "id": "",
       "width": 375,
-      "height": 2436,
+      "height": 2669,
       "outlineWidth": "3px",
       "outlineStyle": "none",
       "boxShadow": "none"
@@ -197,6 +175,28 @@
       "id": "",
       "width": 343,
       "height": 45,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "FuelVoice",
+      "id": "",
+      "width": 67,
+      "height": 17,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "Search stations",
+      "id": "",
+      "width": 104,
+      "height": 44,
       "outlineWidth": "3px",
       "outlineStyle": "solid",
       "boxShadow": "none"

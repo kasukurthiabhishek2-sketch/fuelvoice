@@ -7,7 +7,7 @@
     "innerWidth": 375,
     "innerHeight": 812,
     "scrollWidth": 375,
-    "scrollHeight": 2436,
+    "scrollHeight": 2669,
     "headings": [
       {
         "level": "h1",
@@ -16,14 +16,6 @@
       {
         "level": "h2",
         "text": "Nearby Fuel Stations, without the clutter."
-      },
-      {
-        "level": "h3",
-        "text": "Chevron"
-      },
-      {
-        "level": "h3",
-        "text": "Fuel Station"
       }
     ],
     "interactive": [
@@ -84,29 +76,11 @@
       {
         "tag": "a",
         "role": null,
-        "name": "Top mapped resultChevronChevron01Address details are not available for this mapped station.200mTrust",
-        "width": 343,
-        "height": 353.8,
-        "x": 16,
-        "y": 1460
-      },
-      {
-        "tag": "a",
-        "role": null,
-        "name": "Fuel Station02Address details are not available for this mapped station.500mTrust score available af",
-        "width": 343,
-        "height": 353.8,
-        "x": 16,
-        "y": 1829
-      },
-      {
-        "tag": "a",
-        "role": null,
         "name": "FuelVoice",
         "width": 67.5,
         "height": 17,
         "x": 16,
-        "y": 2284
+        "y": 2517
       },
       {
         "tag": "a",
@@ -115,7 +89,7 @@
         "width": 104,
         "height": 44,
         "x": 16,
-        "y": 2360
+        "y": 2593
       },
       {
         "tag": "a",
@@ -124,7 +98,7 @@
         "width": 108,
         "height": 44,
         "x": 132,
-        "y": 2360
+        "y": 2593
       }
     ],
     "undersizedTargets": [
@@ -135,16 +109,16 @@
         "width": 67.5,
         "height": 17,
         "x": 16,
-        "y": 2284
+        "y": 2517
       }
     ],
     "navigation": {
-      "domContentLoadedMs": 657,
-      "loadMs": 1630,
-      "responseStartMs": 64,
+      "domContentLoadedMs": 422,
+      "loadMs": 696,
+      "responseStartMs": 79,
       "transferSize": 6638
     },
-    "resourceCount": 21
+    "resourceCount": 20
   },
   "signals": {
     "consoleErrors": [],

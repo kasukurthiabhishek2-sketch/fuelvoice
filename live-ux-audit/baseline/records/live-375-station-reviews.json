@@ -301,23 +301,17 @@
       }
     ],
     "navigation": {
-      "domContentLoadedMs": 930,
-      "loadMs": 1151,
-      "responseStartMs": 45,
+      "domContentLoadedMs": 992,
+      "loadMs": 1217,
+      "responseStartMs": 66,
       "transferSize": 5377
     },
-    "resourceCount": 34
+    "resourceCount": 28
   },
   "signals": {
     "consoleErrors": [],
     "pageErrors": [],
-    "failedRequests": [
-      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=0&CI=0&TYPE=xmlhttp&zx=ekasdi8kepar&t=1 :: net::ERR_ABORTED",
-      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=7&CI=1&TYPE=xmlhttp&zx=u6ewrrhm83fz&t=1 :: net::ERR_ABORTED",
-      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=9&CI=1&TYPE=xmlhttp&zx=h06g8za9ghj8&t=1 :: net::ERR_ABORTED",
-      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=11&CI=1&TYPE=xmlhttp&zx=pcvwu0uce8ib&t=1 :: net::ERR_ABORTED",
-      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=16&CI=1&TYPE=xmlhttp&zx=63ojdgn8e3uj&t=1 :: net::ERR_ABORTED"
-    ],
+    "failedRequests": [],
     "badResponses": []
   },
   "axeViolations": []

@@ -100,12 +100,12 @@
       }
     ],
     "navigation": {
-      "domContentLoadedMs": 113,
-      "loadMs": 236,
-      "responseStartMs": 47,
+      "domContentLoadedMs": 118,
+      "loadMs": 291,
+      "responseStartMs": 67,
       "transferSize": 6638
     },
-    "resourceCount": 21
+    "resourceCount": 20
   },
   "signals": {
     "consoleErrors": [],

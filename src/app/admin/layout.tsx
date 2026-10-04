@@ -25,7 +25,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!user) {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
-        <div className="text-5xl mb-4">🔒</div>
+        <AdminAccessIcon kind="lock" />
         <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Access Denied</h1>
         <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>Please sign in to access this page.</p>
         <div className="mx-auto flex max-w-xs flex-col items-stretch gap-3">
@@ -39,10 +39,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!isAdmin) {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
-        <div className="text-5xl mb-4">🛡️</div>
+        <AdminAccessIcon kind="shield" />
         <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Admin Only</h1>
         <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>You do not have admin privileges.</p>
-        <Link href="/" className="text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">← Back to Home</Link>
+        <div className="mt-6 flex justify-center">
+          <Link href="/" className="secondary-action">Back to Home</Link>
+        </div>
       </div>
     );
   }
@@ -54,6 +56,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <span className="px-3 py-1 rounded-lg text-xs font-medium bg-brand-500/10 text-brand-500">Admin</span>
       </div>
       {children}
+    </div>
+  );
+}
+
+
+function AdminAccessIcon({ kind }: { kind: 'lock' | 'shield' }) {
+  return (
+    <div
+      className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]"
+      aria-hidden="true"
+    >
+      {kind === 'lock' ? (
+        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <rect x="5" y="10" width="14" height="10" rx="2" />
+          <path d="M8 10V7a4 4 0 0 1 8 0v3" strokeLinecap="round" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M12 3 19 6v5c0 4.5-2.8 8-7 10-4.2-2-7-5.5-7-10V6l7-3Z" strokeLinejoin="round" />
+          <path d="m9.5 12 1.7 1.7 3.6-4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
     </div>
   );
 }

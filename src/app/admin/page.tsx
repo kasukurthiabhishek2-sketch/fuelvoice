@@ -96,7 +96,7 @@ export default function AdminPage() {
 
       <section className="card min-w-0 p-5" aria-labelledby="admin-reports-heading">
         <h2 id="admin-reports-heading" className="mb-4 text-base font-bold" style={{ color: 'var(--text-primary)' }}>
-          🚩 Pending Reports{reportsQuery.isSuccess ? ` (${reports.length})` : ''}
+          Pending Reports{reportsQuery.isSuccess ? ` (${reports.length})` : ''}
         </h2>
         <div className="max-h-96 space-y-3 overflow-y-auto">
           {reportsQuery.isLoading ? (
@@ -118,13 +118,13 @@ export default function AdminPage() {
               </div>
             ))
           ) : (
-            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No pending reports 🎉</p>
+            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No pending reports.</p>
           )}
         </div>
       </section>
 
       <section className="card min-w-0 p-5" aria-labelledby="admin-reviews-heading">
-        <h2 id="admin-reviews-heading" className="mb-4 text-base font-bold" style={{ color: 'var(--text-primary)' }}>📝 Recent Reviews</h2>
+        <h2 id="admin-reviews-heading" className="mb-4 text-base font-bold" style={{ color: 'var(--text-primary)' }}>Recent Reviews</h2>
         <div className="max-h-96 space-y-3 overflow-y-auto">
           {reviewsQuery.isLoading ? (
             <AdminSectionLoading label="Loading reviews…" />
@@ -143,10 +143,10 @@ export default function AdminPage() {
                   </div>
                   <div className="flex flex-wrap gap-1 sm:justify-end">
                     <button onClick={() => handleHideReview(r.id, r.isHidden)} className="min-h-11 rounded px-2 py-1 text-xs font-medium transition-colors hover:bg-surface-100 dark:hover:bg-surface-700" style={{ color: 'var(--text-secondary)' }}>
-                      {r.isHidden ? '👁️ Show' : '🙈 Hide'}
+                      {r.isHidden ? 'Show' : 'Hide'}
                     </button>
                     <button onClick={() => handleFeature(r.id, r.isFeatured)} className="min-h-11 rounded px-2 py-1 text-xs font-medium transition-colors hover:bg-surface-100 dark:hover:bg-surface-700" style={{ color: 'var(--text-secondary)' }}>
-                      {r.isFeatured ? '⭐ Unfeature' : '⭐ Feature'}
+                      {r.isFeatured ? 'Unfeature' : 'Feature'}
                     </button>
                   </div>
                 </div>
@@ -160,7 +160,7 @@ export default function AdminPage() {
       </section>
 
       <section className="card min-w-0 p-5 lg:col-span-2" aria-labelledby="admin-users-heading">
-        <h2 id="admin-users-heading" className="mb-4 text-base font-bold" style={{ color: 'var(--text-primary)' }}>👥 Users</h2>
+        <h2 id="admin-users-heading" className="mb-4 text-base font-bold" style={{ color: 'var(--text-primary)' }}>Users</h2>
         {usersQuery.isLoading ? (
           <AdminSectionLoading label="Loading users…" />
         ) : usersQuery.isError ? (
@@ -227,23 +227,20 @@ function StatCard({
   value,
   loading,
   error,
-  icon,
 }: {
   label: string;
   value?: number;
   loading: boolean;
   error: boolean;
-  icon: string;
 }) {
   return (
     <div className="card p-5 text-center">
-      <span className="text-2xl" aria-hidden="true">{icon}</span>
       {loading ? (
         <div className="mx-auto mt-2 h-8 w-12 skeleton" role="status" aria-label={`${label} loading`} />
       ) : error ? (
         <p className="mt-2 text-sm font-semibold text-rose-500">Unavailable</p>
       ) : (
-        <p className="mt-2 bg-gradient-to-r from-brand-500 to-accent-500 bg-clip-text text-2xl font-bold text-transparent">{value ?? 0}</p>
+        <p className="mt-2 text-2xl font-bold text-[var(--text-primary)]">{value ?? 0}</p>
       )}
       <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>{label}</p>
     </div>

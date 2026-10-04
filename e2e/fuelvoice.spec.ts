@@ -612,18 +612,18 @@ test.describe('Admin query feedback', () => {
     await page.goto('/admin', { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByText('Loading reports…')).toBeVisible();
-    await expect(page.getByText('No pending reports 🎉')).toHaveCount(0);
+    await expect(page.getByText('No pending reports.')).toHaveCount(0);
 
     const reviewsSection = page.locator('section').filter({
-      has: page.getByRole('heading', { name: '📝 Recent Reviews' }),
+      has: page.getByRole('heading', { name: 'Recent Reviews' }),
     });
     const usersSection = page.locator('section').filter({
-      has: page.getByRole('heading', { name: '👥 Users' }),
+      has: page.getByRole('heading', { name: 'Users' }),
     });
     await expect(reviewsSection.getByText('The fuel quality was excellent and the service was super fast. Highly recommended!')).toBeVisible();
     await expect(usersSection.getByRole('cell', { name: 'Test User', exact: true })).toBeVisible();
 
-    await expect(page.getByRole('heading', { name: '🚩 Pending Reports (1)' })).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole('heading', { name: 'Pending Reports (1)' })).toBeVisible({ timeout: 8000 });
   });
 
   for (const dataset of ['reports', 'reviews', 'users'] as const) {
@@ -649,10 +649,10 @@ test.describe('Admin query feedback', () => {
         has: page.getByRole('heading', { name: /Pending Reports/ }),
       });
       const reviewsSection = page.locator('section').filter({
-        has: page.getByRole('heading', { name: '📝 Recent Reviews' }),
+        has: page.getByRole('heading', { name: 'Recent Reviews' }),
       });
       const usersSection = page.locator('section').filter({
-        has: page.getByRole('heading', { name: '👥 Users' }),
+        has: page.getByRole('heading', { name: 'Users' }),
       });
 
       if (dataset !== 'reports') {
@@ -682,6 +682,23 @@ test.describe('Admin authorization recovery', () => {
       page.getByRole('button', { name: 'Sign in with Google' }).filter({ hasText: 'Continue with Google' }),
     ).toBeVisible();
     await expect(page.getByRole('link', { name: 'Back to Home' })).toHaveAttribute('href', '/');
+  });
+});
+
+test.describe('Admin presentation consistency', () => {
+  test('uses product text labels instead of decorative emoji controls', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fuelvoice:mock_user', 'admin');
+      localStorage.setItem('fuelvoice-theme', 'dark');
+    });
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { name: /Pending Reports/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Recent Reviews' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^(Show|Hide)$/ }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /^(Feature|Unfeature)$/ }).first()).toBeVisible();
+    await expect(page.getByText(/[📝🚩👥🙈👁️⭐🎉]/)).toHaveCount(0);
   });
 });
 

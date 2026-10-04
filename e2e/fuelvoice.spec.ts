@@ -668,6 +668,16 @@ test.describe('Admin responsiveness', () => {
   });
 });
 
+test.describe('Search privacy copy', () => {
+  test('distinguishes precise permission from approximate location behavior', async ({ page }) => {
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByText('Search does not require precise browser-location permission.')).toBeVisible();
+    await expect(page.getByText('Search works without precise location permission.')).toBeVisible();
+    await expect(page.getByText(/does not request your location just to make search work/i)).toHaveCount(0);
+  });
+});
+
 test.describe('Fallbacks and metadata', () => {
   test('offers both home and station-search recovery from unknown routes', async ({ page }) => {
     await page.goto('/this-route-does-not-exist', { waitUntil: 'domcontentloaded' });

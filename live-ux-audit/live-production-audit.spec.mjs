@@ -33,9 +33,9 @@ async function capture(page, testInfo, scenario, signals) {
 
   const axe = await new AxeBuilder({ page }).analyze();
   const metrics = await page.evaluate(() => {
-    const visible = (element: Element) => {
+    const visible = (element) => {
       const style = getComputedStyle(element);
-      const rect = (element as HTMLElement).getBoundingClientRect();
+      const rect = element.getBoundingClientRect();
       return style.visibility !== 'hidden' && style.display !== 'none' && rect.width > 0 && rect.height > 0;
     };
 
@@ -44,7 +44,7 @@ async function capture(page, testInfo, scenario, signals) {
     ))
       .filter(visible)
       .map(element => {
-        const rect = (element as HTMLElement).getBoundingClientRect();
+        const rect = element.getBoundingClientRect();
         const name =
           element.getAttribute('aria-label') ||
           element.getAttribute('title') ||

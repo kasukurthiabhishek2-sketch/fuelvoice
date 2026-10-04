@@ -2,6 +2,9 @@ import React from 'react';
 import Link from 'next/link';
 
 export function Footer() {
+  const footerLinkClass =
+    'inline-flex min-h-11 items-center rounded-lg px-1.5 hover:text-[var(--text-primary)]';
+
   return (
     <footer className="product-footer">
       <div className="app-frame flex flex-col gap-5 py-8 sm:flex-row sm:items-center sm:justify-between">
@@ -11,13 +14,13 @@ export function Footer() {
             Reviews and verified complaint paths for fuel stations worldwide.
           </p>
         </div>
-        <div className="flex items-center gap-5 text-xs font-semibold text-[var(--text-secondary)]">
-          <Link href="/search" className="hover:text-[var(--text-primary)]">Search stations</Link>
+        <div className="flex items-center gap-3 text-xs font-semibold text-[var(--text-secondary)] sm:gap-4">
+          <Link href="/search" className={footerLinkClass}>Search stations</Link>
           <a
             href="https://www.openstreetmap.org/copyright"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-[var(--text-primary)]"
+            className={footerLinkClass}
           >
             OpenStreetMap
           </a>

@@ -692,6 +692,20 @@ test.describe('Fallbacks and metadata', () => {
     await expect(page.getByRole('heading', { name: /could not find this station/i })).toBeVisible();
   });
 
+  test('keeps footer navigation comfortably tappable without changing destinations', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/this-route-does-not-exist', { waitUntil: 'domcontentloaded' });
+
+    for (const name of ['Search stations', 'OpenStreetMap']) {
+      const link = page.getByRole('contentinfo').getByRole('link', { name, exact: true });
+      const box = await link.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+
+    await expect(page.getByRole('contentinfo').getByRole('link', { name: 'Search stations' })).toHaveAttribute('href', '/search');
+  });
+
   test('has basic SEO metadata and crawl files', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/FuelVoice/i);

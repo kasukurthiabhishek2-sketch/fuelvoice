@@ -10,8 +10,8 @@ const widths = [
 ] as const;
 
 export default defineConfig({
-  testDir: './e2e',
-  testMatch: 'live-production-audit.spec.ts',
+  testDir: './live-ux-audit',
+  testMatch: 'live-production-audit.spec.mjs',
   outputDir: './live-ux-audit/test-results',
   fullyParallel: false,
   retries: 1,

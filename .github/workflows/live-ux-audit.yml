@@ -5,7 +5,7 @@ on:
   push:
     branches: [live-ux-hardening-2026-10-04]
     paths:
-      - 'e2e/live-production-audit.spec.ts'
+      - 'live-ux-audit/live-production-audit.spec.mjs'
       - 'playwright.live-ux.config.ts'
       - 'scripts/live-ux-summarize.mjs'
       - '.github/workflows/live-ux-audit.yml'

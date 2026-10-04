@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const OUTPUT = path.join(process.cwd(), 'live-ux-audit', 'baseline');
 const STATION_ID = 'node_2817379324';
@@ -13,7 +13,7 @@ type AuditSignals = {
   badResponses: string[];
 };
 
-function attachSignals(page: Page): AuditSignals {
+function attachSignals(page) {
   const signals: AuditSignals = { consoleErrors: [], pageErrors: [], failedRequests: [], badResponses: [] };
 
   page.on('console', message => {
@@ -30,12 +30,12 @@ function attachSignals(page: Page): AuditSignals {
   return signals;
 }
 
-async function settle(page: Page) {
+async function settle(page) {
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(1200);
 }
 
-async function capture(page: Page, testInfo: TestInfo, scenario: string, signals: AuditSignals) {
+async function capture(page, testInfo, scenario, signals) {
   await settle(page);
 
   const axe = await new AxeBuilder({ page }).analyze();
@@ -68,7 +68,7 @@ async function capture(page: Page, testInfo: TestInfo, scenario: string, signals
         };
       });
 
-    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    const nav = performance.getEntriesByType('navigation')[0];
 
     return {
       title: document.title,
@@ -127,14 +127,14 @@ async function capture(page: Page, testInfo: TestInfo, scenario: string, signals
   expect(signals.pageErrors, 'page errors in ' + key).toEqual([]);
 }
 
-async function recordKeyboardSequence(page: Page, count = 16) {
+async function recordKeyboardSequence(page, count = 16) {
   const sequence = [];
 
   for (let i = 0; i < count; i += 1) {
     await page.keyboard.press('Tab');
 
     sequence.push(await page.evaluate(() => {
-      const element = document.activeElement as HTMLElement | null;
+      const element = document.activeElement;
       if (!element) return null;
 
       const rect = element.getBoundingClientRect();

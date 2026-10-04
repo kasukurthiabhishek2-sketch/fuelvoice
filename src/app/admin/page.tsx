@@ -24,9 +24,9 @@ export default function AdminPage() {
   const reportsQuery = useQuery({ queryKey: ['admin-reports'], queryFn: () => getPendingReports(30) });
   const usersQuery = useQuery({ queryKey: ['admin-users'], queryFn: () => getAdminUsers(50) });
 
-  const { data: reviews } = reviewsQuery;
-  const { data: reports } = reportsQuery;
-  const { data: users } = usersQuery;
+  const reviews = reviewsQuery.data ?? [];
+  const reports = reportsQuery.data ?? [];
+  const users = usersQuery.data ?? [];
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['admin-reviews'] });

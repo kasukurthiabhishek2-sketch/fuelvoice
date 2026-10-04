@@ -455,23 +455,24 @@ test.describe('Station trust page', () => {
 
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
 
-    await page.getByRole('button', { name: 'Edit your review' }).click();
-    const editContext = page.getByRole('textbox', { name: 'Review context (optional)' });
+    const ownerReview = page.locator(`#review-${STATION_ID}__test-user-123`);
+    await ownerReview.getByRole('button', { name: 'Edit your review' }).click();
+    const editContext = ownerReview.getByRole('textbox', { name: 'Review context (optional)' });
     await expect(editContext).toBeVisible();
 
-    await page.getByRole('button', { name: 'Fuel quality', exact: true }).click();
-    await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+    await ownerReview.getByRole('button', { name: 'Fuel quality', exact: true }).click();
+    await ownerReview.getByRole('button', { name: 'Save changes', exact: true }).click();
 
-    const editError = page.getByRole('alert').filter({
+    const editError = ownerReview.getByRole('alert').filter({
       hasText: 'Choose at least one complaint category for a 1-2 rating.',
     });
     await expect(editError).toBeVisible();
     await expect(editContext).toHaveAttribute('aria-invalid', 'true');
 
-    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-    await page.getByRole('button', { name: 'Delete your review' }).click();
+    await ownerReview.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await ownerReview.getByRole('button', { name: 'Delete your review' }).click();
 
-    const deleteReason = page.getByRole('textbox', { name: 'Reason for deleting review' });
+    const deleteReason = ownerReview.getByRole('textbox', { name: 'Reason for deleting review' });
     await expect(deleteReason).toBeVisible();
     await expect(deleteReason).toHaveAttribute('aria-describedby', /review-delete-help-/);
   });

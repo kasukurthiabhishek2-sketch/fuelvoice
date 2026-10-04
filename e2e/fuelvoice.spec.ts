@@ -449,8 +449,8 @@ test.describe('Station trust page', () => {
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
 
     for (const control of [
-      page.getByRole('link', { name: /Search fuel stations/i }).last(),
-      page.getByRole('button', { name: 'Share station' }),
+      page.getByRole('link', { name: 'Search', exact: true }),
+      page.getByRole('button', { name: 'Share', exact: true }),
       page.getByRole('button', { name: 'Helpful' }).first(),
       page.getByRole('button', { name: 'Not helpful' }).first(),
     ]) {

@@ -178,7 +178,7 @@ export function SearchBar({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.99 }}
             transition={{ duration: 0.14 }}
-            className="absolute left-0 top-full z-[9999] mt-2 w-full overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-elevated)] p-1.5 shadow-[var(--shadow-xl)] backdrop-blur-2xl"
+            className="absolute left-0 top-full z-[9999] mt-2 max-h-[38dvh] w-full overflow-y-auto overscroll-contain rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-elevated)] p-1.5 shadow-[var(--shadow-xl)] backdrop-blur-2xl"
             role="listbox"
             aria-label="Fuel station search results"
           >

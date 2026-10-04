@@ -323,6 +323,58 @@ test.describe('Minimal homepage', () => {
     await expect(options.first()).toContainText('India');
   });
 
+  test('keeps long mobile search results inside the viewport with internal scrolling', async ({ page }) => {
+    await page.unroute('https://photon.komoot.io/api**');
+    await page.route('https://photon.komoot.io/api**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: Array.from({ length: 8 }, (_, index) => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [78.47 + index * 0.001, 17.38 + index * 0.001] },
+            properties: {
+              osm_id: 7100000000 + index,
+              osm_type: 'N',
+              osm_key: 'amenity',
+              osm_value: 'fuel',
+              name: 'Shell ' + (index + 1),
+              city: 'Hyderabad',
+              state: 'Telangana',
+              country: 'India',
+              countrycode: 'IN',
+            },
+          })),
+        }),
+      });
+    });
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+
+    const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await expect.poll(() => input.evaluate((element) =>
+      Object.keys(element).some((key) => key.startsWith('__reactProps$'))
+    )).toBe(true);
+    await input.fill('Shell');
+
+    const listbox = page.getByRole('listbox', { name: 'Fuel station search results' });
+    await expect(listbox).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('option')).toHaveCount(8);
+
+    const box = await listbox.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.y + box!.height).toBeLessThanOrEqual(812);
+
+    const scrollMetrics = await listbox.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+      overflowY: getComputedStyle(element).overflowY,
+    }));
+    expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight);
+    expect(scrollMetrics.overflowY).toBe('auto');
+  });
+
   test('autocomplete navigates toward a station page', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 

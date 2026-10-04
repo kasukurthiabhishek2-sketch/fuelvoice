@@ -173,6 +173,14 @@ test.describe('Minimal homepage', () => {
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
 
+    const themeBox = await controls[1].boundingBox();
+    expect(themeBox).not.toBeNull();
+    expect(themeBox!.width).toBeGreaterThanOrEqual(44);
+
+    const signInBox = await controls[2].boundingBox();
+    expect(signInBox).not.toBeNull();
+    expect(signInBox!.height).toBeLessThanOrEqual(46);
+
     const metrics = await page.evaluate(() => ({
       innerWidth: window.innerWidth,
       scrollWidth: document.documentElement.scrollWidth,

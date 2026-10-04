@@ -103,9 +103,9 @@ test('history and refresh preserve the primary search to station journey', async
   await page.goto('/search', { waitUntil: 'domcontentloaded' });
 
   const input = page.getByRole('combobox', { name: /search fuel stations/i });
-  await input.fill('Shell');
+  await input.pressSequentially('Shell', { delay: 40 });
   const result = page.getByRole('option', { name: /Shell Fuel Station/i });
-  await expect(result).toBeVisible();
+  await expect(result).toBeVisible({ timeout: 10000 });
   await result.click();
 
   await expect(page).toHaveURL(new RegExp('/station/' + STATION_ID + '$'));
@@ -165,6 +165,7 @@ test('keyboard-only navigation reaches search results and returns focus from the
   await expect(page.getByRole('button', { name: 'Sign Out' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(userMenu).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Sign Out' })).toHaveCount(0);
 
   await page.keyboard.press('Shift+Tab');
   await expect(page.getByRole('button', { name: /Switch to light mode/i })).toBeFocused();
@@ -182,9 +183,11 @@ test('keyboard-only navigation reaches search results and returns focus from the
     if (inputFocused) break;
   }
   expect(inputFocused).toBe(true);
-  await page.keyboard.type('Shell');
-  await expect(page.getByRole('option', { name: /Shell Fuel Station/i })).toBeVisible();
+  await input.pressSequentially('Shell', { delay: 40 });
+  const keyboardResult = page.getByRole('option', { name: /Shell Fuel Station/i });
+  await expect(keyboardResult).toBeVisible({ timeout: 10000 });
   await page.keyboard.press('ArrowDown');
+  await expect(input).toHaveAttribute('aria-activedescendant', 'search-result-' + STATION_ID);
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(new RegExp('/station/' + STATION_ID + '$'));
 });

@@ -612,7 +612,9 @@ test.describe('Admin authorization recovery', () => {
     await page.goto('/admin', { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByRole('heading', { name: 'Access Denied' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Sign in with Google' }).filter({ hasText: 'Continue with Google' }),
+    ).toBeVisible();
     await expect(page.getByRole('link', { name: 'Back to Home' })).toHaveAttribute('href', '/');
   });
 });

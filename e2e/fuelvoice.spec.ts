@@ -602,6 +602,21 @@ test.describe('Admin query feedback', () => {
   }
 });
 
+test.describe('Admin authorization recovery', () => {
+  test('offers direct sign-in from a signed-out admin route', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fuelvoice:mock_guest_data', 'true');
+      localStorage.setItem('fuelvoice-theme', 'dark');
+    });
+
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { name: 'Access Denied' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Back to Home' })).toHaveAttribute('href', '/');
+  });
+});
+
 test.describe('Admin responsiveness', () => {
   test('contains authenticated admin content inside a 375px viewport', async ({ page }) => {
     await page.addInitScript(() => {

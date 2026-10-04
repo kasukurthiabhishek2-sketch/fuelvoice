@@ -674,7 +674,7 @@ test.describe('Fallbacks and metadata', () => {
 
     await expect(page.getByRole('heading', { name: 'Page Not Found' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Back to Home' })).toHaveAttribute('href', '/');
-    await expect(page.getByRole('link', { name: 'Search stations' })).toHaveAttribute('href', '/search');
+    await expect(page.getByRole('main').getByRole('link', { name: 'Search stations' })).toHaveAttribute('href', '/search');
   });
 
   test('invalid station IDs fail clearly without invented station data', async ({ page }) => {

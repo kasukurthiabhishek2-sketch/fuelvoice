@@ -466,7 +466,7 @@ const scenarios: Scenario[] = [
     prepare: async (page) => {
       const composer = page.locator('#write-review');
       await composer.getByRole('button', { name: /^Write a review/ }).click();
-      await composer.getByRole('button', { name: '1 star', exact: true }).click();
+      await composer.getByRole('radio', { name: '1 star', exact: true }).click();
       await composer.getByRole('button', { name: 'Publish review', exact: true }).click();
       await composer.getByText('Choose at least one complaint category.').waitFor();
       await composer.scrollIntoViewIfNeeded();

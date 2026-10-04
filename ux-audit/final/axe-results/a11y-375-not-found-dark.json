@@ -1,0 +1,6 @@
+{
+  "project": "a11y-375",
+  "scenario": "not-found-dark",
+  "url": "http://localhost:3000/does-not-exist",
+  "violations": []
+}

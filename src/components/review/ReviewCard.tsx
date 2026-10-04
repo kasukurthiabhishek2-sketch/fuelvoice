@@ -181,7 +181,7 @@ export function ReviewCard({ review, stationId, initialReaction = null }: Review
       <div className="review-card-muted" id={`review-${review.id}`}>
         <div>
           <p className="text-sm font-semibold text-[var(--text-primary)]">Review collapsed</p>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-tertiary)]">
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
             At least 65% of 5+ reactions marked this review Not helpful.
           </p>
         </div>

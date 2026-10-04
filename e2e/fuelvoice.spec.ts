@@ -547,8 +547,15 @@ test.describe('Admin query feedback', () => {
 
     await expect(page.getByText('Loading reports…')).toBeVisible();
     await expect(page.getByText('No pending reports 🎉')).toHaveCount(0);
-    await expect(page.getByText('Test User', { exact: true })).toBeVisible();
-    await expect(page.getByText('Total Users', { exact: true })).toBeVisible();
+
+    const reviewsSection = page.locator('section').filter({
+      has: page.getByRole('heading', { name: '📝 Recent Reviews' }),
+    });
+    const usersSection = page.locator('section').filter({
+      has: page.getByRole('heading', { name: '👥 Users' }),
+    });
+    await expect(reviewsSection.getByText('The fuel quality was excellent and the service was super fast. Highly recommended!')).toBeVisible();
+    await expect(usersSection.getByRole('cell', { name: 'Test User', exact: true })).toBeVisible();
 
     await expect(page.getByRole('heading', { name: '🚩 Pending Reports (1)' })).toBeVisible({ timeout: 8000 });
   });
@@ -572,14 +579,24 @@ test.describe('Admin query feedback', () => {
       await expect(page.getByText(expectedError)).toBeVisible({ timeout: 10000 });
       await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
 
+      const reportsSection = page.locator('section').filter({
+        has: page.getByRole('heading', { name: /Pending Reports/ }),
+      });
+      const reviewsSection = page.locator('section').filter({
+        has: page.getByRole('heading', { name: '📝 Recent Reviews' }),
+      });
+      const usersSection = page.locator('section').filter({
+        has: page.getByRole('heading', { name: '👥 Users' }),
+      });
+
       if (dataset !== 'reports') {
-        await expect(page.getByText('spam', { exact: true })).toBeVisible();
+        await expect(reportsSection.getByText('spam', { exact: true })).toBeVisible();
       }
       if (dataset !== 'reviews') {
-        await expect(page.getByText('Great experience', { exact: true })).toBeVisible();
+        await expect(reviewsSection.getByText('The fuel quality was excellent and the service was super fast. Highly recommended!')).toBeVisible();
       }
       if (dataset !== 'users') {
-        await expect(page.getByText('Spammer Bob', { exact: true })).toBeVisible();
+        await expect(usersSection.getByRole('cell', { name: 'Spammer Bob', exact: true })).toBeVisible();
       }
     });
   }

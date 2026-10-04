@@ -88,6 +88,7 @@ export function SearchBar({
   };
 
   const isHero = variant === 'hero';
+  const hasResultsPopup = isOpen && results.length > 0;
   const activeOptionId = selectedIndex >= 0 && results[selectedIndex]
     ? `search-result-${results[selectedIndex].id}`
     : undefined;
@@ -127,8 +128,8 @@ export function SearchBar({
             : 'rounded-xl py-2.5 pl-10 pr-20 text-sm shadow-[var(--shadow-xs)] focus:border-brand-500'
           }`}
           role="combobox"
-          aria-expanded={isOpen}
-          aria-controls="search-results"
+          aria-expanded={hasResultsPopup}
+          aria-controls={hasResultsPopup ? 'search-results' : undefined}
           aria-label="Search fuel stations"
           aria-autocomplete="list"
           aria-activedescendant={activeOptionId}
@@ -138,7 +139,11 @@ export function SearchBar({
 
         <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
           {isSearching && (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" aria-label="Searching" />
+            <span
+              role="status"
+              className="h-4 w-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"
+              aria-label="Searching"
+            />
           )}
           {!isSearching && searchTerm && (
             <button
@@ -151,11 +156,6 @@ export function SearchBar({
                 <path d="m7 7 10 10M17 7 7 17" strokeLinecap="round" />
               </svg>
             </button>
-          )}
-          {isHero && (
-            <span className="hidden rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--text-tertiary)] sm:inline-flex">
-              Search
-            </span>
           )}
         </div>
       </div>

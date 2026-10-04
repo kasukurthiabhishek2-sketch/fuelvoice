@@ -30,7 +30,7 @@ import { db } from './config';
 import type { Station, StationScores } from '@/types/station';
 import type { Review, ReviewFormData, ReviewSortOption } from '@/types/review';
 import type { UserProfile, Report, ReportReason } from '@/types/user';
-import { canUseE2EGuestDataMocks, canUseE2EMocks } from '@/lib/testing/e2e';
+import { applyE2EAdminQueryBehavior, canUseE2EGuestDataMocks, canUseE2EMocks } from '@/lib/testing/e2e';
 
 const isMockMode = (): boolean => {
   if (!canUseE2EMocks()) return false;
@@ -777,6 +777,7 @@ export async function banUser(userId: string, banned: boolean): Promise<void> {
 /** Get pending reports (admin) */
 export async function getPendingReports(pageSize: number = 20): Promise<Report[]> {
   if (isMockMode()) {
+    await applyE2EAdminQueryBehavior('reports');
     return [
       {
         id: 'mock-report-1',
@@ -823,6 +824,7 @@ export async function updateReportStatus(
 /** Get all reviews for admin (including hidden) */
 export async function getAdminReviews(pageSize: number = 20): Promise<Review[]> {
   if (isMockMode()) {
+    await applyE2EAdminQueryBehavior('reviews');
     return [
       {
         id: 'mock-review-1',
@@ -894,6 +896,7 @@ export async function getAdminReviews(pageSize: number = 20): Promise<Review[]> 
 /** Get all users (admin) */
 export async function getAdminUsers(pageSize: number = 50): Promise<UserProfile[]> {
   if (isMockMode()) {
+    await applyE2EAdminQueryBehavior('users');
     return [
       {
         uid: 'test-user-123',

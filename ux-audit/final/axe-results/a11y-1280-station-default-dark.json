@@ -1,0 +1,6 @@
+{
+  "project": "a11y-1280",
+  "scenario": "station-default-dark",
+  "url": "http://localhost:3000/station/node_6254336890",
+  "violations": []
+}

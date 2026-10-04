@@ -1,0 +1,6 @@
+{
+  "project": "a11y-1280",
+  "scenario": "admin-content-dark",
+  "url": "http://localhost:3000/admin",
+  "violations": []
+}

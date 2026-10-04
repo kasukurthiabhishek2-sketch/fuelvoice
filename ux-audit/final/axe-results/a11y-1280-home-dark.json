@@ -1,0 +1,6 @@
+{
+  "project": "a11y-1280",
+  "scenario": "home-dark",
+  "url": "http://localhost:3000/",
+  "violations": []
+}

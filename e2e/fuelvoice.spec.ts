@@ -157,6 +157,47 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Minimal homepage', () => {
+  test('keeps primary header controls at 44px targets without mobile overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const controls = [
+      page.getByRole('link', { name: 'Search fuel stations' }),
+      page.getByRole('button', { name: /Switch to light mode/i }),
+      page.getByRole('button', { name: 'Sign in with Google' }),
+    ];
+
+    for (const control of controls) {
+      const box = await control.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+  });
+
+  test('closes the signed-in user disclosure with Escape and restores trigger focus', async ({ page }) => {
+    await enableMockUser(page);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const trigger = page.getByRole('button', { name: 'User menu' });
+    await trigger.focus();
+    await trigger.press('Enter');
+
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('button', { name: 'Sign Out' })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByRole('button', { name: 'Sign Out' })).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+
   test('loads nearby stations from approximate location without eager map work', async ({ page }) => {
     let ipLocationRequests = 0;
     let nearbyRequests = 0;
@@ -189,6 +230,16 @@ test.describe('Minimal homepage', () => {
     });
   });
 
+  test('keeps the hero search free of inert button-like search badges', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await expect(input).toBeVisible();
+    await expect(input.locator('..').getByText('Search', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Search fuel stations' })).toBeVisible();
+  });
+
   test('autocomplete navigates toward a station page', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
@@ -219,6 +270,38 @@ test.describe('Minimal homepage', () => {
 });
 
 test.describe('Signed-out station loading', () => {
+  test('keeps the station loading state inside a 375px viewport', async ({ page }) => {
+    await enableGuestDataMocks(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+
+    await page.unroute('**/api/osm-element**');
+    await page.route('**/api/osm-element**', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          element: {
+            type: 'node',
+            id: 6254336890,
+            lat: 17.3887027,
+            lon: 78.4753829,
+            tags: { amenity: 'fuel', name: 'Shell Fuel Station' },
+          },
+        }),
+      });
+    });
+
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('.skeleton').first()).toBeVisible();
+
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+  });
+
   test('loads an uncached mapped station without requiring a Firestore write', async ({ page }, testInfo) => {
     await enableGuestDataMocks(page);
 
@@ -362,6 +445,21 @@ test.describe('Station trust page', () => {
     await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 10000 });
   });
 
+  test('keeps station and review actions comfortably tappable', async ({ page }) => {
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    for (const control of [
+      page.getByRole('link', { name: 'Search', exact: true }),
+      page.getByRole('button', { name: 'Share', exact: true }),
+      page.getByRole('button', { name: 'Helpful' }).first(),
+      page.getByRole('button', { name: 'Not helpful' }).first(),
+    ]) {
+      const box = await control.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+  });
+
   test('negative reviews require an explicit complaint category while text stays optional', async ({ page }) => {
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
 
@@ -371,14 +469,24 @@ test.describe('Station trust page', () => {
     await openComposer.click();
     await expect(composer.locator('#review-form-panel')).toBeVisible();
 
-    const oneStar = composer.getByRole('button', { name: '1 star', exact: true });
+    const rating = composer.getByRole('radiogroup', { name: 'Your rating' });
+    const oneStar = rating.getByRole('radio', { name: '1 star', exact: true });
     const starBox = await oneStar.boundingBox();
     expect(starBox).not.toBeNull();
     expect(starBox!.width).toBeGreaterThanOrEqual(44);
     expect(starBox!.height).toBeGreaterThanOrEqual(44);
 
     await oneStar.click();
-    await expect(oneStar).toHaveAttribute('aria-pressed', 'true');
+    await expect(oneStar).toHaveAttribute('aria-checked', 'true');
+
+    await oneStar.press('ArrowRight');
+    const twoStars = rating.getByRole('radio', { name: '2 stars', exact: true });
+    await expect(twoStars).toHaveAttribute('aria-checked', 'true');
+    await expect(twoStars).toBeFocused();
+
+    await twoStars.press('ArrowLeft');
+    await expect(oneStar).toHaveAttribute('aria-checked', 'true');
+    await expect(oneStar).toBeFocused();
     await composer.getByRole('button', { name: 'Publish review', exact: true }).click();
 
     await expect(composer.getByText('Choose at least one complaint category.')).toBeVisible();
@@ -389,6 +497,52 @@ test.describe('Station trust page', () => {
     await composer.getByRole('button', { name: 'Publish review', exact: true }).click();
 
     await expect(page.getByText('Review published')).toBeVisible();
+  });
+
+  test('labels owner review fields and announces edit validation errors', async ({ page }) => {
+    await page.addInitScript(({ stationId }) => {
+      localStorage.setItem(
+        `fuelvoice:mock_user_reviews:${stationId}`,
+        JSON.stringify([
+          {
+            id: `${stationId}__test-user-123`,
+            stationId,
+            userId: 'test-user-123',
+            userName: 'Test User',
+            rating: 2,
+            content: 'Owner review context',
+            complaintCategories: ['fuel-quality'],
+            helpfulCount: 0,
+            notHelpfulCount: 0,
+          },
+        ]),
+      );
+    }, { stationId: STATION_ID });
+
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    const ownerReview = page.locator(`#review-${STATION_ID}__test-user-123`);
+    await ownerReview.getByRole('button', { name: 'Edit your review' }).click();
+    const editContext = ownerReview.getByRole('textbox', { name: 'Review context (optional)' });
+    await expect(editContext).toBeVisible();
+
+    await ownerReview.getByRole('button', { name: 'Fuel quality', exact: true }).click();
+    const saveChanges = ownerReview.getByRole('button', { name: 'Save changes', exact: true });
+    await saveChanges.focus();
+    await saveChanges.press('Enter');
+
+    const editError = ownerReview.getByRole('alert').filter({
+      hasText: 'Choose at least one complaint category for a 1-2 rating.',
+    });
+    await expect(editError).toBeVisible();
+    await expect(editContext).toHaveAttribute('aria-invalid', 'true');
+
+    await ownerReview.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await ownerReview.getByRole('button', { name: 'Delete your review' }).click();
+
+    const deleteReason = ownerReview.getByRole('textbox', { name: 'Reason for deleting review' });
+    await expect(deleteReason).toBeVisible();
+    await expect(deleteReason).toHaveAttribute('aria-describedby', /review-delete-help-/);
   });
 
   test('collapses a review after the configured Not helpful threshold', async ({ page }) => {
@@ -449,10 +603,164 @@ test.describe('Mobile station actions', () => {
   });
 });
 
+test.describe('Admin query feedback', () => {
+  test('does not show a false reports zero while reports are still loading', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fuelvoice:mock_user', 'admin');
+      localStorage.setItem('fuelvoice-theme', 'dark');
+      localStorage.setItem('fuelvoice:mock_admin_reports', 'slow');
+    });
+
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByText('Loading reports…')).toBeVisible();
+    await expect(page.getByText('No pending reports.')).toHaveCount(0);
+
+    const reviewsSection = page.locator('section').filter({
+      has: page.getByRole('heading', { name: 'Recent Reviews' }),
+    });
+    const usersSection = page.locator('section').filter({
+      has: page.getByRole('heading', { name: 'Users' }),
+    });
+    await expect(reviewsSection.getByText('The fuel quality was excellent and the service was super fast. Highly recommended!')).toBeVisible();
+    await expect(usersSection.getByRole('cell', { name: 'Test User', exact: true })).toBeVisible();
+
+    await expect(page.getByRole('heading', { name: 'Pending Reports (1)' })).toBeVisible({ timeout: 8000 });
+  });
+
+  for (const dataset of ['reports', 'reviews', 'users'] as const) {
+    test(`isolates a failed ${dataset} query from successful admin sections`, async ({ page }) => {
+      await page.addInitScript((failedDataset) => {
+        localStorage.setItem('fuelvoice:mock_user', 'admin');
+        localStorage.setItem('fuelvoice-theme', 'dark');
+        localStorage.setItem(`fuelvoice:mock_admin_${failedDataset}`, 'error');
+      }, dataset);
+
+      await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+      const expectedError = {
+        reports: 'Reports could not be loaded.',
+        reviews: 'Reviews could not be loaded.',
+        users: 'Users could not be loaded.',
+      }[dataset];
+
+      await expect(page.getByText(expectedError)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
+
+      const reportsSection = page.locator('section').filter({
+        has: page.getByRole('heading', { name: /Pending Reports/ }),
+      });
+      const reviewsSection = page.locator('section').filter({
+        has: page.getByRole('heading', { name: 'Recent Reviews' }),
+      });
+      const usersSection = page.locator('section').filter({
+        has: page.getByRole('heading', { name: 'Users' }),
+      });
+
+      if (dataset !== 'reports') {
+        await expect(reportsSection.getByText('spam', { exact: true })).toBeVisible();
+      }
+      if (dataset !== 'reviews') {
+        await expect(reviewsSection.getByText('The fuel quality was excellent and the service was super fast. Highly recommended!')).toBeVisible();
+      }
+      if (dataset !== 'users') {
+        await expect(usersSection.getByRole('cell', { name: 'Spammer Bob', exact: true })).toBeVisible();
+      }
+    });
+  }
+});
+
+test.describe('Admin authorization recovery', () => {
+  test('offers direct sign-in from a signed-out admin route', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fuelvoice:mock_guest_data', 'true');
+      localStorage.setItem('fuelvoice-theme', 'dark');
+    });
+
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { name: 'Access Denied' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Sign in with Google' }).filter({ hasText: 'Continue with Google' }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Back to Home' })).toHaveAttribute('href', '/');
+  });
+});
+
+test.describe('Admin presentation consistency', () => {
+  test('uses product text labels instead of decorative emoji controls', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fuelvoice:mock_user', 'admin');
+      localStorage.setItem('fuelvoice-theme', 'dark');
+    });
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { name: /Pending Reports/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Recent Reviews' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^(Show|Hide)$/ }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /^(Feature|Unfeature)$/ }).first()).toBeVisible();
+    await expect(page.getByText(/[📝🚩👥🙈👁️⭐🎉]/)).toHaveCount(0);
+  });
+});
+
+test.describe('Admin responsiveness', () => {
+  test('contains authenticated admin content inside a 375px viewport', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fuelvoice:mock_user', 'admin');
+      localStorage.setItem('fuelvoice-theme', 'dark');
+    });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { name: 'Admin Panel' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Pending Reports/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Users/ })).toBeVisible();
+
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+  });
+});
+
+test.describe('Search privacy copy', () => {
+  test('distinguishes precise permission from approximate location behavior', async ({ page }) => {
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByText('Search does not require precise browser-location permission.')).toBeVisible();
+    await expect(page.getByText('Search works without precise location permission.')).toBeVisible();
+    await expect(page.getByText(/does not request your location just to make search work/i)).toHaveCount(0);
+  });
+});
+
 test.describe('Fallbacks and metadata', () => {
+  test('offers both home and station-search recovery from unknown routes', async ({ page }) => {
+    await page.goto('/this-route-does-not-exist', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { name: 'Page Not Found' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Back to Home' })).toHaveAttribute('href', '/');
+    await expect(page.getByRole('main').getByRole('link', { name: 'Search stations' })).toHaveAttribute('href', '/search');
+  });
+
   test('invalid station IDs fail clearly without invented station data', async ({ page }) => {
     await page.goto('/station/invalid_0', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /could not find this station/i })).toBeVisible();
+  });
+
+  test('keeps footer navigation comfortably tappable without changing destinations', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/this-route-does-not-exist', { waitUntil: 'domcontentloaded' });
+
+    for (const name of ['Search stations', 'OpenStreetMap']) {
+      const link = page.getByRole('contentinfo').getByRole('link', { name, exact: true });
+      const box = await link.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+
+    await expect(page.getByRole('contentinfo').getByRole('link', { name: 'Search stations' })).toHaveAttribute('href', '/search');
   });
 
   test('has basic SEO metadata and crawl files', async ({ page }) => {

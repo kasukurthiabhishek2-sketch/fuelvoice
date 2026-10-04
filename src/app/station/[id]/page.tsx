@@ -180,7 +180,7 @@ export default function StationPage() {
 
       <div className="app-frame py-8 sm:py-10">
         <div className="mx-auto max-w-4xl">
-          <main className="min-w-0">
+          <div className="min-w-0">
             <section id="reviews" className="scroll-mt-28">
               <div className="flex items-end justify-between gap-4">
                 <div>
@@ -261,7 +261,7 @@ export default function StationPage() {
             <div className="station-quiet-note mt-8">
               Station identity and mapped facts come from OpenStreetMap. Customer experiences and Trust Score are FuelVoice community data.
             </div>
-          </main>
+          </div>
         </div>
       </div>
 

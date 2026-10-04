@@ -1,0 +1,6 @@
+{
+  "project": "a11y-375",
+  "scenario": "admin-signed-out-light",
+  "url": "http://localhost:3000/admin",
+  "violations": []
+}

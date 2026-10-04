@@ -63,7 +63,7 @@
 
   --text-primary: #17201C;
   --text-secondary: #58635E;
-  --text-tertiary: #7C8781;
+  --text-tertiary: #66716B;
   --text-inverse: #F8FAF8;
 
   --border-primary: #D7DDD7;
@@ -626,7 +626,7 @@ body {
 
   --text-primary: #f4f4f5;
   --text-secondary: #a4a7ad;
-  --text-tertiary: #666b73;
+  --text-tertiary: #80868F;
   --text-inverse: #090a0b;
 
   --border-primary: #23262b;
@@ -690,8 +690,8 @@ body {
 
 .fuelvoice-mark {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--color-brand-500) 28%, var(--border-primary));
   border-radius: 11px;
@@ -703,8 +703,8 @@ body {
 
 .header-action {
   display: inline-flex;
-  min-width: 40px;
-  min-height: 40px;
+  min-width: 44px;
+  min-height: 44px;
   justify-content: center;
   align-items: center;
   gap: .45rem;
@@ -960,7 +960,7 @@ html:not(.dark) .home-search-shell input {
   display: inline-flex;
   align-items: center;
   gap: .4rem;
-  min-height: 36px;
+  min-height: 44px;
   color: var(--text-secondary);
   font-size: .75rem;
   font-weight: 700;
@@ -1032,7 +1032,7 @@ html:not(.dark) .home-search-shell input {
 
 .review-filter-pill {
   flex: 0 0 auto;
-  min-height: 40px;
+  min-height: 44px;
   border: 1px solid var(--border-primary);
   border-radius: 999px;
   background: transparent;
@@ -1122,7 +1122,7 @@ html:not(.dark) .home-search-shell input {
 
 .reaction-button {
   display: inline-flex;
-  min-height: 34px;
+  min-height: 44px;
   align-items: center;
   gap: .4rem;
   border: 1px solid var(--border-primary);

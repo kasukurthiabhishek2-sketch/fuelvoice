@@ -13,7 +13,7 @@ export default function SearchPage() {
             <span className="block text-[var(--text-tertiary)]">Then judge it by the evidence.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
-            Search by station name, brand, locality, or city. FuelVoice does not request your location just to make search work.
+            Search by station name, brand, locality, or city. Search does not require precise browser-location permission.
           </p>
 
           <div className="home-search-shell mt-8 max-w-3xl">
@@ -24,7 +24,7 @@ export default function SearchPage() {
           </div>
 
           <div className="search-principles mt-10 grid gap-px overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--border-primary)] sm:grid-cols-3">
-            <SearchPrinciple title="No location gate" copy="Search works without granting location permission." />
+            <SearchPrinciple title="No location gate" copy="Search works without precise location permission." />
             <SearchPrinciple title="Trust over stars" copy="Open a station to see its Trust Score and reviews." />
             <SearchPrinciple title="Official complaint paths" copy="Verified destinations appear on supported station pages." />
           </div>

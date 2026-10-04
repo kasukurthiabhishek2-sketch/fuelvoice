@@ -70,6 +70,10 @@ export function ReviewCard({ review, stationId, initialReaction = null }: Review
   const totalReactions = helpfulCount + notHelpfulCount;
   const isLowQuality = totalReactions >= 5 && notHelpfulCount / totalReactions >= 0.65;
   const edited = review.updatedAt.toMillis() - review.createdAt.toMillis() > 1000;
+  const editContentId = `review-edit-content-${review.id}`;
+  const editErrorId = `review-edit-error-${review.id}`;
+  const deleteReasonId = `review-delete-reason-${review.id}`;
+  const deleteHelpId = `review-delete-help-${review.id}`;
 
   const applyOptimisticReaction = (next: ReviewReaction | null) => {
     let helpful = helpfulCount;
@@ -177,7 +181,7 @@ export function ReviewCard({ review, stationId, initialReaction = null }: Review
       <div className="review-card-muted" id={`review-${review.id}`}>
         <div>
           <p className="text-sm font-semibold text-[var(--text-primary)]">Review collapsed</p>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-tertiary)]">
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
             At least 65% of 5+ reactions marked this review Not helpful.
           </p>
         </div>
@@ -269,6 +273,7 @@ export function ReviewCard({ review, stationId, initialReaction = null }: Review
           <div className="mt-3">
             <StarRating
               value={editForm.rating}
+              label="Edit rating"
               onChange={(rating) => setEditForm((current) => ({
                 ...current,
                 rating,
@@ -300,16 +305,20 @@ export function ReviewCard({ review, stationId, initialReaction = null }: Review
             </div>
           )}
 
+          <label htmlFor={editContentId} className="sr-only">Review context (optional)</label>
           <textarea
+            id={editContentId}
             value={editForm.content}
             onChange={(event) => setEditForm((current) => ({ ...current, content: event.target.value }))}
             maxLength={2000}
             rows={4}
             placeholder="Add context (optional)"
+            aria-invalid={editError ? true : undefined}
+            aria-describedby={editError ? editErrorId : undefined}
             className="mt-4 w-full resize-none rounded-xl border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--border-strong)]"
           />
 
-          {editError && <p className="mt-2 text-xs text-rose-400">{editError}</p>}
+          {editError && <p id={editErrorId} className="mt-2 text-xs text-rose-400" role="alert">{editError}</p>}
 
           <div className="mt-4 flex justify-end gap-2">
             <button type="button" onClick={() => setShowEdit(false)} className="secondary-action">Cancel</button>
@@ -328,16 +337,19 @@ export function ReviewCard({ review, stationId, initialReaction = null }: Review
       {showDelete && isOwner && (
         <div className="mt-5 rounded-2xl border border-rose-500/20 bg-rose-500/[0.06] p-4">
           <p className="text-sm font-semibold text-[var(--text-primary)]">Remove this review?</p>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+          <p id={deleteHelpId} className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
             Tell us why. The reason is kept for audit purposes and is not shown publicly.
           </p>
+          <label htmlFor={deleteReasonId} className="sr-only">Reason for deleting review</label>
           <textarea
+            id={deleteReasonId}
             value={deleteReason}
             onChange={(event) => setDeleteReason(event.target.value)}
             minLength={10}
             maxLength={500}
             rows={2}
             placeholder="Reason for deletion, at least 10 characters"
+            aria-describedby={deleteHelpId}
             className="mt-3 w-full resize-none rounded-xl border border-rose-500/20 bg-[var(--bg-primary)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-rose-400"
           />
           <div className="mt-3 flex justify-end gap-2">

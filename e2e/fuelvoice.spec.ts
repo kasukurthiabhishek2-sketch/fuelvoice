@@ -157,6 +157,29 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Minimal homepage', () => {
+  test('keeps primary header controls at 44px targets without mobile overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const controls = [
+      page.getByRole('link', { name: 'Search fuel stations' }),
+      page.getByRole('button', { name: /Switch to light mode/i }),
+      page.getByRole('button', { name: 'Sign in with Google' }),
+    ];
+
+    for (const control of controls) {
+      const box = await control.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+  });
+
   test('closes the signed-in user disclosure with Escape and restores trigger focus', async ({ page }) => {
     await enableMockUser(page);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -420,6 +443,21 @@ test.describe('Station trust page', () => {
     await page.getByText('Location', { exact: true }).scrollIntoViewIfNeeded();
 
     await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('keeps station and review actions comfortably tappable', async ({ page }) => {
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    for (const control of [
+      page.getByRole('link', { name: /Search fuel stations/i }).last(),
+      page.getByRole('button', { name: 'Share station' }),
+      page.getByRole('button', { name: 'Helpful' }).first(),
+      page.getByRole('button', { name: 'Not helpful' }).first(),
+    ]) {
+      const box = await control.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
   });
 
   test('negative reviews require an explicit complaint category while text stays optional', async ({ page }) => {

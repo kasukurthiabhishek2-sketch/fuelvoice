@@ -112,8 +112,8 @@ export default function AdminPage() {
                 <p className="text-sm font-medium capitalize" style={{ color: 'var(--text-primary)' }}>{r.reason}</p>
                 <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>{timeAgo(r.createdAt)}</p>
                 <div className="mt-2 flex gap-2">
-                  <button onClick={() => handleReport(r.id, 'reviewed')} className="rounded-lg bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-500 transition-colors hover:bg-emerald-500/20">Accept</button>
-                  <button onClick={() => handleReport(r.id, 'dismissed')} className="rounded-lg bg-rose-500/10 px-3 py-1 text-xs font-medium text-rose-500 transition-colors hover:bg-rose-500/20">Dismiss</button>
+                  <button onClick={() => handleReport(r.id, 'reviewed')} className="min-h-11 rounded-lg bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-500 transition-colors hover:bg-emerald-500/20">Accept</button>
+                  <button onClick={() => handleReport(r.id, 'dismissed')} className="min-h-11 rounded-lg bg-rose-500/10 px-3 py-1 text-xs font-medium text-rose-500 transition-colors hover:bg-rose-500/20">Dismiss</button>
                 </div>
               </div>
             ))
@@ -142,10 +142,10 @@ export default function AdminPage() {
                     <StarRating value={r.rating} size="sm" />
                   </div>
                   <div className="flex flex-wrap gap-1 sm:justify-end">
-                    <button onClick={() => handleHideReview(r.id, r.isHidden)} className="rounded px-2 py-1 text-xs font-medium transition-colors hover:bg-surface-100 dark:hover:bg-surface-700" style={{ color: 'var(--text-secondary)' }}>
+                    <button onClick={() => handleHideReview(r.id, r.isHidden)} className="min-h-11 rounded px-2 py-1 text-xs font-medium transition-colors hover:bg-surface-100 dark:hover:bg-surface-700" style={{ color: 'var(--text-secondary)' }}>
                       {r.isHidden ? '👁️ Show' : '🙈 Hide'}
                     </button>
-                    <button onClick={() => handleFeature(r.id, r.isFeatured)} className="rounded px-2 py-1 text-xs font-medium transition-colors hover:bg-surface-100 dark:hover:bg-surface-700" style={{ color: 'var(--text-secondary)' }}>
+                    <button onClick={() => handleFeature(r.id, r.isFeatured)} className="min-h-11 rounded px-2 py-1 text-xs font-medium transition-colors hover:bg-surface-100 dark:hover:bg-surface-700" style={{ color: 'var(--text-secondary)' }}>
                       {r.isFeatured ? '⭐ Unfeature' : '⭐ Feature'}
                     </button>
                   </div>
@@ -190,7 +190,7 @@ export default function AdminPage() {
                     <td className="py-2" style={{ color: 'var(--text-secondary)' }}>{u.reviewCount}</td>
                     <td className="py-2">{u.isBanned ? <span className="text-xs text-rose-500">Banned</span> : <span className="text-xs text-emerald-500">Active</span>}</td>
                     <td className="py-2 text-right">
-                      <button onClick={() => handleBan(u.uid, u.isBanned)} className="text-xs font-medium text-rose-500 transition-colors hover:text-rose-600">
+                      <button onClick={() => handleBan(u.uid, u.isBanned)} className="min-h-11 px-2 text-xs font-medium text-rose-500 transition-colors hover:text-rose-600">
                         {u.isBanned ? 'Unban' : 'Ban'}
                       </button>
                     </td>

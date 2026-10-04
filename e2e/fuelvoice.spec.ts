@@ -527,7 +527,9 @@ test.describe('Station trust page', () => {
     await expect(editContext).toBeVisible();
 
     await ownerReview.getByRole('button', { name: 'Fuel quality', exact: true }).click();
-    await ownerReview.getByRole('button', { name: 'Save changes', exact: true }).click();
+    const saveChanges = ownerReview.getByRole('button', { name: 'Save changes', exact: true });
+    await saveChanges.focus();
+    await saveChanges.press('Enter');
 
     const editError = ownerReview.getByRole('alert').filter({
       hasText: 'Choose at least one complaint category for a 1-2 rating.',

@@ -88,9 +88,15 @@ jobs:
         continue-on-error: true
         run: npm install --no-save --no-package-lock @axe-core/playwright@4.13.0
 
+      - name: Align Chromium with axe Playwright runtime
+        id: axebrowser
+        if: steps.axeinstall.outcome == 'success'
+        continue-on-error: true
+        run: npx playwright install --with-deps chromium
+
       - name: Run zero-violation axe audit
         id: axe
-        if: steps.axeinstall.outcome == 'success' && steps.browser.outcome == 'success'
+        if: steps.axeinstall.outcome == 'success' && steps.axebrowser.outcome == 'success'
         continue-on-error: true
         run: npx playwright test --config=playwright.ux-audit-a11y.config.ts
 
@@ -112,6 +118,7 @@ jobs:
           FLOWS: ${{ steps.flows.outcome }}
           CAPTURE: ${{ steps.capture.outcome }}
           AXE_INSTALL: ${{ steps.axeinstall.outcome }}
+          AXE_BROWSER: ${{ steps.axebrowser.outcome }}
           AXE: ${{ steps.axe.outcome }}
           COMPARE: ${{ steps.compare.outcome }}
         run: |
@@ -131,6 +138,7 @@ jobs:
           | product E2E at 375/768/1280/1920 | $FLOWS |
           | 112-state deterministic recapture | $CAPTURE |
           | @axe-core/playwright 4.13.0 CI-only install | $AXE_INSTALL |
+          | Chromium aligned to axe Playwright runtime | $AXE_BROWSER |
           | zero-violation axe audit | $AXE |
           | baseline/final screenshot comparison | $COMPARE |
 
@@ -173,6 +181,7 @@ jobs:
           FLOWS: ${{ steps.flows.outcome }}
           CAPTURE: ${{ steps.capture.outcome }}
           AXE_INSTALL: ${{ steps.axeinstall.outcome }}
+          AXE_BROWSER: ${{ steps.axebrowser.outcome }}
           AXE: ${{ steps.axe.outcome }}
           COMPARE: ${{ steps.compare.outcome }}
         run: |
@@ -184,5 +193,6 @@ jobs:
           test "$FLOWS" = success
           test "$CAPTURE" = success
           test "$AXE_INSTALL" = success
+          test "$AXE_BROWSER" = success
           test "$AXE" = success
           test "$COMPARE" = success

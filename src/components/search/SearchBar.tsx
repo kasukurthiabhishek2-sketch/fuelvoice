@@ -88,6 +88,7 @@ export function SearchBar({
   };
 
   const isHero = variant === 'hero';
+  const hasResultsPopup = isOpen && results.length > 0;
   const activeOptionId = selectedIndex >= 0 && results[selectedIndex]
     ? `search-result-${results[selectedIndex].id}`
     : undefined;
@@ -127,8 +128,8 @@ export function SearchBar({
             : 'rounded-xl py-2.5 pl-10 pr-20 text-sm shadow-[var(--shadow-xs)] focus:border-brand-500'
           }`}
           role="combobox"
-          aria-expanded={isOpen}
-          aria-controls="search-results"
+          aria-expanded={hasResultsPopup}
+          aria-controls={hasResultsPopup ? 'search-results' : undefined}
           aria-label="Search fuel stations"
           aria-autocomplete="list"
           aria-activedescendant={activeOptionId}

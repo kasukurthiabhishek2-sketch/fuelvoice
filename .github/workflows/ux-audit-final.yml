@@ -1,0 +1,188 @@
+name: UX Audit Final Verification
+
+on:
+  push:
+    branches: [ux-audit-2026-10-04]
+    paths:
+      - 'e2e/ux-audit-phase4.spec.ts'
+      - 'playwright.ux-audit-final.config.ts'
+      - 'playwright.ux-audit-a11y.config.ts'
+      - 'ux-audit/final/accessibility.spec.mjs'
+      - 'scripts/ux-audit-compare.mjs'
+      - '.github/workflows/ux-audit-final.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ux-audit-final
+  cancel-in-progress: true
+
+env:
+  NEXT_PUBLIC_FIREBASE_API_KEY: ci-placeholder
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: example.firebaseapp.com
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: fuelvoice-ci
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: example.appspot.com
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
+  NEXT_PUBLIC_FIREBASE_APP_ID: '1:000000000000:web:ci'
+  NEXT_PUBLIC_MAPTILER_API_KEY: ci-maptiler-placeholder
+  NEXT_PUBLIC_FUELVOICE_E2E_MOCKS: 'true'
+
+jobs:
+  final:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install repository dependencies
+        id: install
+        continue-on-error: true
+        run: npm ci
+
+      - name: Install Chromium
+        id: browser
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npx playwright install --with-deps chromium
+
+      - name: Lint
+        id: lint
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Type check
+        id: typecheck
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run typecheck
+
+      - name: Production build
+        id: build
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run build
+
+      - name: Run product E2E at all four audit widths
+        id: flows
+        if: steps.install.outcome == 'success' && steps.browser.outcome == 'success'
+        continue-on-error: true
+        run: npx playwright test --config=playwright.ux-audit-final.config.ts
+
+      - name: Recapture all deterministic audit states
+        id: capture
+        if: steps.install.outcome == 'success' && steps.browser.outcome == 'success'
+        continue-on-error: true
+        env:
+          UX_AUDIT_OUTPUT: ux-audit/final/current
+        run: npx playwright test --config=playwright.ux-audit.config.ts
+
+      - name: Install axe test adapter
+        id: axeinstall
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm install --no-save --no-package-lock @axe-core/playwright@4.13.0
+
+      - name: Run zero-violation axe audit
+        id: axe
+        if: steps.axeinstall.outcome == 'success' && steps.browser.outcome == 'success'
+        continue-on-error: true
+        run: npx playwright test --config=playwright.ux-audit-a11y.config.ts
+
+      - name: Compare baseline and final screenshots
+        id: compare
+        if: steps.capture.outcome == 'success'
+        continue-on-error: true
+        run: node scripts/ux-audit-compare.mjs
+
+      - name: Write final test record
+        if: always()
+        shell: bash
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          LINT: ${{ steps.lint.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          FLOWS: ${{ steps.flows.outcome }}
+          CAPTURE: ${{ steps.capture.outcome }}
+          AXE_INSTALL: ${{ steps.axeinstall.outcome }}
+          AXE: ${{ steps.axe.outcome }}
+          COMPARE: ${{ steps.compare.outcome }}
+        run: |
+          mkdir -p ux-audit/final
+          cat > ux-audit/final/test-results.md <<EOF
+          # Phase 4 final test results
+
+          Final product commit under test: `$GITHUB_SHA`
+
+          | Gate | Outcome |
+          | --- | --- |
+          | npm ci | $INSTALL |
+          | Chromium install | $BROWSER |
+          | npm run lint | $LINT |
+          | npm run typecheck | $TYPECHECK |
+          | npm run build | $BUILD |
+          | product E2E at 375/768/1280/1920 | $FLOWS |
+          | 112-state deterministic recapture | $CAPTURE |
+          | @axe-core/playwright 4.13.0 CI-only install | $AXE_INSTALL |
+          | zero-violation axe audit | $AXE |
+          | baseline/final screenshot comparison | $COMPARE |
+
+          `@axe-core/playwright@4.13.0` is installed only in this audit workflow. It is not added to production dependencies or the application bundle.
+          EOF
+
+      - name: Upload final audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-audit-final-${{ github.sha }}
+          path: |
+            ux-audit/final
+            e2e/screenshots
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Commit final evidence
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ux-audit/final
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore(ux-audit): persist Phase 4 evidence [skip ci]"
+          git push origin HEAD:ux-audit-2026-10-04
+
+      - name: Enforce final audit gates
+        if: always()
+        shell: bash
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          LINT: ${{ steps.lint.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          FLOWS: ${{ steps.flows.outcome }}
+          CAPTURE: ${{ steps.capture.outcome }}
+          AXE_INSTALL: ${{ steps.axeinstall.outcome }}
+          AXE: ${{ steps.axe.outcome }}
+          COMPARE: ${{ steps.compare.outcome }}
+        run: |
+          test "$INSTALL" = success
+          test "$BROWSER" = success
+          test "$LINT" = success
+          test "$TYPECHECK" = success
+          test "$BUILD" = success
+          test "$FLOWS" = success
+          test "$CAPTURE" = success
+          test "$AXE_INSTALL" = success
+          test "$AXE" = success
+          test "$COMPARE" = success

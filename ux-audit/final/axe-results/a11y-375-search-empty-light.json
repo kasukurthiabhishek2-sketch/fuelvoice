@@ -1,0 +1,46 @@
+{
+  "project": "a11y-375",
+  "scenario": "search-empty-light",
+  "url": "http://localhost:3000/search",
+  "violations": [
+    {
+      "id": "aria-valid-attr-value",
+      "impact": "critical",
+      "tags": [
+        "cat.aria",
+        "wcag2a",
+        "wcag412",
+        "EN-301-549",
+        "EN-9.4.1.2",
+        "RGAAv4",
+        "RGAA-7.1.1"
+      ],
+      "description": "Ensure all ARIA attributes have valid values",
+      "help": "ARIA attributes must conform to valid values",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/aria-valid-attr-value?application=playwright",
+      "nodes": [
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-valid-attr-value",
+              "data": [
+                "aria-controls=\"search-results\""
+              ],
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "Invalid ARIA attribute value: aria-controls=\"search-results\""
+            }
+          ],
+          "none": [],
+          "impact": "critical",
+          "html": "<input type=\"text\" placeholder=\"Search a fuel statio...\" class=\"w-full border border...\" role=\"combobox\" aria-expanded=\"true\" aria-controls=\"search-results\" aria-label=\"Search fuel stations\" aria-autocomplete=\"list\" aria-busy=\"false\" autocomplete=\"off\" value=\"NoSuchStation\">",
+          "target": [
+            "input"
+          ],
+          "failureSummary": "Fix all of the following:\n  Invalid ARIA attribute value: aria-controls=\"search-results\""
+        }
+      ]
+    }
+  ]
+}

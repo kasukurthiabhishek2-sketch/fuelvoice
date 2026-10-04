@@ -1,6 +1,6 @@
 # Phase 4 final test results
 
-Final product commit under test: 
+Final product commit under test: d4935668fd523898181f7fd3337d52a75e6a0f82
 
 | Gate | Outcome |
 | --- | --- |
@@ -16,4 +16,4 @@ Final product commit under test:
 | zero-violation axe audit | failure |
 | baseline/final screenshot comparison | success |
 
- is installed only in this audit workflow. It is not added to production dependencies or the application bundle.
+@axe-core/playwright@4.13.0 is installed only in this audit workflow. It is not added to production dependencies or the application bundle.

@@ -12,18 +12,67 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Error: [
+  {
+    "id": "aria-valid-attr-value",
+    "impact": "critical",
+    "help": "ARIA attributes must conform to valid values",
+    "nodes": [
+      [
+        "input"
+      ]
+    ]
+  }
+]
 
-Locator: getByText(/No fuel stations found/)
-Expected: visible
-Error: strict mode violation: getByText(/No fuel stations found/) resolved to 2 elements:
-    1) <div class="sr-only" aria-live="polite" aria-atomic="true">No fuel stations found</div> aka getByText('No fuel stations found', { exact: true })
-    2) <p class="mt-3 text-sm font-semibold">No fuel stations found for “NoSuchStation”</p> aka getByText('No fuel stations found for “')
+expect(received).toEqual(expected) // deep equality
 
-Call log:
-  - Expect "toBeVisible" getByText(/No fuel stations found/) with timeout 5000ms
-  - waiting for getByText(/No fuel stations found/)
+- Expected  -  1
++ Received  + 42
 
+- Array []
++ Array [
++   Object {
++     "description": "Ensure all ARIA attributes have valid values",
++     "help": "ARIA attributes must conform to valid values",
++     "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/aria-valid-attr-value?application=playwright",
++     "id": "aria-valid-attr-value",
++     "impact": "critical",
++     "nodes": Array [
++       Object {
++         "all": Array [
++           Object {
++             "data": Array [
++               "aria-controls=\"search-results\"",
++             ],
++             "id": "aria-valid-attr-value",
++             "impact": "critical",
++             "message": "Invalid ARIA attribute value: aria-controls=\"search-results\"",
++             "relatedNodes": Array [],
++           },
++         ],
++         "any": Array [],
++         "failureSummary": "Fix all of the following:
++   Invalid ARIA attribute value: aria-controls=\"search-results\"",
++         "html": "<input type=\"text\" placeholder=\"Search a fuel statio...\" class=\"w-full border border...\" role=\"combobox\" aria-expanded=\"true\" aria-controls=\"search-results\" aria-label=\"Search fuel stations\" aria-autocomplete=\"list\" aria-busy=\"false\" autocomplete=\"off\" value=\"NoSuchStation\">",
++         "impact": "critical",
++         "none": Array [],
++         "target": Array [
++           "input",
++         ],
++       },
++     ],
++     "tags": Array [
++       "cat.aria",
++       "wcag2a",
++       "wcag412",
++       "EN-301-549",
++       "EN-9.4.1.2",
++       "RGAAv4",
++       "RGAA-7.1.1",
++     ],
++   },
++ ]
 ```
 
 # Page snapshot
@@ -83,6 +132,28 @@ Call log:
 # Test source
 
 ```ts
+  1   | import fs from 'node:fs';
+  2   | import path from 'node:path';
+  3   | import { expect, test } from '@playwright/test';
+  4   | import AxeBuilder from '@axe-core/playwright';
+  5   | 
+  6   | const STATION_ID = 'node_6254336890';
+  7   | const OUTPUT = path.join(process.cwd(), 'ux-audit', 'final', 'axe-results');
+  8   | 
+  9   | async function installNetwork(page, mode = 'default') {
+  10  |   await page.route('https://ipwho.is/**', route => route.fulfill({
+  11  |     status: 200,
+  12  |     contentType: 'application/json',
+  13  |     body: JSON.stringify({ success: true, latitude: 17.3887027, longitude: 78.4753829 }),
+  14  |   }));
+  15  |   await page.route('https://photon.komoot.io/api**', route => route.fulfill({
+  16  |     status: 200,
+  17  |     contentType: 'application/json',
+  18  |     body: JSON.stringify(mode === 'search-empty' ? { features: [] } : {
+  19  |       features: [{
+  20  |         type: 'Feature',
+  21  |         geometry: { type: 'Point', coordinates: [78.4753829, 17.3887027] },
+  22  |         properties: {
   23  |           osm_id: 6254336890,
   24  |           osm_type: 'N',
   25  |           osm_key: 'amenity',
@@ -154,7 +225,8 @@ Call log:
   91  |     help: v.help,
   92  |     nodes: v.nodes.map(n => n.target),
   93  |   }));
-  94  |   expect(results.violations, JSON.stringify(compact, null, 2)).toEqual([]);
+> 94  |   expect(results.violations, JSON.stringify(compact, null, 2)).toEqual([]);
+      |                                                                ^ Error: [
   95  | }
   96  | 
   97  | const scenarios = [
@@ -183,8 +255,7 @@ Call log:
   120 |     mode: 'search-empty',
   121 |     prepare: async page => {
   122 |       await page.getByRole('combobox', { name: /search fuel stations/i }).fill('NoSuchStation');
-> 123 |       await expect(page.getByText(/No fuel stations found/)).toBeVisible();
-      |                                                              ^ Error: expect(locator).toBeVisible() failed
+  123 |       await expect(page.getByText('No fuel stations found for “NoSuchStation”', { exact: true })).toBeVisible();
   124 |     },
   125 |   },
   126 |   {

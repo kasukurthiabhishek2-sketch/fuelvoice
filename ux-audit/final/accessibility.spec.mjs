@@ -120,7 +120,7 @@ const scenarios = [
     mode: 'search-empty',
     prepare: async page => {
       await page.getByRole('combobox', { name: /search fuel stations/i }).fill('NoSuchStation');
-      await expect(page.getByText(/No fuel stations found/)).toBeVisible();
+      await expect(page.getByText('No fuel stations found for “NoSuchStation”', { exact: true })).toBeVisible();
     },
   },
   {

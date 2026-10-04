@@ -126,7 +126,7 @@ jobs:
           cat > ux-audit/final/test-results.md <<EOF
           # Phase 4 final test results
 
-          Final product commit under test: `$GITHUB_SHA`
+          Final product commit under test: $GITHUB_SHA
 
           | Gate | Outcome |
           | --- | --- |
@@ -142,7 +142,7 @@ jobs:
           | zero-violation axe audit | $AXE |
           | baseline/final screenshot comparison | $COMPARE |
 
-          `@axe-core/playwright@4.13.0` is installed only in this audit workflow. It is not added to production dependencies or the application bundle.
+          @axe-core/playwright@4.13.0 is installed only in this audit workflow. It is not added to production dependencies or the application bundle.
           EOF
 
       - name: Upload final audit evidence

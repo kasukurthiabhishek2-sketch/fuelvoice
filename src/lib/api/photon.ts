@@ -25,6 +25,56 @@ export interface SearchResult {
   osmId: number;
 }
 
+const SEARCH_STOPWORDS = new Set(['at', 'in', 'near', 'the', 'fuel', 'station', 'petrol', 'pump']);
+
+function normalizeSearchText(value: string): string {
+  return value
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^\p{Letter}\p{Number}]+/gu, ' ')
+    .trim();
+}
+
+function meaningfulQueryTokens(query: string): string[] {
+  const tokens = normalizeSearchText(query)
+    .split(/\s+/)
+    .filter((token) => token.length >= 2);
+
+  const meaningful = tokens.filter((token) => !SEARCH_STOPWORDS.has(token));
+  return meaningful.length > 0 ? meaningful : tokens;
+}
+
+function rankSearchResults(query: string, results: SearchResult[]): SearchResult[] {
+  const tokens = meaningfulQueryTokens(query);
+  if (tokens.length < 2) return results;
+
+  return results
+    .map((result, index) => {
+      const name = normalizeSearchText(result.name);
+      const city = normalizeSearchText(result.city);
+      const state = normalizeSearchText(result.state);
+      const country = normalizeSearchText(result.country);
+      const searchable = [name, city, state, country].filter(Boolean).join(' ');
+      const coverage = tokens.reduce((count, token) => count + (searchable.includes(token) ? 1 : 0), 0);
+      const weightedScore = tokens.reduce((score, token) => {
+        if (name.includes(token)) score += 5;
+        if (city.includes(token)) score += 4;
+        if (state.includes(token)) score += 3;
+        if (country.includes(token)) score += 2;
+        return score;
+      }, 0);
+
+      return { result, index, coverage, weightedScore };
+    })
+    .sort((a, b) =>
+      b.coverage - a.coverage ||
+      b.weightedScore - a.weightedScore ||
+      a.index - b.index
+    )
+    .map(({ result }) => result);
+}
+
 /**
  * Search for fuel stations by name/location.
  * Uses Photon's autocomplete-friendly endpoint.
@@ -42,9 +92,14 @@ export async function searchFuelStations(
 ): Promise<SearchResult[]> {
   if (query.trim().length < 2) return [];
 
+  const queryTokens = meaningfulQueryTokens(query);
+  const requestLimit = queryTokens.length > 1
+    ? Math.min(Math.max(limitCount * 3, 24), 40)
+    : limitCount;
+
   const params = new URLSearchParams({
     q: query,
-    limit: limitCount.toString(),
+    limit: requestLimit.toString(),
     lang: 'en',
     osm_tag: 'amenity:fuel',
   });
@@ -68,9 +123,11 @@ export async function searchFuelStations(
   const data = await response.json();
   const features: PhotonFeature[] = data.features || [];
 
-  return features
+  const results = features
     .map(featureToSearchResult)
     .filter((r): r is SearchResult => r !== null);
+
+  return rankSearchResults(query, results).slice(0, limitCount);
 }
 
 /**

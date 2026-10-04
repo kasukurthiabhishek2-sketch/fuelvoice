@@ -240,6 +240,59 @@ test.describe('Minimal homepage', () => {
     await expect(page.getByRole('link', { name: 'Search fuel stations' })).toBeVisible();
   });
 
+  test('prioritizes station results that match the full multi-word query', async ({ page }) => {
+    await page.unroute('https://photon.komoot.io/api**');
+    await page.route('https://photon.komoot.io/api**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: [
+            {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [67.0011, 24.8607] },
+              properties: {
+                osm_id: 7000000001,
+                osm_type: 'N',
+                osm_key: 'amenity',
+                osm_value: 'fuel',
+                name: 'Shell',
+                city: 'Karachi',
+                state: 'Sindh',
+                country: 'Pakistan',
+                countrycode: 'PK',
+              },
+            },
+            {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [78.4753829, 17.3887027] },
+              properties: {
+                osm_id: 7000000002,
+                osm_type: 'N',
+                osm_key: 'amenity',
+                osm_value: 'fuel',
+                name: 'Shell',
+                city: 'Hyderabad',
+                state: 'Telangana',
+                country: 'India',
+                countrycode: 'IN',
+              },
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+    const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await input.fill('Shell Hyderabad');
+
+    const options = page.getByRole('option');
+    await expect(options).toHaveCount(2, { timeout: 10000 });
+    await expect(options.first()).toContainText('Hyderabad');
+    await expect(options.first()).toContainText('India');
+  });
+
   test('autocomplete navigates toward a station page', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 

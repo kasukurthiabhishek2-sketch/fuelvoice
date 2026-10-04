@@ -1,0 +1,87 @@
+name: Live Production UX Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [live-ux-hardening-2026-10-04]
+    paths:
+      - 'e2e/live-production-audit.spec.ts'
+      - 'playwright.live-ux.config.ts'
+      - 'scripts/live-ux-summarize.mjs'
+      - '.github/workflows/live-ux-audit.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-production-ux-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      PRODUCTION_URL: https://fuelvoice.vercel.app
+      EXPECTED_PRODUCTION_SHA: a874c3f593e07c0814fc497cd53c7ed3ef356c7d
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install repository dependencies
+        run: npm ci
+
+      - name: Install CI-only axe adapter
+        run: npm install --no-save --no-package-lock @axe-core/playwright@4.13.0
+
+      - name: Install matching Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify exact production commit
+        shell: bash
+        run: |
+          health="$(curl --fail --silent --show-error --location --max-time 20 "$PRODUCTION_URL/api/health")"
+          printf '%s\n' "$health" | jq .
+          printf '%s' "$health" | jq -e --arg sha "$EXPECTED_PRODUCTION_SHA"             '.status == "ok" and .environment == "production" and .gitSha == $sha' >/dev/null
+
+      - name: Audit live production UX
+        run: npx playwright test --config=playwright.live-ux.config.ts
+
+      - name: Summarize live evidence
+        if: always()
+        run: node scripts/live-ux-summarize.mjs
+
+      - name: Upload live audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-production-ux-audit
+          path: live-ux-audit
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Commit live baseline evidence
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -d live-ux-audit/baseline ]; then
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add live-ux-audit/baseline
+
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+
+          git commit -m "chore(live-ux): capture production baseline [skip live-audit]"
+          git push origin HEAD:live-ux-hardening-2026-10-04

@@ -669,6 +669,14 @@ test.describe('Admin responsiveness', () => {
 });
 
 test.describe('Fallbacks and metadata', () => {
+  test('offers both home and station-search recovery from unknown routes', async ({ page }) => {
+    await page.goto('/this-route-does-not-exist', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { name: 'Page Not Found' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Back to Home' })).toHaveAttribute('href', '/');
+    await expect(page.getByRole('link', { name: 'Search stations' })).toHaveAttribute('href', '/search');
+  });
+
   test('invalid station IDs fail clearly without invented station data', async ({ page }) => {
     await page.goto('/station/invalid_0', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /could not find this station/i })).toBeVisible();

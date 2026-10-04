@@ -139,7 +139,11 @@ export function SearchBar({
 
         <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
           {isSearching && (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" aria-label="Searching" />
+            <span
+              role="status"
+              className="h-4 w-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"
+              aria-label="Searching"
+            />
           )}
           {!isSearching && searchTerm && (
             <button

@@ -1,0 +1,324 @@
+{
+  "project": "live-375",
+  "scenario": "station-reviews",
+  "url": "https://fuelvoice.vercel.app/station/node_2817379324",
+  "metrics": {
+    "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+    "innerWidth": 375,
+    "innerHeight": 812,
+    "scrollWidth": 375,
+    "scrollHeight": 3168,
+    "headings": [
+      {
+        "level": "h1",
+        "text": "HP Gas Station (Petrol pump)"
+      },
+      {
+        "level": "h2",
+        "text": "Reviews"
+      },
+      {
+        "level": "h2",
+        "text": "Go straight to an official channel."
+      },
+      {
+        "level": "h2",
+        "text": "Useful details, after the reviews."
+      }
+    ],
+    "interactive": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice home",
+        "width": 128.9,
+        "height": 44,
+        "x": 16,
+        "y": 15
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search fuel stations",
+        "width": 44,
+        "height": 44,
+        "x": 161,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Switch to light mode",
+        "width": 39.6,
+        "height": 44,
+        "x": 211,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sign in with Google",
+        "width": 102.5,
+        "height": 58,
+        "x": 257,
+        "y": 8
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search",
+        "width": 68.4,
+        "height": 44,
+        "x": 16,
+        "y": 103
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Share",
+        "width": 60.4,
+        "height": 44,
+        "x": 299,
+        "y": 103
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Get directions",
+        "width": 135,
+        "height": 45.4,
+        "x": 16,
+        "y": 388
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Read reviews",
+        "width": 131,
+        "height": 45.4,
+        "x": 159,
+        "y": 388
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Risk first",
+        "width": 77,
+        "height": 44,
+        "x": 16,
+        "y": 804
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Newest",
+        "width": 72,
+        "height": 44,
+        "x": 101,
+        "y": 804
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Most helpful",
+        "width": 99,
+        "height": 44,
+        "x": 181,
+        "y": 804
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "All issues",
+        "width": 82,
+        "height": 44,
+        "x": 16,
+        "y": 864
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Fuel quality",
+        "width": 93,
+        "height": 44,
+        "x": 106,
+        "y": 864
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Quantity / short-filling",
+        "width": 152,
+        "height": 44,
+        "x": 207,
+        "y": 864
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Pricing / billing",
+        "width": 112,
+        "height": 44,
+        "x": 367,
+        "y": 864
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Staff behavior",
+        "width": 109,
+        "height": 44,
+        "x": 487,
+        "y": 864
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Payment issue",
+        "width": 113,
+        "height": 44,
+        "x": 604,
+        "y": 864
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Facilities",
+        "width": 78,
+        "height": 44,
+        "x": 725,
+        "y": 864
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Safety",
+        "width": 64,
+        "height": 44,
+        "x": 811,
+        "y": 864
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Other",
+        "width": 59,
+        "height": 44,
+        "x": 883,
+        "y": 864
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sign in with Google",
+        "width": 301,
+        "height": 50,
+        "x": 37,
+        "y": 1254
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "File a consumer complaintNational Consumer Helpline",
+        "width": 301,
+        "height": 68.8,
+        "x": 37,
+        "y": 1614
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Write a review",
+        "width": 163,
+        "height": 46,
+        "x": 12,
+        "y": 756
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "File a complaint",
+        "width": 179.3,
+        "height": 46,
+        "x": 184,
+        "y": 756
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Directions ↗",
+        "width": 71.6,
+        "height": 32,
+        "x": 287,
+        "y": 2401
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Get directions",
+        "width": 137,
+        "height": 45.4,
+        "x": 41,
+        "y": 2614
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 16,
+        "y": 3016
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search stations",
+        "width": 104,
+        "height": 44,
+        "x": 16,
+        "y": 3092
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "OpenStreetMap",
+        "width": 108,
+        "height": 44,
+        "x": 132,
+        "y": 3092
+      }
+    ],
+    "undersizedTargets": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 16,
+        "y": 3016
+      }
+    ],
+    "navigation": {
+      "domContentLoadedMs": 930,
+      "loadMs": 1151,
+      "responseStartMs": 45,
+      "transferSize": 5377
+    },
+    "resourceCount": 34
+  },
+  "signals": {
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failedRequests": [
+      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=0&CI=0&TYPE=xmlhttp&zx=ekasdi8kepar&t=1 :: net::ERR_ABORTED",
+      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=7&CI=1&TYPE=xmlhttp&zx=u6ewrrhm83fz&t=1 :: net::ERR_ABORTED",
+      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=9&CI=1&TYPE=xmlhttp&zx=h06g8za9ghj8&t=1 :: net::ERR_ABORTED",
+      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=11&CI=1&TYPE=xmlhttp&zx=pcvwu0uce8ib&t=1 :: net::ERR_ABORTED",
+      "GET https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?gsessionid=3QuwN3DqpQ-hzFEJQF-MYUotGdPt0X88CRV9R7dXuhEwsP60WmuqpQ&VER=8&database=projects%2Fbunk-review%2Fdatabases%2F(default)&RID=rpc&SID=PhsUul7whz1X7y5VcQrLvA&AID=16&CI=1&TYPE=xmlhttp&zx=63ojdgn8e3uj&t=1 :: net::ERR_ABORTED"
+    ],
+    "badResponses": []
+  },
+  "axeViolations": []
+}

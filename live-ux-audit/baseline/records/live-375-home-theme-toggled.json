@@ -1,0 +1,156 @@
+{
+  "project": "live-375",
+  "scenario": "home-theme-toggled",
+  "url": "https://fuelvoice.vercel.app/",
+  "metrics": {
+    "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+    "innerWidth": 375,
+    "innerHeight": 812,
+    "scrollWidth": 375,
+    "scrollHeight": 2436,
+    "headings": [
+      {
+        "level": "h1",
+        "text": "Know the stationbefore you trust it."
+      },
+      {
+        "level": "h2",
+        "text": "Nearby Fuel Stations, without the clutter."
+      },
+      {
+        "level": "h3",
+        "text": "Chevron"
+      },
+      {
+        "level": "h3",
+        "text": "Fuel Station"
+      }
+    ],
+    "interactive": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice home",
+        "width": 128.9,
+        "height": 44,
+        "x": 16,
+        "y": 15
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search fuel stations",
+        "width": 44,
+        "height": 44,
+        "x": 161,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Switch to dark mode",
+        "width": 39.6,
+        "height": 44,
+        "x": 211,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sign in with Google",
+        "width": 102.5,
+        "height": 58,
+        "x": 257,
+        "y": 8
+      },
+      {
+        "tag": "input",
+        "role": "combobox",
+        "name": "Search fuel stations",
+        "width": 329,
+        "height": 56.5,
+        "x": 23,
+        "y": 530
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search another area",
+        "width": 343,
+        "height": 45.4,
+        "x": 16,
+        "y": 1378
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Top mapped resultChevronChevron01Address details are not available for this mapped station.200mTrust",
+        "width": 343,
+        "height": 353.8,
+        "x": 16,
+        "y": 1460
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Fuel Station02Address details are not available for this mapped station.500mTrust score available af",
+        "width": 343,
+        "height": 353.8,
+        "x": 16,
+        "y": 1829
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 16,
+        "y": 2284
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search stations",
+        "width": 104,
+        "height": 44,
+        "x": 16,
+        "y": 2360
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "OpenStreetMap",
+        "width": 108,
+        "height": 44,
+        "x": 132,
+        "y": 2360
+      }
+    ],
+    "undersizedTargets": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 16,
+        "y": 2284
+      }
+    ],
+    "navigation": {
+      "domContentLoadedMs": 657,
+      "loadMs": 1630,
+      "responseStartMs": 64,
+      "transferSize": 6638
+    },
+    "resourceCount": 21
+  },
+  "signals": {
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failedRequests": [],
+    "badResponses": []
+  },
+  "axeViolations": []
+}

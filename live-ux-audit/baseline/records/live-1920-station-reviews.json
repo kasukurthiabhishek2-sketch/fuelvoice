@@ -1,0 +1,309 @@
+{
+  "project": "live-1920",
+  "scenario": "station-reviews",
+  "url": "https://fuelvoice.vercel.app/station/node_2817379324",
+  "metrics": {
+    "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+    "innerWidth": 1920,
+    "innerHeight": 1080,
+    "scrollWidth": 1920,
+    "scrollHeight": 2412,
+    "headings": [
+      {
+        "level": "h1",
+        "text": "HP Gas Station (Petrol pump)"
+      },
+      {
+        "level": "h2",
+        "text": "Reviews"
+      },
+      {
+        "level": "h2",
+        "text": "Go straight to an official channel."
+      },
+      {
+        "level": "h2",
+        "text": "Useful details, after the reviews."
+      }
+    ],
+    "interactive": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice home",
+        "width": 128.9,
+        "height": 44,
+        "x": 320,
+        "y": 15
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search fuel stations",
+        "width": 96.2,
+        "height": 44,
+        "x": 1338,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Switch to light mode",
+        "width": 44,
+        "height": 44,
+        "x": 1440,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sign in with Google",
+        "width": 110,
+        "height": 44,
+        "x": 1490,
+        "y": 15
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search",
+        "width": 68.4,
+        "height": 44,
+        "x": 320,
+        "y": 123
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Share",
+        "width": 60.4,
+        "height": 44,
+        "x": 1540,
+        "y": 123
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Get directions",
+        "width": 135,
+        "height": 45.4,
+        "x": 320,
+        "y": 369
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Read reviews",
+        "width": 131,
+        "height": 45.4,
+        "x": 463,
+        "y": 369
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Risk first",
+        "width": 77,
+        "height": 44,
+        "x": 512,
+        "y": 623
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Newest",
+        "width": 72,
+        "height": 44,
+        "x": 597,
+        "y": 623
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Most helpful",
+        "width": 99,
+        "height": 44,
+        "x": 677,
+        "y": 623
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "All issues",
+        "width": 82,
+        "height": 44,
+        "x": 512,
+        "y": 683
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Fuel quality",
+        "width": 93,
+        "height": 44,
+        "x": 602,
+        "y": 683
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Quantity / short-filling",
+        "width": 152,
+        "height": 44,
+        "x": 703,
+        "y": 683
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Pricing / billing",
+        "width": 112,
+        "height": 44,
+        "x": 863,
+        "y": 683
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Staff behavior",
+        "width": 109,
+        "height": 44,
+        "x": 983,
+        "y": 683
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Payment issue",
+        "width": 113,
+        "height": 44,
+        "x": 1100,
+        "y": 683
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Facilities",
+        "width": 78,
+        "height": 44,
+        "x": 1221,
+        "y": 683
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Safety",
+        "width": 64,
+        "height": 44,
+        "x": 1307,
+        "y": 683
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Other",
+        "width": 59,
+        "height": 44,
+        "x": 1379,
+        "y": 683
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sign in with Google",
+        "width": 846,
+        "height": 50,
+        "x": 537,
+        "y": 1005
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "File a consumer complaintNational Consumer Helpline",
+        "width": 854,
+        "height": 68.8,
+        "x": 533,
+        "y": 1269
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Directions ↗",
+        "width": 74,
+        "height": 16,
+        "x": 1334,
+        "y": 1803
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Get directions",
+        "width": 137,
+        "height": 45.4,
+        "x": 1246,
+        "y": 1959
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 320,
+        "y": 2340
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search stations",
+        "width": 104,
+        "height": 44,
+        "x": 1372,
+        "y": 2336
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "OpenStreetMap",
+        "width": 108,
+        "height": 44,
+        "x": 1492,
+        "y": 2336
+      }
+    ],
+    "undersizedTargets": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Directions ↗",
+        "width": 74,
+        "height": 16,
+        "x": 1334,
+        "y": 1803
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 320,
+        "y": 2340
+      }
+    ],
+    "navigation": {
+      "domContentLoadedMs": 298,
+      "loadMs": 512,
+      "responseStartMs": 47,
+      "transferSize": 5377
+    },
+    "resourceCount": 28
+  },
+  "signals": {
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failedRequests": [],
+    "badResponses": []
+  },
+  "axeViolations": []
+}

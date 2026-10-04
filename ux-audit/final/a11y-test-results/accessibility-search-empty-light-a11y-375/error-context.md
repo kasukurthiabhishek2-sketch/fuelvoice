@@ -14,12 +14,12 @@
 ```
 Error: [
   {
-    "id": "aria-valid-attr-value",
-    "impact": "critical",
-    "help": "ARIA attributes must conform to valid values",
+    "id": "aria-prohibited-attr",
+    "impact": "serious",
+    "help": "Elements must only use permitted ARIA attributes",
     "nodes": [
       [
-        "input"
+        ".animate-spin"
       ]
     ]
   }
@@ -28,37 +28,42 @@ Error: [
 expect(received).toEqual(expected) // deep equality
 
 - Expected  -  1
-+ Received  + 42
++ Received  + 47
 
 - Array []
 + Array [
 +   Object {
-+     "description": "Ensure all ARIA attributes have valid values",
-+     "help": "ARIA attributes must conform to valid values",
-+     "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/aria-valid-attr-value?application=playwright",
-+     "id": "aria-valid-attr-value",
-+     "impact": "critical",
++     "description": "Ensure ARIA attributes are not prohibited for an element's role",
++     "help": "Elements must only use permitted ARIA attributes",
++     "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/aria-prohibited-attr?application=playwright",
++     "id": "aria-prohibited-attr",
++     "impact": "serious",
 +     "nodes": Array [
 +       Object {
-+         "all": Array [
++         "all": Array [],
++         "any": Array [],
++         "failureSummary": "Fix all of the following:
++   aria-label attribute cannot be used on a span with no valid role attribute.",
++         "html": "<span class=\"h-4 w-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent\" aria-label=\"Searching\"></span>",
++         "impact": "serious",
++         "none": Array [
 +           Object {
-+             "data": Array [
-+               "aria-controls=\"search-results\"",
-+             ],
-+             "id": "aria-valid-attr-value",
-+             "impact": "critical",
-+             "message": "Invalid ARIA attribute value: aria-controls=\"search-results\"",
++             "data": Object {
++               "messageKey": "noRoleSingular",
++               "nodeName": "span",
++               "prohibited": Array [
++                 "aria-label",
++               ],
++               "role": null,
++             },
++             "id": "aria-prohibited-attr",
++             "impact": "serious",
++             "message": "aria-label attribute cannot be used on a span with no valid role attribute.",
 +             "relatedNodes": Array [],
 +           },
 +         ],
-+         "any": Array [],
-+         "failureSummary": "Fix all of the following:
-+   Invalid ARIA attribute value: aria-controls=\"search-results\"",
-+         "html": "<input type=\"text\" placeholder=\"Search a fuel statio...\" class=\"w-full border border...\" role=\"combobox\" aria-expanded=\"true\" aria-controls=\"search-results\" aria-label=\"Search fuel stations\" aria-autocomplete=\"list\" aria-busy=\"false\" autocomplete=\"off\" value=\"NoSuchStation\">",
-+         "impact": "critical",
-+         "none": Array [],
 +         "target": Array [
-+           "input",
++           ".animate-spin",
 +         ],
 +       },
 +     ],
@@ -98,7 +103,7 @@ expect(received).toEqual(expected) // deep equality
       - paragraph [ref=e33]: Search by station name, brand, locality, or city. Search does not require precise browser-location permission.
       - generic [ref=e35]:
         - generic [ref=e36]:
-          - combobox "Search fuel stations" [expanded] [active] [ref=e37]: NoSuchStation
+          - combobox "Search fuel stations" [active] [ref=e37]: NoSuchStation
           - button "Clear search" [ref=e39]
         - generic [ref=e42]: No fuel stations found
         - generic [ref=e43]:

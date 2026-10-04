@@ -4,8 +4,8 @@
   "url": "http://localhost:3000/search",
   "violations": [
     {
-      "id": "aria-valid-attr-value",
-      "impact": "critical",
+      "id": "aria-prohibited-attr",
+      "impact": "serious",
       "tags": [
         "cat.aria",
         "wcag2a",
@@ -15,30 +15,35 @@
         "RGAAv4",
         "RGAA-7.1.1"
       ],
-      "description": "Ensure all ARIA attributes have valid values",
-      "help": "ARIA attributes must conform to valid values",
-      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/aria-valid-attr-value?application=playwright",
+      "description": "Ensure ARIA attributes are not prohibited for an element's role",
+      "help": "Elements must only use permitted ARIA attributes",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/aria-prohibited-attr?application=playwright",
       "nodes": [
         {
           "any": [],
-          "all": [
+          "all": [],
+          "none": [
             {
-              "id": "aria-valid-attr-value",
-              "data": [
-                "aria-controls=\"search-results\""
-              ],
+              "id": "aria-prohibited-attr",
+              "data": {
+                "role": null,
+                "nodeName": "span",
+                "messageKey": "noRoleSingular",
+                "prohibited": [
+                  "aria-label"
+                ]
+              },
               "relatedNodes": [],
-              "impact": "critical",
-              "message": "Invalid ARIA attribute value: aria-controls=\"search-results\""
+              "impact": "serious",
+              "message": "aria-label attribute cannot be used on a span with no valid role attribute."
             }
           ],
-          "none": [],
-          "impact": "critical",
-          "html": "<input type=\"text\" placeholder=\"Search a fuel statio...\" class=\"w-full border border...\" role=\"combobox\" aria-expanded=\"true\" aria-controls=\"search-results\" aria-label=\"Search fuel stations\" aria-autocomplete=\"list\" aria-busy=\"false\" autocomplete=\"off\" value=\"NoSuchStation\">",
+          "impact": "serious",
+          "html": "<span class=\"h-4 w-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent\" aria-label=\"Searching\"></span>",
           "target": [
-            "input"
+            ".animate-spin"
           ],
-          "failureSummary": "Fix all of the following:\n  Invalid ARIA attribute value: aria-controls=\"search-results\""
+          "failureSummary": "Fix all of the following:\n  aria-label attribute cannot be used on a span with no valid role attribute."
         }
       ]
     }

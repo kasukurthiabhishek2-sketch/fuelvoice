@@ -1,6 +1,6 @@
 # Phase 4 final test results
 
-Final product commit under test: d4935668fd523898181f7fd3337d52a75e6a0f82
+Final product commit under test: d0f2d75453cb5a17711c5274da245a9080e21a06
 
 | Gate | Outcome |
 | --- | --- |

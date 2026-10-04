@@ -313,7 +313,12 @@ test.describe('Minimal homepage', () => {
     await page.goto('/search', { waitUntil: 'domcontentloaded' });
     const input = page.getByRole('combobox', { name: /search fuel stations/i });
     await expect.poll(() => input.evaluate((element) =>
-      Object.keys(element).some((key) => key.startsWith('__reactProps    await expect(options).toHaveCount(2, { timeout: 10000 });
+      Object.keys(element).some((key) => key.startsWith('__reactProps$'))
+    )).toBe(true);
+    await input.fill('Shell Hyderabad');
+
+    const options = page.getByRole('option');
+    await expect(options).toHaveCount(2, { timeout: 10000 });
     await expect(options.first()).toContainText('Hyderabad');
     await expect(options.first()).toContainText('India');
   });

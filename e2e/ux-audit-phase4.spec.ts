@@ -79,6 +79,14 @@ async function installNetwork(page: Page) {
   await page.route('https://*.tile.openstreetmap.org/**', route => route.abort());
 }
 
+async function guestData(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.removeItem('fuelvoice:mock_user');
+    localStorage.setItem('fuelvoice:mock_guest_data', 'true');
+    localStorage.setItem('fuelvoice-theme', 'dark');
+  });
+}
+
 async function signedIn(page: Page, role: 'user' | 'admin' = 'user') {
   await page.addInitScript((mockRole) => {
     localStorage.setItem('fuelvoice:mock_user', mockRole === 'admin' ? 'admin' : 'true');
@@ -91,6 +99,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('history and refresh preserve the primary search to station journey', async ({ page }) => {
+  await guestData(page);
   await page.goto('/search', { waitUntil: 'domcontentloaded' });
 
   const input = page.getByRole('combobox', { name: /search fuel stations/i });
@@ -115,6 +124,7 @@ test('history and refresh preserve the primary search to station journey', async
 });
 
 test('slow station data keeps truthful loading feedback stable and contained', async ({ page }) => {
+  await guestData(page);
   await page.unroute('**/api/osm-element**');
   await page.route('**/api/osm-element**', async route => {
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -156,21 +166,22 @@ test('keyboard-only navigation reaches search results and returns focus from the
   await page.keyboard.press('Escape');
   await expect(userMenu).toBeFocused();
 
-  let foundSearch = false;
-  for (let i = 0; i < 12; i += 1) {
-    await page.keyboard.press('Tab');
-    foundSearch = await page.getByRole('link', { name: 'Search fuel stations' }).evaluate(
-      (element) => element === document.activeElement,
-    ).catch(() => false);
-    if (foundSearch) break;
-  }
-  expect(foundSearch).toBe(true);
+  await page.keyboard.press('Shift+Tab');
+  await expect(page.getByRole('button', { name: /Switch to light mode/i })).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(page.getByRole('link', { name: 'Search fuel stations' })).toBeFocused();
 
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/search$/);
 
   const input = page.getByRole('combobox', { name: /search fuel stations/i });
-  await input.focus();
+  let inputFocused = false;
+  for (let i = 0; i < 8; i += 1) {
+    await page.keyboard.press('Tab');
+    inputFocused = await input.evaluate((element) => element === document.activeElement);
+    if (inputFocused) break;
+  }
+  expect(inputFocused).toBe(true);
   await page.keyboard.type('Shell');
   await expect(page.getByRole('option', { name: /Shell Fuel Station/i })).toBeVisible();
   await page.keyboard.press('ArrowDown');

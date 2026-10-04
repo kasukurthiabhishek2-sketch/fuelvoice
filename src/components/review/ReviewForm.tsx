@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { StarRating } from '@/components/ui/StarRating';
 import { LoginButton } from '@/components/auth/LoginButton';
 import { useAuth } from '@/hooks/useAuth';
@@ -51,6 +51,7 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
   const [form, setForm] = useState<ReviewFormData>(INITIAL_FORM);
   const [isOpen, setIsOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const submitGuardRef = useRef(false);
 
   const remaining = Math.max(0, MAX_ACTIVE_REVIEWS_PER_STATION - activeCount);
 
@@ -106,6 +107,8 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (submitGuardRef.current) return;
+
     const nextErrors: Record<string, string> = {};
 
     if (form.rating < 1 || form.rating > 5) nextErrors.rating = 'Choose a rating from 1 to 5.';
@@ -117,6 +120,7 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
     setErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) return;
 
+    submitGuardRef.current = true;
     try {
       await createReview.mutateAsync({
         userId: user.uid,
@@ -134,6 +138,8 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
       onSuccess?.();
     } catch (error) {
       toast(error instanceof Error ? error.message : 'Could not publish the review', 'error');
+    } finally {
+      submitGuardRef.current = false;
     }
   };
 

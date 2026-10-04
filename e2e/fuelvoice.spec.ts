@@ -433,6 +433,49 @@ test.describe('Station trust page', () => {
     await expect(page.getByText('Review published')).toBeVisible();
   });
 
+  test('labels owner review fields and announces edit validation errors', async ({ page }) => {
+    await page.addInitScript(({ stationId }) => {
+      localStorage.setItem(
+        `fuelvoice:mock_user_reviews:${stationId}`,
+        JSON.stringify([
+          {
+            id: `${stationId}__test-user-123`,
+            stationId,
+            userId: 'test-user-123',
+            userName: 'Test User',
+            rating: 2,
+            content: 'Owner review context',
+            complaintCategories: ['fuel-quality'],
+            helpfulCount: 0,
+            notHelpfulCount: 0,
+          },
+        ]),
+      );
+    }, { stationId: STATION_ID });
+
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    await page.getByRole('button', { name: 'Edit your review' }).click();
+    const editContext = page.getByRole('textbox', { name: 'Review context (optional)' });
+    await expect(editContext).toBeVisible();
+
+    await page.getByRole('button', { name: 'Fuel quality', exact: true }).click();
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+
+    const editError = page.getByRole('alert').filter({
+      hasText: 'Choose at least one complaint category for a 1-2 rating.',
+    });
+    await expect(editError).toBeVisible();
+    await expect(editContext).toHaveAttribute('aria-invalid', 'true');
+
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.getByRole('button', { name: 'Delete your review' }).click();
+
+    const deleteReason = page.getByRole('textbox', { name: 'Reason for deleting review' });
+    await expect(deleteReason).toBeVisible();
+    await expect(deleteReason).toHaveAttribute('aria-describedby', /review-delete-help-/);
+  });
+
   test('collapses a review after the configured Not helpful threshold', async ({ page }) => {
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
 

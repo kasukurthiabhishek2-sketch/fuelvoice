@@ -76,21 +76,18 @@ export default function AdminPage() {
           value={reviews?.length}
           loading={reviewsQuery.isLoading}
           error={reviewsQuery.isError}
-          icon="📝"
         />
         <StatCard
           label="Pending Reports"
           value={reports?.length}
           loading={reportsQuery.isLoading}
           error={reportsQuery.isError}
-          icon="🚩"
         />
         <StatCard
           label="Total Users"
           value={users?.length}
           loading={usersQuery.isLoading}
           error={usersQuery.isError}
-          icon="👥"
         />
       </div>
 

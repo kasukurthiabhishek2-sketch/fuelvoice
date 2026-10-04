@@ -6,15 +6,8 @@ import { expect, test } from '@playwright/test';
 const OUTPUT = path.join(process.cwd(), 'live-ux-audit', 'baseline');
 const STATION_ID = 'node_2817379324';
 
-type AuditSignals = {
-  consoleErrors: string[];
-  pageErrors: string[];
-  failedRequests: string[];
-  badResponses: string[];
-};
-
 function attachSignals(page) {
-  const signals: AuditSignals = { consoleErrors: [], pageErrors: [], failedRequests: [], badResponses: [] };
+  const signals = { consoleErrors: [], pageErrors: [], failedRequests: [], badResponses: [] };
 
   page.on('console', message => {
     if (message.type() === 'error') signals.consoleErrors.push(message.text());

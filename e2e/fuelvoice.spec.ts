@@ -403,14 +403,24 @@ test.describe('Station trust page', () => {
     await openComposer.click();
     await expect(composer.locator('#review-form-panel')).toBeVisible();
 
-    const oneStar = composer.getByRole('button', { name: '1 star', exact: true });
+    const rating = composer.getByRole('radiogroup', { name: 'Your rating' });
+    const oneStar = rating.getByRole('radio', { name: '1 star', exact: true });
     const starBox = await oneStar.boundingBox();
     expect(starBox).not.toBeNull();
     expect(starBox!.width).toBeGreaterThanOrEqual(44);
     expect(starBox!.height).toBeGreaterThanOrEqual(44);
 
     await oneStar.click();
-    await expect(oneStar).toHaveAttribute('aria-pressed', 'true');
+    await expect(oneStar).toHaveAttribute('aria-checked', 'true');
+
+    await oneStar.press('ArrowRight');
+    const twoStars = rating.getByRole('radio', { name: '2 stars', exact: true });
+    await expect(twoStars).toHaveAttribute('aria-checked', 'true');
+    await expect(twoStars).toBeFocused();
+
+    await twoStars.press('ArrowLeft');
+    await expect(oneStar).toHaveAttribute('aria-checked', 'true');
+    await expect(oneStar).toBeFocused();
     await composer.getByRole('button', { name: 'Publish review', exact: true }).click();
 
     await expect(composer.getByText('Choose at least one complaint category.')).toBeVisible();

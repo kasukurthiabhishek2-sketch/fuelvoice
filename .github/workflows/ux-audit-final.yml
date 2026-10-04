@@ -4,6 +4,7 @@ on:
   push:
     branches: [ux-audit-2026-10-04]
     paths:
+      - 'src/**'
       - 'e2e/ux-audit-phase4.spec.ts'
       - 'playwright.ux-audit-final.config.ts'
       - 'playwright.ux-audit-a11y.config.ts'

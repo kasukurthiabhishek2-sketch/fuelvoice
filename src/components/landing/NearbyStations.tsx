@@ -120,7 +120,10 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
         {stationsLoading && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <SkeletonStationCard key={index} />
+              <SkeletonStationCard
+                key={index}
+                className={index >= 3 ? 'hidden sm:block' : ''}
+              />
             ))}
           </div>
         )}

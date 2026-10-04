@@ -206,6 +206,25 @@ test.describe('Minimal homepage', () => {
     await expect(trigger).toBeFocused();
   });
 
+  test('keeps mobile nearby loading compact while retaining desktop density', async ({ page }) => {
+    await page.unroute('**/api/overpass');
+    await page.route('**/api/overpass', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ elements: [] }),
+      });
+    });
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    await expect.poll(async () => page.locator('#nearby-stations .card').evaluateAll((cards) =>
+      cards.filter((card) => getComputedStyle(card).display !== 'none').length
+    )).toBe(3);
+  });
+
   test('loads nearby stations from approximate location without eager map work', async ({ page }) => {
     let ipLocationRequests = 0;
     let nearbyRequests = 0;

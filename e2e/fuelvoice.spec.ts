@@ -189,6 +189,16 @@ test.describe('Minimal homepage', () => {
     });
   });
 
+  test('keeps the hero search free of inert button-like search badges', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await expect(input).toBeVisible();
+    await expect(input.locator('..').getByText('Search', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Search fuel stations' })).toBeVisible();
+  });
+
   test('autocomplete navigates toward a station page', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 

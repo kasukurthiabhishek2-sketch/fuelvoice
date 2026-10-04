@@ -152,11 +152,6 @@ export function SearchBar({
               </svg>
             </button>
           )}
-          {isHero && (
-            <span className="hidden rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--text-tertiary)] sm:inline-flex">
-              Search
-            </span>
-          )}
         </div>
       </div>
 

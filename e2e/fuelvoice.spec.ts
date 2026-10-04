@@ -157,6 +157,24 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Minimal homepage', () => {
+  test('closes the signed-in user disclosure with Escape and restores trigger focus', async ({ page }) => {
+    await enableMockUser(page);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const trigger = page.getByRole('button', { name: 'User menu' });
+    await trigger.focus();
+    await trigger.press('Enter');
+
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('button', { name: 'Sign Out' })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByRole('button', { name: 'Sign Out' })).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+
   test('loads nearby stations from approximate location without eager map work', async ({ page }) => {
     let ipLocationRequests = 0;
     let nearbyRequests = 0;

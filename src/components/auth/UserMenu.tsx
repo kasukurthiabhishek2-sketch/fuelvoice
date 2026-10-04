@@ -18,6 +18,7 @@ export function UserMenu() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Close on outside click
   useEffect(() => {
@@ -29,6 +30,20 @@ export function UserMenu() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setIsOpen(false);
+      requestAnimationFrame(() => triggerRef.current?.focus());
+    }
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen]);
 
   if (!user) return null;
 
@@ -48,11 +63,13 @@ export function UserMenu() {
   return (
     <div className="relative" ref={menuRef}>
       <button
+        ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 p-1 rounded-xl hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
         aria-label="User menu"
         aria-expanded={isOpen}
         aria-haspopup="true"
+        aria-controls={isOpen ? 'user-menu-panel' : undefined}
       >
         {photoURL ? (
           <Image
@@ -72,6 +89,7 @@ export function UserMenu() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id="user-menu-panel"
             initial={{ opacity: 0, y: 8, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.95 }}

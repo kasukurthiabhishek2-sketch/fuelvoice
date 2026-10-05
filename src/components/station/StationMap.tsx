@@ -82,20 +82,8 @@ export function StationMapInner({ lat, lng, name, userLat, userLng, className = 
   }, [lat, lng, name, userLat, userLng]);
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden ${className}`}>
+    <div className={`relative overflow-hidden rounded-2xl ${className}`}>
       <div ref={mapRef} style={{ height: 300, width: '100%' }} />
-      <a
-        href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 shadow-lg transition-colors z-[1000]"
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        Get Directions
-      </a>
     </div>
   );
 }

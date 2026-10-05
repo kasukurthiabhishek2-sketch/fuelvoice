@@ -380,6 +380,27 @@ test.describe('Minimal homepage', () => {
     }
   });
 
+  test('prioritizes directions over complaints in the mobile quick-action bar without covering the map', async ({ page }) => {
+    await enableGuestDataMocks(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    const quickActions = page.getByLabel('Station quick actions');
+    await expect(quickActions).toBeVisible();
+    await expect(quickActions.getByRole('link', { name: 'Write a review' })).toHaveAttribute('href', '#write-review');
+
+    const directions = quickActions.getByRole('link', { name: 'Get directions' });
+    await expect(directions).toHaveAttribute('href', /google\.com\/maps\/dir/);
+    await expect(quickActions.getByRole('link', { name: /complaint/i })).toHaveCount(0);
+
+    const map = page.locator('.leaflet-container');
+    await map.scrollIntoViewIfNeeded();
+    await expect(map).toBeVisible();
+    await expect(map.locator('..').getByRole('link', { name: 'Get Directions', exact: true })).toHaveCount(0);
+
+    await expect(page.getByRole('heading', { name: 'Go straight to an official channel.' })).toBeVisible();
+  });
+
   test('keeps production-measured secondary controls comfortably tappable', async ({ page }) => {
     await enableGuestDataMocks(page);
     await page.setViewportSize({ width: 375, height: 812 });

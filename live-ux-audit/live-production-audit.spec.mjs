@@ -3,7 +3,7 @@ import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-const OUTPUT = path.join(process.cwd(), 'live-ux-audit', 'baseline');
+const OUTPUT = path.resolve(process.cwd(), process.env.LIVE_UX_OUTPUT_DIR || 'live-ux-audit/baseline');
 const STATION_ID = 'node_2817379324';
 
 function attachSignals(page) {
@@ -31,7 +31,9 @@ async function settle(page) {
 async function capture(page, testInfo, scenario, signals) {
   await settle(page);
 
-  const axe = await new AxeBuilder({ page }).analyze();
+  const axe = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
   const metrics = await page.evaluate(() => {
     const visible = (element) => {
       const style = getComputedStyle(element);
@@ -241,6 +243,71 @@ test('keyboard-only home navigation exposes visible focus', async ({ page }, tes
 
   const focusless = keyboard.filter(item => item && item.outlineWidth === '0px' && item.boxShadow === 'none');
   expect(focusless.length, JSON.stringify(focusless, null, 2)).toBe(0);
+});
+
+test('production fixes stay ergonomic and discoverable', async ({ page }, testInfo) => {
+  const signals = attachSignals(page);
+  const viewport = page.viewportSize();
+  if (!viewport) throw new Error('Viewport is required for live UX verification');
+
+  await page.goto('/search');
+  const input = page.getByRole('combobox', { name: /search fuel stations/i });
+  await expect(input).toBeVisible();
+  await input.fill('Shell Hyderabad');
+  await page.waitForTimeout(3500);
+
+  const clear = page.getByRole('button', { name: 'Clear search' });
+  const clearBox = await clear.boundingBox();
+  expect(clearBox).not.toBeNull();
+  expect(clearBox.height).toBeGreaterThanOrEqual(44);
+
+  const listbox = page.getByRole('listbox', { name: 'Fuel station search results' });
+  if (await listbox.count()) {
+    const box = await listbox.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
+    const scroll = await listbox.evaluate(element => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+      overflowY: getComputedStyle(element).overflowY,
+    }));
+    if (scroll.scrollHeight > scroll.clientHeight) {
+      expect(['auto', 'scroll']).toContain(scroll.overflowY);
+    }
+  }
+
+  await page.goto('/station/' + STATION_ID);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 20000 });
+
+  const issueFilters = page.getByRole('group', { name: 'Filter reviews by issue' });
+  await expect(issueFilters).toBeVisible();
+  const filterMetrics = await issueFilters.evaluate(element => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+    overflowX: getComputedStyle(element).overflowX,
+    flexWrap: getComputedStyle(element).flexWrap,
+  }));
+
+  if (viewport.width >= 640) {
+    expect(filterMetrics.scrollWidth).toBeLessThanOrEqual(filterMetrics.clientWidth + 1);
+    expect(filterMetrics.flexWrap).toBe('wrap');
+  } else {
+    expect(filterMetrics.overflowX).toBe('auto');
+  }
+
+  const directions = page.getByRole('link', { name: 'Directions ↗', exact: true });
+  await directions.scrollIntoViewIfNeeded();
+  const directionsBox = await directions.boundingBox();
+  expect(directionsBox).not.toBeNull();
+  expect(directionsBox.height).toBeGreaterThanOrEqual(44);
+
+  const footerHome = page.getByRole('contentinfo').getByRole('link', { name: 'FuelVoice', exact: true });
+  await footerHome.scrollIntoViewIfNeeded();
+  const footerBox = await footerHome.boundingBox();
+  expect(footerBox).not.toBeNull();
+  expect(footerBox.height).toBeGreaterThanOrEqual(44);
+
+  await capture(page, testInfo, 'production-fix-verification', signals);
 });
 
 test('production search navigation is keyboard reachable', async ({ page }, testInfo) => {

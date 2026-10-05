@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const root = path.join(process.cwd(), 'live-ux-audit', 'baseline');
+const root = path.resolve(process.cwd(), process.env.LIVE_UX_OUTPUT_DIR || 'live-ux-audit/baseline');
 const recordsDir = path.join(root, 'records');
 const files = fs.existsSync(recordsDir)
   ? fs.readdirSync(recordsDir).filter(name => name.endsWith('.json'))
@@ -79,9 +79,9 @@ fs.writeFileSync(
 );
 
 const lines = [
-  '# Live production UX audit baseline',
+  '# ' + (process.env.LIVE_UX_LABEL || 'Live production UX audit'),
   '',
-  'Production URL: https://fuelvoice.vercel.app',
+  'Target URL: ' + (process.env.PRODUCTION_URL || 'https://fuelvoice.vercel.app'),
   'Records: ' + summary.recordCount,
   'Rendered states: ' + summary.pageRecordCount,
   '',

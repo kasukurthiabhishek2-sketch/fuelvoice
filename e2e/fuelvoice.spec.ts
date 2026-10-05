@@ -519,6 +519,32 @@ test.describe('Signed-out station loading', () => {
     expect(desktop.flexWrap).toBe('wrap');
   });
 
+  test('keeps location ahead of secondary details and suppresses repeated unavailable rows', async ({ page }) => {
+    await enableGuestDataMocks(page);
+    await page.goto(`/station/${REGRESSION_STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    const locationHeading = page.getByRole('heading', { name: 'Location', exact: true });
+    const detailsHeading = page.getByRole('heading', { name: 'Published station information' });
+    const complaintHeading = page.getByRole('heading', { name: 'Go straight to an official channel.' });
+
+    await expect(locationHeading).toBeVisible();
+    await expect(detailsHeading).toBeVisible();
+    await expect(complaintHeading).toBeVisible();
+
+    const order = await page.locator('main, body').evaluate(() => {
+      const location = document.querySelector('#station-location-heading');
+      const details = document.querySelector('#station-details-heading');
+      const complaint = document.querySelector('#complaint-heading');
+      if (!location || !details || !complaint) return [];
+      return [location, details, complaint]
+        .map((element) => ({ id: element.id, top: element.getBoundingClientRect().top + window.scrollY }))
+        .sort((a, b) => a.top - b.top)
+        .map((item) => item.id);
+    });
+    expect(order).toEqual(['station-location-heading', 'station-details-heading', 'complaint-heading']);
+    await expect(page.getByText('Not available', { exact: true })).toHaveCount(0);
+  });
+
   test('loads an uncached mapped station without requiring a Firestore write', async ({ page }, testInfo) => {
     await enableGuestDataMocks(page);
 

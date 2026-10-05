@@ -256,6 +256,11 @@ test('production fixes stay ergonomic and discoverable', async ({ page }, testIn
   await input.fill('Shell Hyderabad');
   await page.waitForTimeout(3500);
 
+  const liveOptions = page.getByRole('option');
+  if (await liveOptions.count()) {
+    await expect(liveOptions.first()).toContainText(/Hyderabad|Telangana|India/i);
+  }
+
   const clear = page.getByRole('button', { name: 'Clear search' });
   const clearBox = await clear.boundingBox();
   expect(clearBox).not.toBeNull();

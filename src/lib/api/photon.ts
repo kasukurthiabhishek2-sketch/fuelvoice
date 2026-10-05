@@ -1,16 +1,14 @@
 /**
  * Photon API Client — Search Autocomplete
- * 
+ *
  * Photon (photon.komoot.io) is a free, open-source geocoder built on OSM data.
- * Unlike Nominatim, it explicitly SUPPORTS autocomplete/search-as-you-type.
- * 
- * We filter by `osm_tag=amenity:fuel` to only return fuel stations.
- * Results are returned in GeoJSON format.
+ * Unlike Nominatim, it explicitly supports autocomplete/search-as-you-type.
  */
 
 import type { PhotonFeature } from '@/types/station';
 
 const PHOTON_API = 'https://photon.komoot.io/api';
+const LOCATION_LAYERS = ['city', 'locality', 'district', 'county', 'state', 'country'] as const;
 
 export interface SearchResult {
   id: string;
@@ -23,6 +21,15 @@ export interface SearchResult {
   lng: number;
   osmType: string;
   osmId: number;
+}
+
+interface LocationContext {
+  query: string;
+  brandQuery: string;
+  lat: number;
+  lng: number;
+  countryCode: string;
+  bbox?: [number, number, number, number];
 }
 
 const SEARCH_STOPWORDS = new Set(['at', 'in', 'near', 'the', 'fuel', 'station', 'petrol', 'pump']);
@@ -43,6 +50,209 @@ function meaningfulQueryTokens(query: string): string[] {
 
   const meaningful = tokens.filter((token) => !SEARCH_STOPWORDS.has(token));
   return meaningful.length > 0 ? meaningful : tokens;
+}
+
+function searchableLocationText(result: SearchResult): string {
+  return normalizeSearchText([result.name, result.city, result.state, result.country].filter(Boolean).join(' '));
+}
+
+function hasAllTokens(value: string, tokens: string[]): boolean {
+  return tokens.every((token) => value.includes(token));
+}
+
+function distanceKm(
+  latA: number,
+  lngA: number,
+  latB: number,
+  lngB: number
+): number {
+  const toRad = (value: number) => value * Math.PI / 180;
+  const earthRadiusKm = 6371;
+  const dLat = toRad(latB - latA);
+  const dLng = toRad(lngB - lngA);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(latA)) * Math.cos(toRad(latB)) * Math.sin(dLng / 2) ** 2;
+
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+async function fetchPhotonFeatures(params: URLSearchParams): Promise<PhotonFeature[]> {
+  const response = await fetch(`${PHOTON_API}?${params}`, {
+    headers: {
+      'User-Agent': 'FuelVoice/1.0 (community fuel station reviews)',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Photon API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.features || [];
+}
+
+function locationContextFromFeature(
+  feature: PhotonFeature,
+  query: string,
+  brandQuery: string
+): LocationContext | null {
+  const result = featureToSearchResult(feature);
+  if (!result) return null;
+
+  const extent = feature.properties.extent;
+  const bbox = extent && extent.length === 4
+    ? [extent[0], extent[1], extent[2], extent[3]] as [number, number, number, number]
+    : undefined;
+
+  return {
+    query,
+    brandQuery,
+    lat: result.lat,
+    lng: result.lng,
+    countryCode: result.countryCode,
+    bbox,
+  };
+}
+
+async function inferLocationContexts(
+  query: string,
+  userLat?: number,
+  userLng?: number
+): Promise<LocationContext[]> {
+  const tokens = meaningfulQueryTokens(query);
+  if (tokens.length < 2) return [];
+
+  const maxSuffix = Math.min(2, tokens.length - 1);
+
+  for (let suffixLength = maxSuffix; suffixLength >= 1; suffixLength -= 1) {
+    const locationTokens = tokens.slice(-suffixLength);
+    const brandTokens = tokens.slice(0, -suffixLength);
+    if (brandTokens.length === 0) continue;
+
+    const locationQuery = locationTokens.join(' ');
+    const params = new URLSearchParams({
+      q: locationQuery,
+      limit: '5',
+      lang: 'en',
+    });
+    LOCATION_LAYERS.forEach((layer) => params.append('layer', layer));
+
+    const features = await fetchPhotonFeatures(params);
+    const matching = features
+      .map((feature) => {
+        const result = featureToSearchResult(feature);
+        if (!result || !hasAllTokens(searchableLocationText(result), locationTokens)) return null;
+        return {
+          context: locationContextFromFeature(feature, locationQuery, brandTokens.join(' ')),
+          result,
+        };
+      })
+      .filter((entry): entry is { context: LocationContext; result: SearchResult } =>
+        entry !== null && entry.context !== null
+      );
+
+    if (matching.length === 0) continue;
+
+    if (userLat !== undefined && userLng !== undefined) {
+      matching.sort((a, b) =>
+        distanceKm(userLat, userLng, a.context.lat, a.context.lng) -
+        distanceKm(userLat, userLng, b.context.lat, b.context.lng)
+      );
+    }
+
+    const seen = new Set<string>();
+    return matching
+      .filter(({ context }) => {
+        const key = `${context.countryCode}:${context.lat.toFixed(3)}:${context.lng.toFixed(3)}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 2)
+      .map(({ context }) => context);
+  }
+
+  return [];
+}
+
+function rankStationCandidates(
+  brandQuery: string,
+  context: LocationContext,
+  results: SearchResult[]
+): SearchResult[] {
+  const brandTokens = meaningfulQueryTokens(brandQuery);
+
+  return results
+    .map((result, index) => {
+      const name = normalizeSearchText(result.name);
+      const brandCoverage = brandTokens.reduce(
+        (count, token) => count + (name.includes(token) ? 1 : 0),
+        0
+      );
+      const distance = distanceKm(context.lat, context.lng, result.lat, result.lng);
+      const sameCountry = Boolean(
+        context.countryCode &&
+        result.countryCode &&
+        context.countryCode === result.countryCode
+      );
+
+      return { result, index, brandCoverage, distance, sameCountry };
+    })
+    .sort((a, b) =>
+      b.brandCoverage - a.brandCoverage ||
+      Number(b.sameCountry) - Number(a.sameCountry) ||
+      a.distance - b.distance ||
+      a.index - b.index
+    )
+    .map(({ result }) => result);
+}
+
+async function searchWithinLocation(
+  context: LocationContext,
+  limitCount: number
+): Promise<SearchResult[]> {
+  const params = new URLSearchParams({
+    q: context.brandQuery,
+    limit: Math.min(Math.max(limitCount * 2, 16), 32).toString(),
+    lang: 'en',
+    osm_tag: 'amenity:fuel',
+    lat: context.lat.toString(),
+    lon: context.lng.toString(),
+    zoom: '12',
+    location_bias_scale: '0.05',
+  });
+
+  if (context.bbox) {
+    params.set('bbox', context.bbox.join(','));
+  }
+
+  const features = await fetchPhotonFeatures(params);
+  const results = features
+    .map(featureToSearchResult)
+    .filter((result): result is SearchResult => result !== null)
+    .filter((result) => context.bbox || distanceKm(context.lat, context.lng, result.lat, result.lng) <= 150);
+
+  return rankStationCandidates(context.brandQuery, context, results);
+}
+
+function interleaveUnique(resultSets: SearchResult[][], limitCount: number): SearchResult[] {
+  const output: SearchResult[] = [];
+  const seen = new Set<string>();
+  const maxLength = Math.max(0, ...resultSets.map((results) => results.length));
+
+  for (let index = 0; index < maxLength && output.length < limitCount; index += 1) {
+    for (const results of resultSets) {
+      const result = results[index];
+      if (!result || seen.has(result.id)) continue;
+
+      seen.add(result.id);
+      output.push(result);
+      if (output.length >= limitCount) break;
+    }
+  }
+
+  return output;
 }
 
 function rankSearchResults(query: string, results: SearchResult[]): SearchResult[] {
@@ -77,12 +287,11 @@ function rankSearchResults(query: string, results: SearchResult[]): SearchResult
 
 /**
  * Search for fuel stations by name/location.
- * Uses Photon's autocomplete-friendly endpoint.
- * 
- * @param query - Search text
- * @param lat - Optional bias latitude (prioritize results near user)
- * @param lng - Optional bias longitude
- * @param limitCount - Max results (default 8)
+ *
+ * For multi-word searches that contain a recognizable place suffix
+ * ("Shell Hyderabad", "BP New Delhi"), resolve that place first and
+ * constrain/bias the station lookup to it. This avoids globally plausible
+ * but locally wrong matches from dominating the candidate pool.
  */
 export async function searchFuelStations(
   query: string,
@@ -91,6 +300,16 @@ export async function searchFuelStations(
   limitCount: number = 8
 ): Promise<SearchResult[]> {
   if (query.trim().length < 2) return [];
+
+  const locationContexts = await inferLocationContexts(query, lat, lng);
+
+  if (locationContexts.length > 0) {
+    const contextualResults = await Promise.all(
+      locationContexts.map((context) => searchWithinLocation(context, limitCount))
+    );
+
+    return interleaveUnique(contextualResults, limitCount);
+  }
 
   const queryTokens = meaningfulQueryTokens(query);
   const requestLimit = queryTokens.length > 1
@@ -104,28 +323,17 @@ export async function searchFuelStations(
     osm_tag: 'amenity:fuel',
   });
 
-  // Bias results toward user's location if available
   if (lat !== undefined && lng !== undefined) {
     params.set('lat', lat.toString());
     params.set('lon', lng.toString());
+    params.set('zoom', '12');
+    params.set('location_bias_scale', '0.05');
   }
 
-  const response = await fetch(`${PHOTON_API}?${params}`, {
-    headers: {
-      'User-Agent': 'FuelVoice/1.0 (community fuel station reviews)',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Photon API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const features: PhotonFeature[] = data.features || [];
-
+  const features = await fetchPhotonFeatures(params);
   const results = features
     .map(featureToSearchResult)
-    .filter((r): r is SearchResult => r !== null);
+    .filter((result): result is SearchResult => result !== null);
 
   return rankSearchResults(query, results).slice(0, limitCount);
 }
@@ -146,22 +354,11 @@ export async function searchLocation(
     lang: 'en',
   });
 
-  const response = await fetch(`${PHOTON_API}?${params}`, {
-    headers: {
-      'User-Agent': 'FuelVoice/1.0 (community fuel station reviews)',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Photon API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const features: PhotonFeature[] = data.features || [];
+  const features = await fetchPhotonFeatures(params);
 
   return features
     .map(featureToSearchResult)
-    .filter((r): r is SearchResult => r !== null);
+    .filter((result): result is SearchResult => result !== null);
 }
 
 /** Convert a Photon feature to a SearchResult */

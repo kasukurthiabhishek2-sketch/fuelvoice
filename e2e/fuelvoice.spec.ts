@@ -267,46 +267,97 @@ test.describe('Minimal homepage', () => {
     await expect(page.getByRole('link', { name: 'Search fuel stations' })).toBeVisible();
   });
 
-  test('prioritizes station results that match the full multi-word query', async ({ page }) => {
+  test('resolves explicit place context before searching a multi-word station query', async ({ page }) => {
+    const requestedUrls: string[] = [];
+
     await page.unroute('https://photon.komoot.io/api**');
     await page.route('https://photon.komoot.io/api**', async (route) => {
+      const url = new URL(route.request().url());
+      requestedUrls.push(url.toString());
+      const q = url.searchParams.get('q');
+      const isStationSearch = url.searchParams.has('osm_tag');
+
+      if (!isStationSearch && q === 'hyderabad') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            features: [
+              {
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [78.4867, 17.385] },
+                properties: {
+                  osm_id: 9000000001,
+                  osm_type: 'R',
+                  osm_key: 'place',
+                  osm_value: 'city',
+                  name: 'Hyderabad',
+                  city: 'Hyderabad',
+                  state: 'Telangana',
+                  country: 'India',
+                  countrycode: 'IN',
+                  extent: [78.20, 17.20, 78.75, 17.65],
+                },
+              },
+              {
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [68.3737, 25.396] },
+                properties: {
+                  osm_id: 9000000002,
+                  osm_type: 'R',
+                  osm_key: 'place',
+                  osm_value: 'city',
+                  name: 'Hyderabad',
+                  city: 'Hyderabad',
+                  state: 'Sindh',
+                  country: 'Pakistan',
+                  countrycode: 'PK',
+                  extent: [68.20, 25.20, 68.55, 25.55],
+                },
+              },
+            ],
+          }),
+        });
+        return;
+      }
+
+      if (isStationSearch && q === 'shell') {
+        const bbox = url.searchParams.get('bbox') || '';
+        const india = bbox.startsWith('78.2');
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            features: [
+              {
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: india ? [78.4753829, 17.3887027] : [68.37, 25.39],
+                },
+                properties: {
+                  osm_id: india ? 7000000002 : 7000000001,
+                  osm_type: 'N',
+                  osm_key: 'amenity',
+                  osm_value: 'fuel',
+                  name: 'Shell',
+                  city: 'Hyderabad',
+                  state: india ? 'Telangana' : 'Sindh',
+                  country: india ? 'India' : 'Pakistan',
+                  countrycode: india ? 'IN' : 'PK',
+                },
+              },
+            ],
+          }),
+        });
+        return;
+      }
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          features: [
-            {
-              type: 'Feature',
-              geometry: { type: 'Point', coordinates: [67.0011, 24.8607] },
-              properties: {
-                osm_id: 7000000001,
-                osm_type: 'N',
-                osm_key: 'amenity',
-                osm_value: 'fuel',
-                name: 'Shell',
-                city: 'Karachi',
-                state: 'Sindh',
-                country: 'Pakistan',
-                countrycode: 'PK',
-              },
-            },
-            {
-              type: 'Feature',
-              geometry: { type: 'Point', coordinates: [78.4753829, 17.3887027] },
-              properties: {
-                osm_id: 7000000002,
-                osm_type: 'N',
-                osm_key: 'amenity',
-                osm_value: 'fuel',
-                name: 'Shell',
-                city: 'Hyderabad',
-                state: 'Telangana',
-                country: 'India',
-                countrycode: 'IN',
-              },
-            },
-          ],
-        }),
+        body: JSON.stringify({ features: [] }),
       });
     });
 
@@ -321,6 +372,19 @@ test.describe('Minimal homepage', () => {
     await expect(options).toHaveCount(2, { timeout: 10000 });
     await expect(options.first()).toContainText('Hyderabad');
     await expect(options.first()).toContainText('India');
+    await expect(options.nth(1)).toContainText('Pakistan');
+
+    expect(requestedUrls.some((value) => {
+      const url = new URL(value);
+      return url.searchParams.get('q') === 'hyderabad' && !url.searchParams.has('osm_tag');
+    })).toBe(true);
+
+    expect(requestedUrls.some((value) => {
+      const url = new URL(value);
+      return url.searchParams.get('q') === 'shell' &&
+        url.searchParams.get('bbox') === '78.2,17.2,78.75,17.65' &&
+        url.searchParams.get('location_bias_scale') === '0.05';
+    })).toBe(true);
   });
 
   test('keeps long search results inside mobile and desktop viewports with internal scrolling', async ({ page }) => {

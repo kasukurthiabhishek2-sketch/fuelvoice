@@ -301,6 +301,27 @@ test('production fixes stay ergonomic and discoverable', async ({ page }, testIn
   expect(directionsBox).not.toBeNull();
   expect(directionsBox.height).toBeGreaterThanOrEqual(44);
 
+  const locationHeading = page.getByRole('heading', { name: 'Location', exact: true });
+  const detailsHeading = page.getByRole('heading', { name: 'Published station information' });
+  const complaintHeading = page.getByRole('heading', { name: 'Go straight to an official channel.' });
+  const verticalOrder = await Promise.all(
+    [locationHeading, detailsHeading, complaintHeading].map(async locator => (await locator.boundingBox())?.y ?? Infinity)
+  );
+  expect(verticalOrder[0]).toBeLessThan(verticalOrder[1]);
+  expect(verticalOrder[1]).toBeLessThan(verticalOrder[2]);
+
+  if (viewport.width < 1024) {
+    const quickActions = page.getByLabel('Station quick actions');
+    await expect(quickActions).toBeVisible();
+    await expect(quickActions.getByRole('link', { name: 'Write a review' })).toBeVisible();
+    await expect(quickActions.getByRole('link', { name: 'Get directions' })).toBeVisible();
+    await expect(quickActions.getByRole('link', { name: /complaint/i })).toHaveCount(0);
+  }
+
+  const map = page.locator('.leaflet-container');
+  await map.scrollIntoViewIfNeeded();
+  await expect(map.locator('..').getByRole('link', { name: 'Get Directions', exact: true })).toHaveCount(0);
+
   const footerHome = page.getByRole('contentinfo').getByRole('link', { name: 'FuelVoice', exact: true });
   await footerHome.scrollIntoViewIfNeeded();
   const footerBox = await footerHome.boundingBox();

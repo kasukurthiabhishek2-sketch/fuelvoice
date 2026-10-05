@@ -59,8 +59,6 @@ export function ConsumerComplaint({
     () => getGovernmentComplaintRoute(resolvedCountryCode),
     [resolvedCountryCode],
   );
-  const primaryRoute = brandRoute || governmentRoute;
-
   return (
     <>
       <section id="complaints" className="complaint-panel scroll-mt-28" aria-labelledby="complaint-heading">
@@ -106,22 +104,16 @@ export function ConsumerComplaint({
       </section>
 
       {showMobileBar && (
-        <div className="station-mobile-actions lg:hidden">
+        <div className="station-mobile-actions lg:hidden" aria-label="Station quick actions">
           <a href="#write-review" className="station-mobile-secondary">Write a review</a>
-          {primaryRoute ? (
-            <a
-              href={primaryRoute.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="station-mobile-primary"
-            >
-              File a complaint
-            </a>
-          ) : (
-            <a href="#complaints" className="station-mobile-primary">
-              Complaint options
-            </a>
-          )}
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="station-mobile-primary"
+          >
+            Get directions
+          </a>
         </div>
       )}
     </>

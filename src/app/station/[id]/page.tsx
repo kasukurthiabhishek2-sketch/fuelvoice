@@ -86,6 +86,14 @@ export default function StationPage() {
   const trustScore = station.reviewCount >= TRUST_SCORE_MIN_REVIEWS
     ? Math.round(station.trustScore ?? ratingToTrustValue(station.avgRating))
     : null;
+  const hasStationDetails = Boolean(
+    station.brand ||
+    station.operator ||
+    station.openingHours ||
+    station.phone ||
+    safeWebsite ||
+    station.fuelTypes.length,
+  );
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -208,6 +216,49 @@ export default function StationPage() {
               <ReviewForm stationId={stationId} stationName={station.name} />
             </section>
 
+            <section className="station-secondary-section mt-12" aria-labelledby="station-location-heading">
+              <div className="mb-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Where it is</p>
+                  <h2 id="station-location-heading" className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                    Location
+                  </h2>
+                  <p className="mt-1 text-xs text-[var(--text-tertiary)]">Interactive map loads only when you reach it.</p>
+                </div>
+                <a
+                  href={directionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="-mr-2 inline-flex min-h-11 shrink-0 items-center rounded-lg px-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+                >
+                  Directions ↗
+                </a>
+              </div>
+              <LazyStationMap lat={station.lat} lng={station.lng} name={station.name} />
+            </section>
+
+            <section className="mt-10" aria-labelledby="station-details-heading">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Station details</p>
+              <h2 id="station-details-heading" className="mt-2 text-xl font-semibold tracking-[-0.035em] text-[var(--text-primary)]">
+                Published station information
+              </h2>
+
+              {hasStationDetails ? (
+                <dl className="mt-5 grid gap-px overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--border-primary)] sm:grid-cols-2">
+                  {station.brand && <DetailRow label="Brand" value={station.brand} />}
+                  {station.operator && <DetailRow label="Operator" value={station.operator} />}
+                  {station.openingHours && <DetailRow label="Opening hours" value={station.openingHours} />}
+                  {station.phone && <DetailRow label="Phone" value={station.phone} href={`tel:${station.phone}`} />}
+                  {safeWebsite && <DetailRow label="Website" value={safeWebsite.label} href={safeWebsite.href} external />}
+                  {station.fuelTypes.length > 0 && <DetailRow label="Fuel types" value={station.fuelTypes.join(' · ')} />}
+                </dl>
+              ) : (
+                <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+                  No additional station details have been published in the mapped source yet.
+                </p>
+              )}
+            </section>
+
             <section className="mt-10">
               <ConsumerComplaint
                 lat={station.lat}
@@ -216,47 +267,6 @@ export default function StationPage() {
                 countryCode={station.addressComponents?.countryCode}
                 showMobileBar
               />
-            </section>
-
-            <section className="station-secondary-section mt-12">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Station details</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-                  Useful details, after the reviews.
-                </h2>
-              </div>
-
-              <dl className="mt-6 grid gap-px overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--border-primary)] sm:grid-cols-2">
-                <DetailRow label="Brand" value={station.brand || 'Not available'} />
-                <DetailRow label="Operator" value={station.operator || 'Not available'} />
-                <DetailRow label="Opening hours" value={station.openingHours || 'Not available'} />
-                <DetailRow label="Phone" value={station.phone || 'Not available'} href={station.phone ? `tel:${station.phone}` : undefined} />
-                <DetailRow
-                  label="Website"
-                  value={safeWebsite?.label || 'Not available'}
-                  href={safeWebsite?.href}
-                  external
-                />
-                <DetailRow label="Fuel types" value={station.fuelTypes.length ? station.fuelTypes.join(' · ') : 'Not available'} />
-              </dl>
-
-              <div className="mt-8">
-                <div className="mb-3 flex items-end justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">Location</p>
-                    <p className="mt-1 text-xs text-[var(--text-tertiary)]">Interactive map loads only when you reach it.</p>
-                  </div>
-                  <a
-                    href={directionsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="-mr-2 inline-flex min-h-11 shrink-0 items-center rounded-lg px-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
-                  >
-                    Directions ↗
-                  </a>
-                </div>
-                <LazyStationMap lat={station.lat} lng={station.lng} name={station.name} />
-              </div>
             </section>
             <div className="station-quiet-note mt-8">
               Station identity and mapped facts come from OpenStreetMap. Customer experiences and Trust Score are FuelVoice community data.

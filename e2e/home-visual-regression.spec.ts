@@ -73,6 +73,8 @@ test.describe('Station-first visual regression', () => {
 
     await expect(heading).toBeVisible();
     await expect(search).toBeVisible();
+    await expect(page.getByRole('link', { name: /Browse nearby stations/i })).toHaveAttribute('href', '#nearby-stations');
+    await expect(page.getByText(/Distance-aware results ready|Search works without location/)).toBeVisible();
     await expect(page.locator('html')).toHaveClass(/dark/);
 
     const headingBox = await heading.boundingBox();
@@ -141,7 +143,7 @@ test.describe('Station-first visual regression', () => {
     await expect(page.getByRole('heading', { name: 'Reviews', exact: true })).toBeVisible();
 
     const reviewHeading = await page.getByRole('heading', { name: 'Reviews', exact: true }).boundingBox();
-    const detailsHeading = await page.getByRole('heading', { name: /Useful details/i }).boundingBox();
+    const detailsHeading = await page.getByRole('heading', { name: 'Published station information' }).boundingBox();
     expect(reviewHeading).not.toBeNull();
     expect(detailsHeading).not.toBeNull();
     expect(reviewHeading!.y).toBeLessThan(detailsHeading!.y);
@@ -165,7 +167,7 @@ test.describe('Station-first visual regression', () => {
     const bar = page.locator('.station-mobile-actions');
     await expect(bar).toBeVisible();
     await expect(bar.getByRole('link', { name: 'Write a review' })).toBeVisible();
-    await expect(bar.getByRole('link', { name: 'File a complaint' })).toBeVisible();
+    await expect(bar.getByRole('link', { name: 'Get directions' })).toBeVisible();
 
     const barBox = await bar.boundingBox();
     const viewport = page.viewportSize();

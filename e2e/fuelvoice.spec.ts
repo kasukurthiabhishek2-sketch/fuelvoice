@@ -257,6 +257,19 @@ test.describe('Minimal homepage', () => {
     });
   });
 
+  test('shows a distance for every nearby station and labels approximate IP-based distance honestly', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const nearby = page.locator('#nearby-stations');
+    const stationLinks = nearby.locator('a[href^="/station/"]');
+    await expect(stationLinks).toHaveCount(2);
+
+    for (const station of await stationLinks.all()) {
+      await expect(station.getByText(/≈ .* away/)).toBeVisible();
+      await expect(station.getByTitle('Approximate distance from your area')).toBeVisible();
+    }
+  });
+
   test('keeps the hero search free of inert button-like search badges', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -380,6 +393,27 @@ test.describe('Minimal homepage', () => {
     }
   });
 
+  test('prioritizes directions over complaints in the mobile quick-action bar without covering the map', async ({ page }) => {
+    await enableGuestDataMocks(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    const quickActions = page.getByLabel('Station quick actions');
+    await expect(quickActions).toBeVisible();
+    await expect(quickActions.getByRole('link', { name: 'Write a review' })).toHaveAttribute('href', '#write-review');
+
+    const directions = quickActions.getByRole('link', { name: 'Get directions' });
+    await expect(directions).toHaveAttribute('href', /google\.com\/maps\/dir/);
+    await expect(quickActions.getByRole('link', { name: /complaint/i })).toHaveCount(0);
+
+    const map = page.locator('.leaflet-container');
+    await map.scrollIntoViewIfNeeded();
+    await expect(map).toBeVisible();
+    await expect(map.locator('..').getByRole('link', { name: 'Get Directions', exact: true })).toHaveCount(0);
+
+    await expect(page.getByRole('heading', { name: 'Go straight to an official channel.' })).toBeVisible();
+  });
+
   test('keeps production-measured secondary controls comfortably tappable', async ({ page }) => {
     await enableGuestDataMocks(page);
     await page.setViewportSize({ width: 375, height: 812 });
@@ -496,6 +530,32 @@ test.describe('Signed-out station loading', () => {
     }));
     expect(desktop.scrollWidth).toBeLessThanOrEqual(desktop.clientWidth + 1);
     expect(desktop.flexWrap).toBe('wrap');
+  });
+
+  test('keeps location ahead of secondary details and suppresses repeated unavailable rows', async ({ page }) => {
+    await enableGuestDataMocks(page);
+    await page.goto(`/station/${REGRESSION_STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    const locationHeading = page.getByRole('heading', { name: 'Location', exact: true });
+    const detailsHeading = page.getByRole('heading', { name: 'Published station information' });
+    const complaintHeading = page.getByRole('heading', { name: 'Go straight to an official channel.' });
+
+    await expect(locationHeading).toBeVisible();
+    await expect(detailsHeading).toBeVisible();
+    await expect(complaintHeading).toBeVisible();
+
+    const order = await page.locator('main, body').evaluate(() => {
+      const location = document.querySelector('#station-location-heading');
+      const details = document.querySelector('#station-details-heading');
+      const complaint = document.querySelector('#complaint-heading');
+      if (!location || !details || !complaint) return [];
+      return [location, details, complaint]
+        .map((element) => ({ id: element.id, top: element.getBoundingClientRect().top + window.scrollY }))
+        .sort((a, b) => a.top - b.top)
+        .map((item) => item.id);
+    });
+    expect(order).toEqual(['station-location-heading', 'station-details-heading', 'complaint-heading']);
+    await expect(page.getByText('Not available', { exact: true })).toHaveCount(0);
   });
 
   test('loads an uncached mapped station without requiring a Firestore write', async ({ page }, testInfo) => {

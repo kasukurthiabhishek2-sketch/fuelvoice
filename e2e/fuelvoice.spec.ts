@@ -467,6 +467,37 @@ test.describe('Signed-out station loading', () => {
     expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
   });
 
+  test('keeps issue filters scrollable on phones and fully discoverable on larger screens', async ({ page }) => {
+    await enableGuestDataMocks(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    const filters = page.getByRole('group', { name: 'Filter reviews by issue' });
+    await expect(filters).toBeVisible();
+
+    const mobile = await filters.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+      overflowX: getComputedStyle(element).overflowX,
+      flexWrap: getComputedStyle(element).flexWrap,
+    }));
+    expect(mobile.scrollWidth).toBeGreaterThan(mobile.clientWidth);
+    expect(mobile.overflowX).toBe('auto');
+    expect(mobile.flexWrap).toBe('nowrap');
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(page.getByRole('button', { name: 'Other', exact: true })).toBeVisible();
+
+    const desktop = await filters.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+      overflowX: getComputedStyle(element).overflowX,
+      flexWrap: getComputedStyle(element).flexWrap,
+    }));
+    expect(desktop.scrollWidth).toBeLessThanOrEqual(desktop.clientWidth + 1);
+    expect(desktop.flexWrap).toBe('wrap');
+  });
+
   test('loads an uncached mapped station without requiring a Firestore write', async ({ page }, testInfo) => {
     await enableGuestDataMocks(page);
 

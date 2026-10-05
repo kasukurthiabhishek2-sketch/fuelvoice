@@ -72,7 +72,7 @@ export function ReviewList({ stationId }: ReviewListProps) {
           ))}
         </div>
 
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter reviews by issue">
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible" role="group" aria-label="Filter reviews by issue">
           <button
             type="button"
             onClick={() => setCategory(null)}

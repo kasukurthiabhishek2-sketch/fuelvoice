@@ -323,7 +323,7 @@ test.describe('Minimal homepage', () => {
     await expect(options.first()).toContainText('India');
   });
 
-  test('keeps long mobile search results inside the viewport with internal scrolling', async ({ page }) => {
+  test('keeps long search results inside mobile and desktop viewports with internal scrolling', async ({ page }) => {
     await page.unroute('https://photon.komoot.io/api**');
     await page.route('https://photon.komoot.io/api**', async (route) => {
       await route.fulfill({
@@ -349,30 +349,35 @@ test.describe('Minimal homepage', () => {
       });
     });
 
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+    for (const viewport of [
+      { width: 375, height: 812 },
+      { width: 1280, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto('/search', { waitUntil: 'domcontentloaded' });
 
-    const input = page.getByRole('combobox', { name: /search fuel stations/i });
-    await expect.poll(() => input.evaluate((element) =>
-      Object.keys(element).some((key) => key.startsWith('__reactProps$'))
-    )).toBe(true);
-    await input.fill('Shell');
+      const input = page.getByRole('combobox', { name: /search fuel stations/i });
+      await expect.poll(() => input.evaluate((element) =>
+        Object.keys(element).some((key) => key.startsWith('__reactProps$'))
+      )).toBe(true);
+      await input.fill('Shell');
 
-    const listbox = page.getByRole('listbox', { name: 'Fuel station search results' });
-    await expect(listbox).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole('option')).toHaveCount(8);
+      const listbox = page.getByRole('listbox', { name: 'Fuel station search results' });
+      await expect(listbox).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('option')).toHaveCount(8);
 
-    const box = await listbox.boundingBox();
-    expect(box).not.toBeNull();
-    expect(box!.y + box!.height).toBeLessThanOrEqual(812);
+      const box = await listbox.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
 
-    const scrollMetrics = await listbox.evaluate((element) => ({
-      clientHeight: element.clientHeight,
-      scrollHeight: element.scrollHeight,
-      overflowY: getComputedStyle(element).overflowY,
-    }));
-    expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight);
-    expect(scrollMetrics.overflowY).toBe('auto');
+      const scrollMetrics = await listbox.evaluate((element) => ({
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+        overflowY: getComputedStyle(element).overflowY,
+      }));
+      expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight);
+      expect(scrollMetrics.overflowY).toBe('auto');
+    }
   });
 
   test('autocomplete navigates toward a station page', async ({ page }) => {

@@ -1,0 +1,247 @@
+{
+  "project": "live-768",
+  "scenario": "home-default",
+  "url": "https://fuelvoice.vercel.app/",
+  "metrics": {
+    "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+    "innerWidth": 768,
+    "innerHeight": 1024,
+    "scrollWidth": 768,
+    "scrollHeight": 3288,
+    "headings": [
+      {
+        "level": "h1",
+        "text": "Know the stationbefore you trust it."
+      },
+      {
+        "level": "h2",
+        "text": "Nearby Fuel Stations, without the clutter."
+      },
+      {
+        "level": "h3",
+        "text": "Fuel Station"
+      },
+      {
+        "level": "h3",
+        "text": "Fuel Station"
+      },
+      {
+        "level": "h3",
+        "text": "Fuel Station"
+      },
+      {
+        "level": "h3",
+        "text": "Fuel Station"
+      },
+      {
+        "level": "h3",
+        "text": "Casey's General Store"
+      },
+      {
+        "level": "h3",
+        "text": "QuikTrip"
+      },
+      {
+        "level": "h3",
+        "text": "QuikTrip"
+      },
+      {
+        "level": "h3",
+        "text": "QuikTrip"
+      },
+      {
+        "level": "h3",
+        "text": "Git N Go"
+      }
+    ],
+    "interactive": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice home",
+        "width": 128.9,
+        "height": 44,
+        "x": 24,
+        "y": 15
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search fuel stations",
+        "width": 96.2,
+        "height": 44,
+        "x": 482,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Switch to light mode",
+        "width": 44,
+        "height": 44,
+        "x": 584,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sign in with Google",
+        "width": 110,
+        "height": 44,
+        "x": 634,
+        "y": 15
+      },
+      {
+        "tag": "input",
+        "role": "combobox",
+        "name": "Search fuel stations",
+        "width": 706,
+        "height": 62,
+        "x": 31,
+        "y": 581
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search another area",
+        "width": 720,
+        "height": 45.4,
+        "x": 24,
+        "y": 1272
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Top mapped resultFuel Station01Address details are not available for this mapped station.300mTrust s",
+        "width": 352,
+        "height": 336.3,
+        "x": 24,
+        "y": 1354
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Fuel Station02Address details are not available for this mapped station.800mTrust score available af",
+        "width": 352,
+        "height": 336.3,
+        "x": 392,
+        "y": 1354
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Fuel Station03Address details are not available for this mapped station.900mTrust score available af",
+        "width": 352,
+        "height": 336.3,
+        "x": 24,
+        "y": 1706
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Fuel Station04Address details are not available for this mapped station.1.0kmTrust score available a",
+        "width": 352,
+        "height": 336.3,
+        "x": 392,
+        "y": 1706
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Casey's General StoreCasey's General Store05Address details are not available for this mapped statio",
+        "width": 352,
+        "height": 336.3,
+        "x": 24,
+        "y": 2058
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "QuikTripQuikTrip06Address details are not available for this mapped station.1.4kmTrust score availab",
+        "width": 352,
+        "height": 336.3,
+        "x": 392,
+        "y": 2058
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "QuikTripQuikTrip07Address details are not available for this mapped station.1.4kmTrust score availab",
+        "width": 352,
+        "height": 336.3,
+        "x": 24,
+        "y": 2410
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "QuikTripQuikTrip08Address details are not available for this mapped station.1.4kmTrust score availab",
+        "width": 352,
+        "height": 336.3,
+        "x": 392,
+        "y": 2410
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Git N Go09Address details are not available for this mapped station.2.2kmTrust score available after",
+        "width": 352,
+        "height": 336.3,
+        "x": 24,
+        "y": 2763
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 24,
+        "y": 3216
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search stations",
+        "width": 104,
+        "height": 44,
+        "x": 516,
+        "y": 3212
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "OpenStreetMap",
+        "width": 108,
+        "height": 44,
+        "x": 636,
+        "y": 3212
+      }
+    ],
+    "undersizedTargets": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 24,
+        "y": 3216
+      }
+    ],
+    "navigation": {
+      "domContentLoadedMs": 150,
+      "loadMs": 307,
+      "responseStartMs": 71,
+      "transferSize": 6638
+    },
+    "resourceCount": 21
+  },
+  "signals": {
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failedRequests": [],
+    "badResponses": []
+  },
+  "axeViolations": []
+}

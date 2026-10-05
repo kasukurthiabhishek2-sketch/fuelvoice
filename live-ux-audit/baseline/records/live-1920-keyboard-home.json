@@ -1,0 +1,211 @@
+{
+  "project": "live-1920",
+  "scenario": "keyboard-home",
+  "url": "https://fuelvoice.vercel.app/",
+  "keyboard": [
+    {
+      "tag": "a",
+      "role": null,
+      "name": "FuelVoice home",
+      "id": "",
+      "width": 129,
+      "height": 44,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "Search fuel stations",
+      "id": "",
+      "width": 96,
+      "height": 44,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "name": "Switch to light mode",
+      "id": "",
+      "width": 44,
+      "height": 44,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "name": "Sign in with Google",
+      "id": "",
+      "width": 110,
+      "height": 44,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "input",
+      "role": "combobox",
+      "name": "Search fuel stations",
+      "id": "",
+      "width": 754,
+      "height": 62,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "Search another area",
+      "id": "",
+      "width": 207,
+      "height": 45,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "Top mapped resultFuel Station01Address details are not available for this mapped station.300mTrust s",
+      "id": "",
+      "width": 848,
+      "height": 270,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "Fuel Station02Address details are not available for this mapped station.800mTrust score available af",
+      "id": "",
+      "width": 416,
+      "height": 270,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "Fuel Station03Address details are not available for this mapped station.900mTrust score available af",
+      "id": "",
+      "width": 416,
+      "height": 270,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "Fuel Station04Address details are not available for this mapped station.1.0kmTrust score available a",
+      "id": "",
+      "width": 416,
+      "height": 270,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "Casey's General StoreCasey's General Store05Address details are not available for this mapped statio",
+      "id": "",
+      "width": 416,
+      "height": 270,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "QuikTripQuikTrip06Address details are not available for this mapped station.1.4kmTrust score availab",
+      "id": "",
+      "width": 416,
+      "height": 270,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "QuikTripQuikTrip07Address details are not available for this mapped station.1.4kmTrust score availab",
+      "id": "",
+      "width": 416,
+      "height": 270,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "QuikTripQuikTrip08Address details are not available for this mapped station.1.4kmTrust score availab",
+      "id": "",
+      "width": 416,
+      "height": 270,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "Git N Go09Address details are not available for this mapped station.2.2kmTrust score available after",
+      "id": "",
+      "width": 416,
+      "height": 270,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "FuelVoice",
+      "id": "",
+      "width": 67,
+      "height": 17,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "Search stations",
+      "id": "",
+      "width": 104,
+      "height": 44,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "name": "OpenStreetMap",
+      "id": "",
+      "width": 108,
+      "height": 44,
+      "outlineWidth": "3px",
+      "outlineStyle": "solid",
+      "boxShadow": "none"
+    }
+  ],
+  "signals": {
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failedRequests": [],
+    "badResponses": []
+  }
+}

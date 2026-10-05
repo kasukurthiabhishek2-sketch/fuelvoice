@@ -1,0 +1,198 @@
+{
+  "project": "live-1920",
+  "scenario": "search-query",
+  "url": "https://fuelvoice.vercel.app/search",
+  "metrics": {
+    "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+    "innerWidth": 1920,
+    "innerHeight": 1080,
+    "scrollWidth": 1920,
+    "scrollHeight": 1190,
+    "headings": [
+      {
+        "level": "h1",
+        "text": "Find the station.Then judge it by the evidence."
+      }
+    ],
+    "interactive": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice home",
+        "width": 128.9,
+        "height": 44,
+        "x": 320,
+        "y": 15
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search fuel stations",
+        "width": 96.2,
+        "height": 44,
+        "x": 1338,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Switch to light mode",
+        "width": 44,
+        "height": 44,
+        "x": 1440,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sign in with Google",
+        "width": 110,
+        "height": 44,
+        "x": 1490,
+        "y": 15
+      },
+      {
+        "tag": "input",
+        "role": "combobox",
+        "name": "Search fuel stations",
+        "width": 754,
+        "height": 62,
+        "x": 519,
+        "y": 502
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Clear search",
+        "width": 32,
+        "height": 32,
+        "x": 1229,
+        "y": 517
+      },
+      {
+        "tag": "button",
+        "role": "option",
+        "name": "Shellحیدرآباد, Sindh, Pakistan",
+        "width": 740,
+        "height": 64,
+        "x": 526,
+        "y": 604
+      },
+      {
+        "tag": "button",
+        "role": "option",
+        "name": "Shellحیدرآباد, Sindh, Pakistan",
+        "width": 740,
+        "height": 64,
+        "x": 526,
+        "y": 668
+      },
+      {
+        "tag": "button",
+        "role": "option",
+        "name": "ShellKarachi, Sindh, Pakistan",
+        "width": 740,
+        "height": 64,
+        "x": 526,
+        "y": 732
+      },
+      {
+        "tag": "button",
+        "role": "option",
+        "name": "ShellKarachi, Sindh, Pakistan",
+        "width": 740,
+        "height": 64,
+        "x": 526,
+        "y": 796
+      },
+      {
+        "tag": "button",
+        "role": "option",
+        "name": "Shellحیدرآباد, Sindh, Pakistan",
+        "width": 740,
+        "height": 64,
+        "x": 526,
+        "y": 860
+      },
+      {
+        "tag": "button",
+        "role": "option",
+        "name": "Shell CNG and Petrol Pumpحیدرآباد, Sindh, Pakistan",
+        "width": 740,
+        "height": 64,
+        "x": 526,
+        "y": 924
+      },
+      {
+        "tag": "button",
+        "role": "option",
+        "name": "Shell ExpressScheme 33, Sindh, Pakistan",
+        "width": 740,
+        "height": 64,
+        "x": 526,
+        "y": 988
+      },
+      {
+        "tag": "button",
+        "role": "option",
+        "name": "Shell ExpressKarachi, Sindh, Pakistan",
+        "width": 740,
+        "height": 64,
+        "x": 526,
+        "y": 1052
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 320,
+        "y": 1118
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search stations",
+        "width": 104,
+        "height": 44,
+        "x": 1372,
+        "y": 1114
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "OpenStreetMap",
+        "width": 108,
+        "height": 44,
+        "x": 1492,
+        "y": 1114
+      }
+    ],
+    "undersizedTargets": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 320,
+        "y": 1118
+      }
+    ],
+    "navigation": {
+      "domContentLoadedMs": 143,
+      "loadMs": 290,
+      "responseStartMs": 63,
+      "transferSize": 6131
+    },
+    "resourceCount": 20
+  },
+  "signals": {
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failedRequests": [],
+    "badResponses": []
+  },
+  "axeViolations": []
+}

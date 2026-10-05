@@ -173,6 +173,14 @@ test.describe('Minimal homepage', () => {
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
 
+    const themeBox = await controls[1].boundingBox();
+    expect(themeBox).not.toBeNull();
+    expect(themeBox!.width).toBeGreaterThanOrEqual(44);
+
+    const signInBox = await controls[2].boundingBox();
+    expect(signInBox).not.toBeNull();
+    expect(signInBox!.height).toBeLessThanOrEqual(46);
+
     const metrics = await page.evaluate(() => ({
       innerWidth: window.innerWidth,
       scrollWidth: document.documentElement.scrollWidth,
@@ -196,6 +204,25 @@ test.describe('Minimal homepage', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect(page.getByRole('button', { name: 'Sign Out' })).toHaveCount(0);
     await expect(trigger).toBeFocused();
+  });
+
+  test('keeps mobile nearby loading compact while retaining desktop density', async ({ page }) => {
+    await page.unroute('**/api/overpass');
+    await page.route('**/api/overpass', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ elements: [] }),
+      });
+    });
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    await expect.poll(async () => page.locator('#nearby-stations .card').evaluateAll((cards) =>
+      cards.filter((card) => getComputedStyle(card).display !== 'none').length
+    )).toBe(3);
   });
 
   test('loads nearby stations from approximate location without eager map work', async ({ page }) => {
@@ -238,6 +265,144 @@ test.describe('Minimal homepage', () => {
     await expect(input).toBeVisible();
     await expect(input.locator('..').getByText('Search', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Search fuel stations' })).toBeVisible();
+  });
+
+  test('prioritizes station results that match the full multi-word query', async ({ page }) => {
+    await page.unroute('https://photon.komoot.io/api**');
+    await page.route('https://photon.komoot.io/api**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: [
+            {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [67.0011, 24.8607] },
+              properties: {
+                osm_id: 7000000001,
+                osm_type: 'N',
+                osm_key: 'amenity',
+                osm_value: 'fuel',
+                name: 'Shell',
+                city: 'Karachi',
+                state: 'Sindh',
+                country: 'Pakistan',
+                countrycode: 'PK',
+              },
+            },
+            {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [78.4753829, 17.3887027] },
+              properties: {
+                osm_id: 7000000002,
+                osm_type: 'N',
+                osm_key: 'amenity',
+                osm_value: 'fuel',
+                name: 'Shell',
+                city: 'Hyderabad',
+                state: 'Telangana',
+                country: 'India',
+                countrycode: 'IN',
+              },
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+    const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await expect.poll(() => input.evaluate((element) =>
+      Object.keys(element).some((key) => key.startsWith('__reactProps$'))
+    )).toBe(true);
+    await input.fill('Shell Hyderabad');
+
+    const options = page.getByRole('option');
+    await expect(options).toHaveCount(2, { timeout: 10000 });
+    await expect(options.first()).toContainText('Hyderabad');
+    await expect(options.first()).toContainText('India');
+  });
+
+  test('keeps long search results inside mobile and desktop viewports with internal scrolling', async ({ page }) => {
+    await page.unroute('https://photon.komoot.io/api**');
+    await page.route('https://photon.komoot.io/api**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: Array.from({ length: 8 }, (_, index) => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [78.47 + index * 0.001, 17.38 + index * 0.001] },
+            properties: {
+              osm_id: 7100000000 + index,
+              osm_type: 'N',
+              osm_key: 'amenity',
+              osm_value: 'fuel',
+              name: 'Shell ' + (index + 1),
+              city: 'Hyderabad',
+              state: 'Telangana',
+              country: 'India',
+              countrycode: 'IN',
+            },
+          })),
+        }),
+      });
+    });
+
+    for (const viewport of [
+      { width: 375, height: 812 },
+      { width: 1280, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto('/search', { waitUntil: 'domcontentloaded' });
+
+      const input = page.getByRole('combobox', { name: /search fuel stations/i });
+      await expect.poll(() => input.evaluate((element) =>
+        Object.keys(element).some((key) => key.startsWith('__reactProps$'))
+      )).toBe(true);
+      await input.fill('Shell');
+
+      const listbox = page.getByRole('listbox', { name: 'Fuel station search results' });
+      await expect(listbox).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('option')).toHaveCount(8);
+
+      const box = await listbox.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
+
+      const scrollMetrics = await listbox.evaluate((element) => ({
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+        overflowY: getComputedStyle(element).overflowY,
+      }));
+      expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight);
+      expect(scrollMetrics.overflowY).toBe('auto');
+    }
+  });
+
+  test('keeps production-measured secondary controls comfortably tappable', async ({ page }) => {
+    await enableGuestDataMocks(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+    const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await expect.poll(() => input.evaluate((element) =>
+      Object.keys(element).some((key) => key.startsWith('__reactProps$'))
+    )).toBe(true);
+    await input.fill('Shell');
+
+    const clear = page.getByRole('button', { name: 'Clear search' });
+    const clearBox = await clear.boundingBox();
+    expect(clearBox).not.toBeNull();
+    expect(clearBox!.width).toBeGreaterThanOrEqual(44);
+    expect(clearBox!.height).toBeGreaterThanOrEqual(44);
+
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+    const mapDirections = page.getByRole('link', { name: 'Directions ↗', exact: true });
+    const directionsBox = await mapDirections.boundingBox();
+    expect(directionsBox).not.toBeNull();
+    expect(directionsBox!.height).toBeGreaterThanOrEqual(44);
+    await expect(mapDirections).toHaveAttribute('href', /google\.com\/maps\/dir/);
   });
 
   test('autocomplete navigates toward a station page', async ({ page }) => {
@@ -300,6 +465,37 @@ test.describe('Signed-out station loading', () => {
       scrollWidth: document.documentElement.scrollWidth,
     }));
     expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+  });
+
+  test('keeps issue filters scrollable on phones and fully discoverable on larger screens', async ({ page }) => {
+    await enableGuestDataMocks(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+
+    const filters = page.getByRole('group', { name: 'Filter reviews by issue' });
+    await expect(filters).toBeVisible();
+
+    const mobile = await filters.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+      overflowX: getComputedStyle(element).overflowX,
+      flexWrap: getComputedStyle(element).flexWrap,
+    }));
+    expect(mobile.scrollWidth).toBeGreaterThan(mobile.clientWidth);
+    expect(mobile.overflowX).toBe('auto');
+    expect(mobile.flexWrap).toBe('nowrap');
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(page.getByRole('button', { name: 'Other', exact: true })).toBeVisible();
+
+    const desktop = await filters.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+      overflowX: getComputedStyle(element).overflowX,
+      flexWrap: getComputedStyle(element).flexWrap,
+    }));
+    expect(desktop.scrollWidth).toBeLessThanOrEqual(desktop.clientWidth + 1);
+    expect(desktop.flexWrap).toBe('wrap');
   });
 
   test('loads an uncached mapped station without requiring a Firestore write', async ({ page }, testInfo) => {
@@ -753,7 +949,7 @@ test.describe('Fallbacks and metadata', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/this-route-does-not-exist', { waitUntil: 'domcontentloaded' });
 
-    for (const name of ['Search stations', 'OpenStreetMap']) {
+    for (const name of ['FuelVoice', 'Search stations', 'OpenStreetMap']) {
       const link = page.getByRole('contentinfo').getByRole('link', { name, exact: true });
       const box = await link.boundingBox();
       expect(box).not.toBeNull();

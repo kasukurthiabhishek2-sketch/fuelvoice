@@ -1,0 +1,130 @@
+{
+  "project": "live-375",
+  "scenario": "home-default",
+  "url": "https://fuelvoice.vercel.app/",
+  "metrics": {
+    "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+    "innerWidth": 375,
+    "innerHeight": 812,
+    "scrollWidth": 375,
+    "scrollHeight": 2669,
+    "headings": [
+      {
+        "level": "h1",
+        "text": "Know the stationbefore you trust it."
+      },
+      {
+        "level": "h2",
+        "text": "Nearby Fuel Stations, without the clutter."
+      }
+    ],
+    "interactive": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice home",
+        "width": 128.9,
+        "height": 44,
+        "x": 16,
+        "y": 15
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search fuel stations",
+        "width": 44,
+        "height": 44,
+        "x": 161,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Switch to light mode",
+        "width": 39.6,
+        "height": 44,
+        "x": 211,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sign in with Google",
+        "width": 102.5,
+        "height": 58,
+        "x": 257,
+        "y": 8
+      },
+      {
+        "tag": "input",
+        "role": "combobox",
+        "name": "Search fuel stations",
+        "width": 329,
+        "height": 56.5,
+        "x": 23,
+        "y": 530
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search another area",
+        "width": 343,
+        "height": 45.4,
+        "x": 16,
+        "y": 1378
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 16,
+        "y": 2517
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search stations",
+        "width": 104,
+        "height": 44,
+        "x": 16,
+        "y": 2593
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "OpenStreetMap",
+        "width": 108,
+        "height": 44,
+        "x": 132,
+        "y": 2593
+      }
+    ],
+    "undersizedTargets": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 16,
+        "y": 2517
+      }
+    ],
+    "navigation": {
+      "domContentLoadedMs": 422,
+      "loadMs": 696,
+      "responseStartMs": 79,
+      "transferSize": 6638
+    },
+    "resourceCount": 20
+  },
+  "signals": {
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failedRequests": [],
+    "badResponses": []
+  },
+  "axeViolations": []
+}

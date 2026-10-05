@@ -1,0 +1,126 @@
+{
+  "project": "live-1920",
+  "scenario": "admin-signed-out",
+  "url": "https://fuelvoice.vercel.app/admin",
+  "metrics": {
+    "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+    "innerWidth": 1920,
+    "innerHeight": 1080,
+    "scrollWidth": 1920,
+    "scrollHeight": 1080,
+    "headings": [
+      {
+        "level": "h1",
+        "text": "Access Denied"
+      }
+    ],
+    "interactive": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice home",
+        "width": 128.9,
+        "height": 44,
+        "x": 320,
+        "y": 15
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search fuel stations",
+        "width": 96.2,
+        "height": 44,
+        "x": 1338,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Switch to light mode",
+        "width": 44,
+        "height": 44,
+        "x": 1440,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sign in with Google",
+        "width": 110,
+        "height": 44,
+        "x": 1490,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sign in with Google",
+        "width": 320,
+        "height": 50,
+        "x": 800,
+        "y": 315
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Back to Home",
+        "width": 320,
+        "height": 45.4,
+        "x": 800,
+        "y": 377
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 320,
+        "y": 1008
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search stations",
+        "width": 104,
+        "height": 44,
+        "x": 1372,
+        "y": 1004
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "OpenStreetMap",
+        "width": 108,
+        "height": 44,
+        "x": 1492,
+        "y": 1004
+      }
+    ],
+    "undersizedTargets": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 320,
+        "y": 1008
+      }
+    ],
+    "navigation": {
+      "domContentLoadedMs": 138,
+      "loadMs": 299,
+      "responseStartMs": 63,
+      "transferSize": 5462
+    },
+    "resourceCount": 22
+  },
+  "signals": {
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failedRequests": [],
+    "badResponses": []
+  },
+  "axeViolations": []
+}

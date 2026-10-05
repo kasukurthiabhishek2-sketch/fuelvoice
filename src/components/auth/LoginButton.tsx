@@ -44,7 +44,7 @@ export function LoginButton({ variant = 'default', className = '' }: LoginButton
         whileTap={{ scale: 0.98 }}
         onClick={handleSignIn}
         disabled={loading}
-        className={`flex min-h-11 items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all
+        className={`flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap px-3 py-2 rounded-xl font-medium text-sm transition-all sm:px-4
           bg-surface-0 dark:bg-surface-800 border border-[var(--border-primary)]
           hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
         style={{ color: 'var(--text-primary)' }}

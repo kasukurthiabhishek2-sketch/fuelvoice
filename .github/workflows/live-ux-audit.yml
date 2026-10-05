@@ -1,0 +1,105 @@
+name: Live Production UX Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: URL to audit
+        required: true
+        default: https://fuelvoice.vercel.app
+        type: string
+      expected_sha:
+        description: Commit SHA expected from /api/health
+        required: true
+        type: string
+      output_dir:
+        description: Artifact output directory
+        required: true
+        default: live-ux-audit/final
+        type: string
+  workflow_run:
+    workflows: [Production Smoke]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-production-ux-audit-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      PRODUCTION_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.target_url || 'https://fuelvoice.vercel.app' }}
+      EXPECTED_PRODUCTION_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_sha || github.event.workflow_run.head_sha }}
+      LIVE_UX_OUTPUT_DIR: ${{ github.event_name == 'workflow_dispatch' && inputs.output_dir || 'live-ux-audit/final' }}
+      LIVE_UX_LABEL: Post-change live production UX audit
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install repository dependencies
+        run: npm ci
+
+      - name: Install CI-only axe adapter
+        run: npm install --no-save --no-package-lock @axe-core/playwright@4.13.0
+
+      - name: Install matching Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Wait for exact target commit
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for attempt in {1..40}; do
+            response="$(curl --silent --show-error --location --max-time 20 --write-out $'\n%{http_code}' "$PRODUCTION_URL/api/health" || true)"
+            status_code="${response##*$'\n'}"
+            body="${response%$'\n'*}"
+
+            if [ "$status_code" = "200" ] && printf '%s' "$body" | jq -e --arg sha "$EXPECTED_PRODUCTION_SHA" '.status == "ok" and .gitSha == $sha' >/dev/null 2>&1; then
+              echo "Target is serving expected commit $EXPECTED_PRODUCTION_SHA"
+              printf '%s\n' "$body" | jq .
+              break
+            fi
+
+            if [ "$attempt" -eq 40 ]; then
+              echo "Target did not converge to expected commit $EXPECTED_PRODUCTION_SHA"
+              echo "Last HTTP status: $status_code"
+              echo "Last response: $body"
+              exit 1
+            fi
+
+            echo "Attempt $attempt/40: target not on expected commit yet; retrying in 15s"
+            sleep 15
+          done
+
+      - name: Audit live UX
+        run: npx playwright test --config=playwright.live-ux.config.ts
+
+      - name: Summarize live evidence
+        if: always()
+        run: node scripts/live-ux-summarize.mjs
+
+      - name: Upload live audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-production-ux-audit-${{ github.run_id }}
+          path: ${{ env.LIVE_UX_OUTPUT_DIR }}
+          retention-days: 30
+          if-no-files-found: warn

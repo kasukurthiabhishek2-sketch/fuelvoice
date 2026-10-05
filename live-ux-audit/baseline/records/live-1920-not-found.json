@@ -1,0 +1,130 @@
+{
+  "project": "live-1920",
+  "scenario": "not-found",
+  "url": "https://fuelvoice.vercel.app/live-ux-audit-not-a-route",
+  "metrics": {
+    "title": "FuelVoice — Honest Petrol Pump & Gas Station Reviews",
+    "innerWidth": 1920,
+    "innerHeight": 1080,
+    "scrollWidth": 1920,
+    "scrollHeight": 1080,
+    "headings": [
+      {
+        "level": "h1",
+        "text": "Page Not Found"
+      }
+    ],
+    "interactive": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice home",
+        "width": 128.9,
+        "height": 44,
+        "x": 320,
+        "y": 15
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search fuel stations",
+        "width": 96.2,
+        "height": 44,
+        "x": 1338,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Switch to light mode",
+        "width": 44,
+        "height": 44,
+        "x": 1440,
+        "y": 15
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sign in with Google",
+        "width": 110,
+        "height": 44,
+        "x": 1490,
+        "y": 15
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Back to Home",
+        "width": 132,
+        "height": 45.4,
+        "x": 813,
+        "y": 493
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search stations",
+        "width": 150,
+        "height": 45.4,
+        "x": 957,
+        "y": 493
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 320,
+        "y": 1008
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "Search stations",
+        "width": 104,
+        "height": 44,
+        "x": 1372,
+        "y": 1004
+      },
+      {
+        "tag": "a",
+        "role": null,
+        "name": "OpenStreetMap",
+        "width": 108,
+        "height": 44,
+        "x": 1492,
+        "y": 1004
+      }
+    ],
+    "undersizedTargets": [
+      {
+        "tag": "a",
+        "role": null,
+        "name": "FuelVoice",
+        "width": 67.5,
+        "height": 17,
+        "x": 320,
+        "y": 1008
+      }
+    ],
+    "navigation": {
+      "domContentLoadedMs": 134,
+      "loadMs": 292,
+      "responseStartMs": 67,
+      "transferSize": 5156
+    },
+    "resourceCount": 19
+  },
+  "signals": {
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "pageErrors": [],
+    "failedRequests": [],
+    "badResponses": [
+      "404 https://fuelvoice.vercel.app/live-ux-audit-not-a-route"
+    ]
+  },
+  "axeViolations": []
+}

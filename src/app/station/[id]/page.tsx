@@ -250,7 +250,7 @@ export default function StationPage() {
                     href={directionsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    className="-mr-2 inline-flex min-h-11 shrink-0 items-center rounded-lg px-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
                   >
                     Directions ↗
                   </a>

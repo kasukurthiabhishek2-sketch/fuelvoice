@@ -124,7 +124,7 @@ export function SearchBar({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className={`w-full border border-[var(--border-primary)] bg-[var(--bg-card)] text-[var(--text-primary)] outline-none transition-all duration-200 ${isHero
-            ? 'rounded-2xl py-4 pl-12 pr-12 text-[15px] shadow-[var(--shadow-xs)] focus:border-brand-500 focus:shadow-[var(--shadow-glow)] sm:py-[18px] sm:pr-24 sm:text-base'
+            ? 'rounded-2xl py-4 pl-12 pr-16 text-[15px] shadow-[var(--shadow-xs)] focus:border-brand-500 focus:shadow-[var(--shadow-glow)] sm:py-[18px] sm:pr-24 sm:text-base'
             : 'rounded-xl py-2.5 pl-10 pr-20 text-sm shadow-[var(--shadow-xs)] focus:border-brand-500'
           }`}
           role="combobox"
@@ -149,7 +149,7 @@ export function SearchBar({
             <button
               type="button"
               onClick={clearSearch}
-              className="grid h-8 w-8 place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+              className={`grid place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] ${isHero ? 'h-11 w-11' : 'h-9 w-9'}`}
               aria-label="Clear search"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">

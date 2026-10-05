@@ -9,7 +9,7 @@ export function Footer() {
     <footer className="product-footer">
       <div className="app-frame flex flex-col gap-5 py-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <Link href="/" className="text-sm font-semibold tracking-[-0.02em] text-[var(--text-primary)]">FuelVoice</Link>
+          <Link href="/" className="inline-flex min-h-11 items-center text-sm font-semibold tracking-[-0.02em] text-[var(--text-primary)]">FuelVoice</Link>
           <p className="mt-1 text-xs text-[var(--text-tertiary)]">
             Reviews and verified complaint paths for fuel stations worldwide.
           </p>

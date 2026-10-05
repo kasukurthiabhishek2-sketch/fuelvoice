@@ -380,6 +380,31 @@ test.describe('Minimal homepage', () => {
     }
   });
 
+  test('keeps production-measured secondary controls comfortably tappable', async ({ page }) => {
+    await enableGuestDataMocks(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+    const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await expect.poll(() => input.evaluate((element) =>
+      Object.keys(element).some((key) => key.startsWith('__reactProps$'))
+    )).toBe(true);
+    await input.fill('Shell');
+
+    const clear = page.getByRole('button', { name: 'Clear search' });
+    const clearBox = await clear.boundingBox();
+    expect(clearBox).not.toBeNull();
+    expect(clearBox!.width).toBeGreaterThanOrEqual(44);
+    expect(clearBox!.height).toBeGreaterThanOrEqual(44);
+
+    await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
+    const mapDirections = page.getByRole('link', { name: 'Directions ↗', exact: true });
+    const directionsBox = await mapDirections.boundingBox();
+    expect(directionsBox).not.toBeNull();
+    expect(directionsBox!.height).toBeGreaterThanOrEqual(44);
+    await expect(mapDirections).toHaveAttribute('href', /google\.com\/maps\/dir/);
+  });
+
   test('autocomplete navigates toward a station page', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
@@ -893,7 +918,7 @@ test.describe('Fallbacks and metadata', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/this-route-does-not-exist', { waitUntil: 'domcontentloaded' });
 
-    for (const name of ['Search stations', 'OpenStreetMap']) {
+    for (const name of ['FuelVoice', 'Search stations', 'OpenStreetMap']) {
       const link = page.getByRole('contentinfo').getByRole('link', { name, exact: true });
       const box = await link.boundingBox();
       expect(box).not.toBeNull();

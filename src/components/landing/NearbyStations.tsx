@@ -171,9 +171,14 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
                         </div>
                       </div>
 
-                      <span className="pt-1 text-[10px] font-black tracking-[0.14em]" style={{ color: 'var(--text-tertiary)' }}>
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
+                      {station.distance !== undefined && (
+                        <span
+                          className="shrink-0 rounded-full border border-brand-500/20 bg-brand-500/10 px-3 py-1.5 text-[11px] font-extrabold text-brand-700 dark:text-brand-200"
+                          title={isIpLocation ? 'Approximate distance from your area' : 'Distance from your location'}
+                        >
+                          {isIpLocation ? '≈ ' : ''}{formatDistance(station.distance)} away
+                        </span>
+                      )}
                     </div>
 
                     <div className={`relative z-10 mt-5 flex items-start gap-2 leading-5 ${featured ? 'max-w-2xl text-sm' : 'text-xs'}`} style={{ color: 'var(--text-secondary)' }}>
@@ -186,9 +191,6 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
 
                     <div className="relative z-10 mt-auto flex flex-wrap items-end justify-between gap-4 pt-7">
                       <div className="flex flex-wrap items-center gap-2">
-                        {station.distance !== undefined && (
-                          <span className="info-chip">{formatDistance(station.distance)}</span>
-                        )}
                         <span className="info-chip">
                           {station.reviewCount > 0
                             ? `${station.reviewCount} review${station.reviewCount === 1 ? '' : 's'} · Trust score on station page`

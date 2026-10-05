@@ -257,6 +257,19 @@ test.describe('Minimal homepage', () => {
     });
   });
 
+  test('shows a distance for every nearby station and labels approximate IP-based distance honestly', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const nearby = page.locator('#nearby-stations');
+    const stationLinks = nearby.locator('a[href^="/station/"]');
+    await expect(stationLinks).toHaveCount(2);
+
+    for (const station of await stationLinks.all()) {
+      await expect(station.getByText(/≈ .* away/)).toBeVisible();
+      await expect(station.getByTitle('Approximate distance from your area')).toBeVisible();
+    }
+  });
+
   test('keeps the hero search free of inert button-like search badges', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });

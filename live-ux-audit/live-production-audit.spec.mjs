@@ -432,6 +432,7 @@ test('production fixes stay ergonomic and discoverable', async ({ page }, testIn
   expect(directionsBox.height).toBeGreaterThanOrEqual(44);
 
   const mapShell = page.locator('.lazy-map-shell');
+  await expect(mapShell.getByRole('link', { name: /^Get directions$/i })).toHaveCount(0);
   await mapShell.scrollIntoViewIfNeeded();
   await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 20000 });
 
@@ -446,10 +447,7 @@ test('production fixes stay ergonomic and discoverable', async ({ page }, testIn
     expect(box.height).toBeGreaterThanOrEqual(44);
   }
 
-  const loadedMapDirections = mapShell.getByRole('link', { name: 'Get Directions', exact: true });
-  const loadedDirectionsBox = await loadedMapDirections.boundingBox();
-  expect(loadedDirectionsBox).not.toBeNull();
-  expect(loadedDirectionsBox.height).toBeGreaterThanOrEqual(44);
+  await expect(mapShell.getByRole('link', { name: /^Get directions$/i })).toHaveCount(0);
 
   const footerHome = page.getByRole('contentinfo').getByRole('link', { name: 'FuelVoice', exact: true });
   await footerHome.scrollIntoViewIfNeeded();

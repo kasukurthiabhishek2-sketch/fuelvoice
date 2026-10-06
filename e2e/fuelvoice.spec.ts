@@ -584,6 +584,7 @@ test.describe('Minimal homepage', () => {
     await expect(mapDirections).toHaveAttribute('href', /google\.com\/maps\/dir/);
 
     const mapShell = page.locator('.lazy-map-shell');
+    await expect(mapShell.getByRole('link', { name: /^Get directions$/i })).toHaveCount(0);
     await mapShell.scrollIntoViewIfNeeded();
     await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 10000 });
 
@@ -598,11 +599,7 @@ test.describe('Minimal homepage', () => {
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
 
-    const loadedMapDirections = mapShell.getByRole('link', { name: 'Get Directions', exact: true });
-    const loadedDirectionsBox = await loadedMapDirections.boundingBox();
-    expect(loadedDirectionsBox).not.toBeNull();
-    expect(loadedDirectionsBox!.height).toBeGreaterThanOrEqual(44);
-    await expect(loadedMapDirections).toHaveAttribute('href', /google\.com\/maps\/dir/);
+    await expect(mapShell.getByRole('link', { name: /^Get directions$/i })).toHaveCount(0);
   });
 
   test('autocomplete navigates toward a station page', async ({ page }) => {

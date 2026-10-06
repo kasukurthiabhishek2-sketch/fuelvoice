@@ -481,8 +481,10 @@ test.describe('Minimal homepage', () => {
     )).toBe(true);
     await input.fill('Shell');
 
-    const errorState = page.getByRole('alert');
-    await expect(errorState).toContainText('Station search is temporarily unavailable.', { timeout: 10000 });
+    const errorState = page.getByRole('alert').filter({
+      hasText: 'Station search is temporarily unavailable.',
+    });
+    await expect(errorState).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/No fuel stations found for/i)).toHaveCount(0);
 
     shouldFail = false;

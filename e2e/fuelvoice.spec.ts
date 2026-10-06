@@ -599,6 +599,14 @@ test.describe('Minimal homepage', () => {
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
 
+    const attributionLinks = page.locator('.leaflet-control-attribution a');
+    expect(await attributionLinks.count()).toBeGreaterThan(0);
+    for (const link of await attributionLinks.all()) {
+      const box = await link.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(24);
+    }
+
     await expect(mapShell.getByRole('link', { name: /^Get directions$/i })).toHaveCount(0);
   });
 

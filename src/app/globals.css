@@ -571,6 +571,14 @@ body {
   isolation: isolate;
 }
 
+.leaflet-control-zoom a.leaflet-control-zoom-in,
+.leaflet-control-zoom a.leaflet-control-zoom-out {
+  width: 44px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+  font-size: 20px !important;
+}
+
 @media (max-width: 640px) {
   .map-shell {
     border-radius: 20px;

@@ -467,6 +467,27 @@ test.describe('Minimal homepage', () => {
     expect(directionsBox).not.toBeNull();
     expect(directionsBox!.height).toBeGreaterThanOrEqual(44);
     await expect(mapDirections).toHaveAttribute('href', /google\.com\/maps\/dir/);
+
+    const mapShell = page.locator('.lazy-map-shell');
+    await mapShell.scrollIntoViewIfNeeded();
+    await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 10000 });
+
+    for (const control of [
+      page.getByRole('button', { name: 'Zoom in' }),
+      page.getByRole('button', { name: 'Zoom out' }),
+      page.locator('.leaflet-marker-icon.custom-marker').first(),
+    ]) {
+      const box = await control.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+
+    const loadedMapDirections = mapShell.getByRole('link', { name: 'Get Directions', exact: true });
+    const loadedDirectionsBox = await loadedMapDirections.boundingBox();
+    expect(loadedDirectionsBox).not.toBeNull();
+    expect(loadedDirectionsBox!.height).toBeGreaterThanOrEqual(44);
+    await expect(loadedMapDirections).toHaveAttribute('href', /google\.com\/maps\/dir/);
   });
 
   test('autocomplete navigates toward a station page', async ({ page }) => {

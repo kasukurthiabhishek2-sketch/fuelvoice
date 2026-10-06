@@ -54,10 +54,10 @@ export function StationMapInner({ lat, lng, name, userLat, userLng, className = 
     }).addTo(map);
 
     const stationIcon = L.divIcon({
-      html: '<div style="font-size:24px;text-align:center;">⛽</div>',
+      html: '<div style="width:44px;height:44px;display:grid;place-items:center;font-size:24px;text-align:center;">⛽</div>',
       className: 'custom-marker',
-      iconSize: [30, 30],
-      iconAnchor: [15, 15],
+      iconSize: [44, 44],
+      iconAnchor: [22, 22],
     });
     L.marker([lat, lng], { icon: stationIcon })
       .addTo(map)
@@ -65,10 +65,10 @@ export function StationMapInner({ lat, lng, name, userLat, userLng, className = 
 
     if (userLat !== null && userLat !== undefined && userLng !== null && userLng !== undefined) {
       const userIcon = L.divIcon({
-        html: '<div style="width:12px;height:12px;background:#3B82F6;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(59,130,246,0.5);"></div>',
+        html: '<div style="width:44px;height:44px;display:grid;place-items:center;"><span style="display:block;width:12px;height:12px;background:#3B82F6;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(59,130,246,0.5);"></span></div>',
         className: 'custom-marker',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
+        iconSize: [44, 44],
+        iconAnchor: [22, 22],
       });
       L.marker([userLat, userLng], { icon: userIcon }).addTo(map).bindPopup('Your Location');
       map.fitBounds(L.latLngBounds([lat, lng], [userLat, userLng]), { padding: [50, 50], maxZoom: 15 });
@@ -88,7 +88,7 @@ export function StationMapInner({ lat, lng, name, userLat, userLng, className = 
         href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 shadow-lg transition-colors z-[1000]"
+        className="absolute bottom-4 right-4 flex min-h-11 items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 shadow-lg transition-colors z-[1000]"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

@@ -306,6 +306,26 @@ test('production fixes stay ergonomic and discoverable', async ({ page }, testIn
   expect(directionsBox).not.toBeNull();
   expect(directionsBox.height).toBeGreaterThanOrEqual(44);
 
+  const mapShell = page.locator('.lazy-map-shell');
+  await mapShell.scrollIntoViewIfNeeded();
+  await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 20000 });
+
+  for (const control of [
+    page.getByRole('button', { name: 'Zoom in' }),
+    page.getByRole('button', { name: 'Zoom out' }),
+    page.locator('.leaflet-marker-icon.custom-marker').first(),
+  ]) {
+    const box = await control.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+
+  const loadedMapDirections = mapShell.getByRole('link', { name: 'Get Directions', exact: true });
+  const loadedDirectionsBox = await loadedMapDirections.boundingBox();
+  expect(loadedDirectionsBox).not.toBeNull();
+  expect(loadedDirectionsBox.height).toBeGreaterThanOrEqual(44);
+
   const footerHome = page.getByRole('contentinfo').getByRole('link', { name: 'FuelVoice', exact: true });
   await footerHome.scrollIntoViewIfNeeded();
   const footerBox = await footerHome.boundingBox();

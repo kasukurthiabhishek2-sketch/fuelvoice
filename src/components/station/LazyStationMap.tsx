@@ -1,8 +1,8 @@
 /**
  * Viewport-deferred station map.
  *
- * Directions stay available immediately. Leaflet and tile requests are only
- * started when the user is close enough to the map to plausibly need it.
+ * The station section keeps directions available immediately. Leaflet and tile
+ * requests start only when the user is close enough to the map to plausibly need it.
  */
 
 'use client';

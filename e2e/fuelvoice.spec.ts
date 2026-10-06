@@ -490,9 +490,10 @@ test.describe('Minimal homepage', () => {
     shouldFail = false;
     await errorState.getByRole('button', { name: 'Retry search' }).click();
 
-    await expect(page.getByRole('status', { name: 'Searching' })).toBeVisible();
+    await expect(errorState).toHaveCount(0);
     await expect(page.getByRole('option')).toHaveCount(1, { timeout: 5000 });
     await expect(page.getByRole('option').first()).toContainText('Hyderabad');
+    await expect(input).toHaveValue('Shell');
   });
 
   test('keeps long search results inside mobile and desktop viewports with internal scrolling', async ({ page }) => {

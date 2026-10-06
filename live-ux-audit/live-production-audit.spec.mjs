@@ -122,6 +122,95 @@ async function capture(page, testInfo, scenario, signals) {
   expect(signals.pageErrors, 'page errors in ' + key).toEqual([]);
 }
 
+async function installDeterministicStationSearch(page) {
+  await page.route('https://photon.komoot.io/api**', async route => {
+    const url = new URL(route.request().url());
+    const query = (url.searchParams.get('q') || '').toLowerCase();
+    const isStationSearch = url.searchParams.has('osm_tag');
+
+    if (!isStationSearch && query === 'hyderabad') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: [
+            {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [78.4867, 17.385] },
+              properties: {
+                osm_id: 9000000001,
+                osm_type: 'R',
+                osm_key: 'place',
+                osm_value: 'city',
+                name: 'Hyderabad',
+                city: 'Hyderabad',
+                state: 'Telangana',
+                country: 'India',
+                countrycode: 'IN',
+                extent: [78.20, 17.20, 78.75, 17.65],
+              },
+            },
+          ],
+        }),
+      });
+      return;
+    }
+
+    if (isStationSearch && query === 'shell') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: Array.from({ length: 8 }, (_, index) => ({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [78.4753829 + index * 0.001, 17.3887027 + index * 0.001],
+            },
+            properties: {
+              osm_id: 7000000200 + index,
+              osm_type: 'N',
+              osm_key: 'amenity',
+              osm_value: 'fuel',
+              name: index === 0 ? 'Shell Petrol Bunk' : 'Shell',
+              city: 'Hyderabad',
+              state: 'Telangana',
+              country: 'India',
+              countrycode: 'IN',
+            },
+          })),
+        }),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ features: [] }),
+    });
+  });
+}
+
+async function waitForKnownSearchOutcome(page, timeout = 12000) {
+  const firstOption = page.getByRole('option').first();
+  const providerError = page.getByRole('alert').filter({
+    hasText: 'Station search is temporarily unavailable.',
+  });
+  const emptyState = page.getByText(/No fuel stations found for/i).first();
+
+  await expect.poll(async () => {
+    if (await firstOption.isVisible()) return 'success';
+    if (await providerError.isVisible()) return 'provider-error';
+    if (await emptyState.isVisible()) return 'empty';
+    return 'pending';
+  }, { timeout }).not.toBe('pending');
+
+  if (await firstOption.isVisible()) return 'success';
+  if (await providerError.isVisible()) return 'provider-error';
+  return 'empty';
+}
+
 async function recordKeyboardSequence(page, count = 16) {
   const sequence = [];
 
@@ -172,6 +261,7 @@ test('home production surface and both themes', async ({ page }, testInfo) => {
 
 test('search production interaction', async ({ page }, testInfo) => {
   const signals = attachSignals(page);
+  await installDeterministicStationSearch(page);
 
   await page.goto('/search');
   const input = page.getByRole('combobox', { name: /search fuel stations/i });
@@ -189,6 +279,41 @@ test('search production interaction', async ({ page }, testInfo) => {
 
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Escape');
+});
+
+test('real Photon integration is geographically relevant or recoverably unavailable', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'live-1280', 'one real provider probe avoids rate-limiting the shared Photon service');
+
+  const signals = attachSignals(page);
+  await page.goto('/search');
+
+  const input = page.getByRole('combobox', { name: /search fuel stations/i });
+  await expect(input).toBeVisible();
+  await input.fill('Shell Hyderabad');
+
+  const outcome = await waitForKnownSearchOutcome(page);
+
+  if (outcome === 'success') {
+    await expect(page.getByRole('option').first()).toContainText(/Hyderabad|Telangana|India/i);
+    await capture(page, testInfo, 'real-provider-search-success', signals);
+    return;
+  }
+
+  if (outcome === 'provider-error') {
+    const errorState = page.getByRole('alert').filter({
+      hasText: 'Station search is temporarily unavailable.',
+    });
+    await expect(errorState.getByRole('button', { name: 'Retry search' })).toBeVisible();
+    await expect(input).toHaveValue('Shell Hyderabad');
+    await capture(page, testInfo, 'real-provider-search-recoverable-error', signals);
+    testInfo.annotations.push({
+      type: 'external-provider-degraded',
+      description: 'Photon was unavailable during the live probe; FuelVoice exposed retryable recovery.',
+    });
+    return;
+  }
+
+  throw new Error('Known query "Shell Hyderabad" produced a genuine empty result instead of a relevant result or recoverable provider error.');
 });
 
 test('known production station surface', async ({ page }, testInfo) => {
@@ -248,6 +373,7 @@ test('keyboard-only home navigation exposes visible focus', async ({ page }, tes
 
 test('production fixes stay ergonomic and discoverable', async ({ page }, testInfo) => {
   const signals = attachSignals(page);
+  await installDeterministicStationSearch(page);
   const viewport = page.viewportSize();
   if (!viewport) throw new Error('Viewport is required for live UX verification');
 

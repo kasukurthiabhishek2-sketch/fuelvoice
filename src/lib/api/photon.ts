@@ -8,6 +8,7 @@
 import type { PhotonFeature } from '@/types/station';
 
 const PHOTON_API = 'https://photon.komoot.io/api';
+const PHOTON_REQUEST_TIMEOUT_MS = 6_000;
 const LOCATION_LAYERS = ['city', 'locality', 'district', 'county', 'state', 'country'] as const;
 
 export interface SearchResult {
@@ -78,18 +79,32 @@ function distanceKm(
 }
 
 async function fetchPhotonFeatures(params: URLSearchParams): Promise<PhotonFeature[]> {
-  const response = await fetch(`${PHOTON_API}?${params}`, {
-    headers: {
-      'User-Agent': 'FuelVoice/1.0 (community fuel station reviews)',
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PHOTON_REQUEST_TIMEOUT_MS);
 
-  if (!response.ok) {
-    throw new Error(`Photon API error: ${response.status}`);
+  try {
+    const response = await fetch(`${PHOTON_API}?${params}`, {
+      headers: {
+        'User-Agent': 'FuelVoice/1.0 (community fuel station reviews)',
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Photon API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.features || [];
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Photon API request timed out');
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const data = await response.json();
-  return data.features || [];
 }
 
 function locationContextFromFeature(

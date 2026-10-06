@@ -82,7 +82,7 @@ export function StationMapInner({ lat, lng, name, userLat, userLng, className = 
   }, [lat, lng, name, userLat, userLng]);
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl ${className}`}>
+    <div className={`relative rounded-2xl overflow-hidden ${className}`}>
       <div ref={mapRef} style={{ height: 300, width: '100%' }} />
     </div>
   );

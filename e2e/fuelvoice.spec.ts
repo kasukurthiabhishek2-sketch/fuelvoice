@@ -435,11 +435,14 @@ test.describe('Minimal homepage', () => {
     await expect(page.getByRole('option').first()).toContainText('Hyderabad');
   });
 
-  test('shows a retryable provider error instead of a false no-results answer', async ({ page }) => {
+  test('shows a retryable provider error without hidden automatic retries', async ({ page }) => {
     let shouldFail = true;
+    let attempts = 0;
 
     await page.unroute('https://photon.komoot.io/api**');
     await page.route('https://photon.komoot.io/api**', async (route) => {
+      attempts += 1;
+
       if (shouldFail) {
         await route.fulfill({
           status: 503,
@@ -487,6 +490,7 @@ test.describe('Minimal homepage', () => {
     await expect(errorState).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/Station search is temporarily unavailable/i)).toHaveCount(1);
     await expect(page.getByText(/No fuel stations found for/i)).toHaveCount(0);
+    expect(attempts).toBe(1);
 
     shouldFail = false;
     await errorState.getByRole('button', { name: 'Retry search' }).click();
@@ -495,6 +499,7 @@ test.describe('Minimal homepage', () => {
     await expect(page.getByRole('option')).toHaveCount(1, { timeout: 5000 });
     await expect(page.getByRole('option').first()).toContainText('Hyderabad');
     await expect(input).toHaveValue('Shell');
+    expect(attempts).toBe(2);
   });
 
   test('keeps long search results inside mobile and desktop viewports with internal scrolling', async ({ page }) => {

@@ -43,6 +43,7 @@ export function useStationSearch({ lat, lng }: UseStationSearchOptions = {}) {
       ),
     enabled: debouncedTerm.length >= 2,
     staleTime: 2 * 60 * 1000,
+    retry: false,
   });
 
   const hasActiveSearch = searchTerm.length >= 2;

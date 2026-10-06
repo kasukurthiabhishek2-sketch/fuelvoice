@@ -27,7 +27,15 @@ export function SearchBar({
   placeholder = 'Search fuel stations worldwide…',
 }: SearchBarProps) {
   const router = useRouter();
-  const { searchTerm, setSearchTerm, results, isSearching } = useStationSearch({
+  const {
+    searchTerm,
+    setSearchTerm,
+    results,
+    isSearching,
+    error,
+    hasCompletedSearch,
+    retrySearch,
+  } = useStationSearch({
     lat: userLat,
     lng: userLng,
   });
@@ -124,7 +132,7 @@ export function SearchBar({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className={`w-full border border-[var(--border-primary)] bg-[var(--bg-card)] text-[var(--text-primary)] outline-none transition-all duration-200 ${isHero
-            ? 'rounded-2xl py-4 pl-12 pr-16 text-[15px] shadow-[var(--shadow-xs)] focus:border-brand-500 focus:shadow-[var(--shadow-glow)] sm:py-[18px] sm:pr-24 sm:text-base'
+            ? 'rounded-2xl py-4 pl-12 pr-20 text-[15px] shadow-[var(--shadow-xs)] focus:border-brand-500 focus:shadow-[var(--shadow-glow)] sm:py-[18px] sm:pr-24 sm:text-base'
             : 'rounded-xl py-2.5 pl-10 pr-20 text-sm shadow-[var(--shadow-xs)] focus:border-brand-500'
           }`}
           role="combobox"
@@ -145,7 +153,7 @@ export function SearchBar({
               aria-label="Searching"
             />
           )}
-          {!isSearching && searchTerm && (
+          {searchTerm && (
             <button
               type="button"
               onClick={clearSearch}
@@ -163,7 +171,7 @@ export function SearchBar({
       <div className="sr-only" aria-live="polite" aria-atomic="true">
         {isSearching
           ? 'Searching fuel stations'
-          : isOpen && searchTerm.length >= 2
+          : !error && isOpen && hasCompletedSearch
             ? results.length > 0
               ? `${results.length} fuel station result${results.length === 1 ? '' : 's'} available`
               : 'No fuel stations found'
@@ -224,7 +232,33 @@ export function SearchBar({
       </AnimatePresence>
 
       <AnimatePresence>
-        {isOpen && searchTerm.length >= 2 && !isSearching && results.length === 0 && (
+        {isOpen && hasCompletedSearch && error && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            className="absolute left-0 top-full z-[9999] mt-2 w-full rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-elevated)] p-5 shadow-[var(--shadow-xl)] backdrop-blur-2xl"
+            role="alert"
+          >
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              Station search is temporarily unavailable.
+            </p>
+            <p className="mt-1 text-xs leading-5" style={{ color: 'var(--text-tertiary)' }}>
+              Your query is still here. Retry the search without starting over.
+            </p>
+            <button
+              type="button"
+              onClick={() => retrySearch()}
+              className="secondary-action mt-4"
+            >
+              Retry search
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isOpen && hasCompletedSearch && !error && results.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}

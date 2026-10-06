@@ -485,6 +485,7 @@ test.describe('Minimal homepage', () => {
       hasText: 'Station search is temporarily unavailable.',
     });
     await expect(errorState).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Station search is temporarily unavailable/i)).toHaveCount(1);
     await expect(page.getByText(/No fuel stations found for/i)).toHaveCount(0);
 
     shouldFail = false;

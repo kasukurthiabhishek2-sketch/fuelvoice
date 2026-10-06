@@ -171,13 +171,11 @@ export function SearchBar({
       <div className="sr-only" aria-live="polite" aria-atomic="true">
         {isSearching
           ? 'Searching fuel stations'
-          : error
-            ? 'Station search is temporarily unavailable'
-            : isOpen && hasCompletedSearch
-              ? results.length > 0
-                ? `${results.length} fuel station result${results.length === 1 ? '' : 's'} available`
-                : 'No fuel stations found'
-              : ''}
+          : !error && isOpen && hasCompletedSearch
+            ? results.length > 0
+              ? `${results.length} fuel station result${results.length === 1 ? '' : 's'} available`
+              : 'No fuel stations found'
+            : ''}
       </div>
 
       <AnimatePresence>

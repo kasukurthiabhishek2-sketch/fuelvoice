@@ -181,13 +181,14 @@ test('search production interaction', async ({ page }, testInfo) => {
   await capture(page, testInfo, 'search-focused', signals);
 
   await input.fill('Shell Hyderabad');
-  await page.waitForTimeout(3500);
+  await expect(page.getByRole('button', { name: 'Clear search' })).toBeVisible();
+  const firstOption = page.getByRole('option').first();
+  await expect(firstOption).toBeVisible({ timeout: 12000 });
+  await expect(firstOption).toContainText(/Hyderabad|Telangana|India/i);
   await capture(page, testInfo, 'search-query', signals);
 
-  if (await page.getByRole('option').count()) {
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Escape');
-  }
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Escape');
 });
 
 test('known production station surface', async ({ page }, testInfo) => {
@@ -254,12 +255,10 @@ test('production fixes stay ergonomic and discoverable', async ({ page }, testIn
   const input = page.getByRole('combobox', { name: /search fuel stations/i });
   await expect(input).toBeVisible();
   await input.fill('Shell Hyderabad');
-  await page.waitForTimeout(3500);
 
   const liveOptions = page.getByRole('option');
-  if (await liveOptions.count()) {
-    await expect(liveOptions.first()).toContainText(/Hyderabad|Telangana|India/i);
-  }
+  await expect(liveOptions.first()).toBeVisible({ timeout: 12000 });
+  await expect(liveOptions.first()).toContainText(/Hyderabad|Telangana|India/i);
 
   const clear = page.getByRole('button', { name: 'Clear search' });
   const clearBox = await clear.boundingBox();

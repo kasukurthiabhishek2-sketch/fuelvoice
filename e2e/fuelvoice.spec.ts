@@ -387,6 +387,112 @@ test.describe('Minimal homepage', () => {
     })).toBe(true);
   });
 
+  test('keeps debounce and provider work in one honest searching state', async ({ page }) => {
+    await page.unroute('https://photon.komoot.io/api**');
+    await page.route('https://photon.komoot.io/api**', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: [
+            {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [78.4753829, 17.3887027] },
+              properties: {
+                osm_id: 7000000101,
+                osm_type: 'N',
+                osm_key: 'amenity',
+                osm_value: 'fuel',
+                name: 'Shell',
+                city: 'Hyderabad',
+                state: 'Telangana',
+                country: 'India',
+                countrycode: 'IN',
+              },
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+    const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await expect.poll(() => input.evaluate((element) =>
+      Object.keys(element).some((key) => key.startsWith('__reactProps$'))
+    )).toBe(true);
+
+    await input.fill('Shell');
+
+    await expect(page.getByRole('status', { name: 'Searching' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Clear search' })).toBeVisible();
+    await expect(page.getByText(/No fuel stations found for/i)).toHaveCount(0);
+
+    await page.waitForTimeout(200);
+    await expect(page.getByText(/No fuel stations found for/i)).toHaveCount(0);
+
+    await expect(page.getByRole('option')).toHaveCount(1, { timeout: 5000 });
+    await expect(page.getByRole('option').first()).toContainText('Hyderabad');
+  });
+
+  test('shows a retryable provider error instead of a false no-results answer', async ({ page }) => {
+    let shouldFail = true;
+
+    await page.unroute('https://photon.komoot.io/api**');
+    await page.route('https://photon.komoot.io/api**', async (route) => {
+      if (shouldFail) {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'temporarily unavailable' }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: [
+            {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [78.4753829, 17.3887027] },
+              properties: {
+                osm_id: 7000000102,
+                osm_type: 'N',
+                osm_key: 'amenity',
+                osm_value: 'fuel',
+                name: 'Shell',
+                city: 'Hyderabad',
+                state: 'Telangana',
+                country: 'India',
+                countrycode: 'IN',
+              },
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+    const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await expect.poll(() => input.evaluate((element) =>
+      Object.keys(element).some((key) => key.startsWith('__reactProps$'))
+    )).toBe(true);
+    await input.fill('Shell');
+
+    const errorState = page.getByRole('alert');
+    await expect(errorState).toContainText('Station search is temporarily unavailable.', { timeout: 10000 });
+    await expect(page.getByText(/No fuel stations found for/i)).toHaveCount(0);
+
+    shouldFail = false;
+    await errorState.getByRole('button', { name: 'Retry search' }).click();
+
+    await expect(page.getByRole('status', { name: 'Searching' })).toBeVisible();
+    await expect(page.getByRole('option')).toHaveCount(1, { timeout: 5000 });
+    await expect(page.getByRole('option').first()).toContainText('Hyderabad');
+  });
+
   test('keeps long search results inside mobile and desktop viewports with internal scrolling', async ({ page }) => {
     await page.unroute('https://photon.komoot.io/api**');
     await page.route('https://photon.komoot.io/api**', async (route) => {

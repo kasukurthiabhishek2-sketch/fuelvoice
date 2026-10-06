@@ -21,7 +21,6 @@ export function useStationSearch({ lat, lng }: UseStationSearchOptions = {}) {
   const [debouncedTerm, setDebouncedTerm] = useState('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Debounce search term
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
 
@@ -43,15 +42,35 @@ export function useStationSearch({ lat, lng }: UseStationSearchOptions = {}) {
         lng ?? undefined
       ),
     enabled: debouncedTerm.length >= 2,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
   });
+
+  const hasActiveSearch = searchTerm.length >= 2;
+  const queryMatchesInput = hasActiveSearch && debouncedTerm === searchTerm;
+  const isDebouncing = hasActiveSearch && !queryMatchesInput;
+  const isSearching = hasActiveSearch && (
+    isDebouncing ||
+    (queryMatchesInput && query.isFetching)
+  );
+  const hasCompletedSearch = hasActiveSearch &&
+    queryMatchesInput &&
+    !query.isFetching &&
+    (query.isSuccess || query.isError);
+  const results = queryMatchesInput && query.isSuccess
+    ? query.data || []
+    : [];
+  const error = hasCompletedSearch && query.isError
+    ? query.error
+    : null;
 
   return {
     searchTerm,
     setSearchTerm,
-    results: query.data || [],
-    isSearching: query.isLoading && debouncedTerm.length >= 2,
-    error: query.error,
-    hasResults: (query.data?.length || 0) > 0,
+    results,
+    isSearching,
+    error,
+    hasCompletedSearch,
+    hasResults: results.length > 0,
+    retrySearch: () => query.refetch(),
   };
 }

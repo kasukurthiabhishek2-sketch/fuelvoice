@@ -1562,31 +1562,40 @@ html:not(.dark) .home-search-shell input {
 
 @media (max-width: 640px) {
   .community-home-hero .app-frame {
-    padding-top: 1.75rem;
-    padding-bottom: 2rem;
+    padding-top: 1.35rem;
+    padding-bottom: 1.45rem;
   }
 
   .community-hero-title {
-    font-size: clamp(2.55rem, 13vw, 3.35rem);
+    font-size: clamp(2.25rem, 11vw, 2.75rem);
+    line-height: .97;
   }
 
   .community-hero-copy {
-    font-size: .88rem;
-    line-height: 1.55rem;
+    max-width: 34rem;
+    font-size: .84rem;
+    line-height: 1.45rem;
   }
 
-  .community-hero-note {
-    flex-basis: 100%;
+  .community-home-hero .home-search-shell {
+    margin-top: 1.15rem;
   }
 
+  .community-hero-actions {
+    margin-top: .75rem;
+  }
+
+  .community-hero-note,
   .community-proof-row {
-    gap: .4rem;
+    display: none;
   }
 
-  .community-proof-row > span {
-    min-height: 30px;
-    padding-inline: .55rem;
-    font-size: .65rem;
+  .nearby-section {
+    padding-top: 1.5rem;
+  }
+
+  .nearby-section > .app-frame > .mb-6 {
+    margin-bottom: 1rem;
   }
 
   .community-location-prompt {

@@ -1,8 +1,8 @@
 /**
  * Station page.
  *
- * Designed for direct search-engine landings: identity, Trust Score and reviews
- * appear before maps and secondary station metadata.
+ * Designed for direct search-engine landings: identity, Trust Score, contribution
+ * and community reviews appear before maps and secondary station metadata.
  */
 
 'use client';

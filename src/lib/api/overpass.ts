@@ -89,6 +89,8 @@ export async function findNearbyStations(
       name: 'Fuel Station',
       brand: 'Shell',
       address: 'Abids Road, Hyderabad, Telangana, IN',
+      addressQuality: 'full',
+      addressSource: 'osm',
       lat: 17.3887027,
       lng: 78.4753829,
       distance: 0.12,
@@ -182,18 +184,34 @@ function elementToStationSummary(
   if (lat === undefined || lng === undefined) return null;
 
   const tags = element.tags || {};
-  const addressParts = [
-    tags['addr:street'],
-    tags['addr:city'],
+  const street = [tags['addr:housenumber'], tags['addr:street'] || tags['addr:place']]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  const locality = tags['addr:suburb'] || tags['addr:neighbourhood'] || tags['addr:district'];
+  const city = tags['addr:city'] || tags['addr:town'] || tags['addr:village'];
+  const addressParts = Array.from(new Set([
+    street,
+    locality,
+    city,
     tags['addr:state'],
+    tags['addr:postcode'],
     tags['addr:country'],
-  ].filter(Boolean);
+  ].filter((value): value is string => Boolean(value))));
+
+  const addressQuality = street && (city || locality)
+    ? 'full'
+    : addressParts.length > 0
+      ? 'partial'
+      : 'missing';
 
   return {
     id: `${element.type}_${element.id}`,
     name: tags.name || tags.brand || tags.operator || 'Fuel Station',
     brand: tags.brand || tags.operator || '',
     address: addressParts.join(', '),
+    addressQuality,
+    addressSource: addressParts.length > 0 ? 'osm' : undefined,
     lat,
     lng,
     avgRating: 0,

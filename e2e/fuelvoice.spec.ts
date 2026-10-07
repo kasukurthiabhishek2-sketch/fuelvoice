@@ -117,22 +117,6 @@ async function installDeterministicNetwork(page: Page) {
     });
   });
 
-  await page.route('**/api/station-addresses', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        addresses: {
-          node_6254336891: {
-            address: 'Himayat Nagar Main Road, Hyderabad, Telangana, India',
-            precision: 'street',
-            source: 'maptiler',
-          },
-        },
-      }),
-    });
-  });
-
   await page.route('https://nominatim.openstreetmap.org/**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -149,7 +133,34 @@ async function installDeterministicNetwork(page: Page) {
     });
   });
 
-  await page.route('https://api.maptiler.com/**', (route) => route.abort());
+  await page.route('https://api.maptiler.com/**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.startsWith('/geocoding/')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            text: 'Himayat Nagar Main Road',
+            place_name: 'Himayat Nagar Main Road, Hyderabad, Telangana, India',
+            place_type: ['address'],
+            context: [
+              { text: 'Hyderabad' },
+              { text: 'Telangana' },
+              { text: 'India' },
+            ],
+          }],
+          query: [],
+          attribution: '© MapTiler © OpenStreetMap contributors',
+        }),
+      });
+      return;
+    }
+
+    await route.abort();
+  });
   await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
 }
 

@@ -195,6 +195,22 @@ async function installNetwork(page: Page, mode: NetworkMode) {
     });
   });
 
+  await page.route('**/api/station-addresses', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        addresses: {
+          node_6254336891: {
+            address: 'Himayat Nagar Main Road, Hyderabad, Telangana, India',
+            precision: 'street',
+            source: 'maptiler',
+          },
+        },
+      }),
+    });
+  });
+
   await page.route('https://nominatim.openstreetmap.org/**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -385,7 +401,7 @@ const scenarios: Scenario[] = [
     name: 'home-nearby-card-hover',
     route: '/',
     prepare: async (page) => {
-      const card = page.locator(`a[href="/station/${STATION_ID}"]`);
+      const card = page.locator(`article[data-station-id="${STATION_ID}"]`);
       await card.getByRole('heading', { name: 'Shell Fuel Station' }).waitFor();
       await card.scrollIntoViewIfNeeded();
       await card.hover();

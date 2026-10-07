@@ -249,6 +249,15 @@ test('home production surface and both themes', async ({ page }, testInfo) => {
 
   await page.goto('/');
   await expect(page.getByRole('link', { name: /FuelVoice home/i })).toBeVisible();
+  const reviewStation = page.getByRole('link', { name: 'Review a station', exact: true });
+  await expect(reviewStation).toBeVisible();
+
+  const viewport = page.viewportSize();
+  const reviewBox = await reviewStation.boundingBox();
+  expect(viewport).not.toBeNull();
+  expect(reviewBox).not.toBeNull();
+  expect(reviewBox.y + reviewBox.height).toBeLessThanOrEqual(viewport.height + 1);
+
   await capture(page, testInfo, 'home-default', signals);
 
   const theme = page.getByRole('button', { name: /Switch to (dark|light) mode/i });
@@ -257,6 +266,16 @@ test('home production surface and both themes', async ({ page }, testInfo) => {
     await page.waitForTimeout(250);
     await capture(page, testInfo, 'home-theme-toggled', signals);
   }
+});
+
+test('contribution hub production surface', async ({ page }, testInfo) => {
+  const signals = attachSignals(page);
+
+  await page.goto('/contribute');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Make the next fuel stop easier');
+  await expect(page.getByRole('combobox', { name: /search fuel stations/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Stations that need your voice', exact: true })).toBeVisible();
+  await capture(page, testInfo, 'contribute-default', signals);
 });
 
 test('search production interaction', async ({ page }, testInfo) => {

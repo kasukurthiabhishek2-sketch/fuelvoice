@@ -1465,7 +1465,13 @@ html:not(.dark) .home-search-shell input {
 
 .station-card-status-needs-review {
   background: color-mix(in srgb, #d6a84b 10%, var(--bg-tertiary));
-  color: color-mix(in srgb, #d6a84b 78%, var(--text-primary));
+  color: var(--text-primary);
+}
+
+.station-card-title-link {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
 }
 
 .community-review-action {

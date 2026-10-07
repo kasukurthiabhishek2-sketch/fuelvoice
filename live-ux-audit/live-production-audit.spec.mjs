@@ -120,6 +120,8 @@ async function capture(page, testInfo, scenario, signals) {
 
   expect(metrics.scrollWidth, 'document overflow in ' + key).toBeLessThanOrEqual(metrics.innerWidth + 1);
   expect(signals.pageErrors, 'page errors in ' + key).toEqual([]);
+  expect(axe.violations, 'axe violations in ' + key).toEqual([]);
+  expect(metrics.undersizedTargets, 'visible targets below 24px in ' + key).toEqual([]);
 }
 
 async function installDeterministicStationSearch(page) {

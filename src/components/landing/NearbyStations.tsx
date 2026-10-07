@@ -8,6 +8,7 @@ import React from 'react';
 import Link from 'next/link';
 import type { GeolocationResult } from '@/hooks/useGeolocation';
 import { useNearbyStations } from '@/hooks/useNearbyStations';
+import { useStationAddresses } from '@/hooks/useStationAddresses';
 import { SkeletonStationCard } from '@/components/ui/Skeleton';
 import { formatDistance } from '@/lib/utils/format';
 import { getBrand } from '@/lib/constants/brands';
@@ -47,6 +48,11 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
         .sort((a, b) => contributeMode ? a.reviewCount - b.reviewCount : 0)
         .slice(0, 9)
     : [];
+
+  const {
+    data: resolvedAddresses = {},
+    isFetching: addressesLoading,
+  } = useStationAddresses(visibleStations);
 
   return (
     <section className="nearby-section scroll-mt-24 py-10 sm:py-12 lg:py-14" id="nearby-stations">
@@ -117,45 +123,90 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
               const brand = station.brand ? getBrand(station.brand) : null;
               const reviewsNeeded = Math.max(0, TRUST_SCORE_MIN_REVIEWS - station.reviewCount);
               const hasTrustScore = station.reviewCount >= TRUST_SCORE_MIN_REVIEWS && station.trustScore !== undefined;
-              const communityStatus = hasTrustScore
-                ? `Trust ${Math.round(station.trustScore!)}/100 · ${station.reviewCount} reviews`
+              const resolvedAddress = resolvedAddresses[station.id];
+              const displayAddress = resolvedAddress?.address || station.address;
+              const isResolvingAddress =
+                station.addressQuality !== 'full' &&
+                !resolvedAddress &&
+                addressesLoading;
+
+              const communityTitle = hasTrustScore
+                ? `Trust ${Math.round(station.trustScore!)}/100`
                 : station.reviewCount === 0
-                  ? 'No reviews yet · be the first'
-                  : `${reviewsNeeded} more review${reviewsNeeded === 1 ? '' : 's'} to unlock Trust Score`;
+                  ? `Needs ${TRUST_SCORE_MIN_REVIEWS} reviews`
+                  : `${reviewsNeeded} more review${reviewsNeeded === 1 ? '' : 's'} needed`;
+
+              const communityDetail = hasTrustScore
+                ? `${station.reviewCount} community review${station.reviewCount === 1 ? '' : 's'}`
+                : station.reviewCount === 0
+                  ? 'Be the first to add useful evidence'
+                  : `${station.reviewCount} review${station.reviewCount === 1 ? '' : 's'} already submitted`;
 
               return (
                 <article key={station.id} className="station-card-v2">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      {brand && (
-                        <span className="station-card-brand" style={{ background: brand.bgColor }}>
-                          {brand.name}
-                        </span>
-                      )}
-                      <h3 className="mt-2 truncate text-base font-semibold tracking-[-0.025em] text-[var(--text-primary)]">
-                        <Link href={`/station/${station.id}`} className="station-card-title-link hover:underline hover:underline-offset-4">
-                          {station.name}
-                        </Link>
-                      </h3>
-                    </div>
-                    {station.distance !== undefined && <span className="info-chip shrink-0">{formatDistance(station.distance)}</span>}
+                  <div className="station-card-topline">
+                    {brand ? (
+                      <span className="station-card-brand" style={{ background: brand.bgColor }}>
+                        {brand.name}
+                      </span>
+                    ) : (
+                      <span className="station-card-brand station-card-brand-neutral">Independent</span>
+                    )}
+                    {station.distance !== undefined && (
+                      <span className="station-card-distance">
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                          <circle cx="12" cy="12" r="8" />
+                          <path d="M12 7.5v4.75l3 1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        {formatDistance(station.distance)}
+                      </span>
+                    )}
                   </div>
 
-                  <p className="mt-2 line-clamp-2 min-h-10 text-xs leading-5 text-[var(--text-secondary)]">
-                    {station.address || 'Address details are not available for this mapped station.'}
-                  </p>
-
-                  <div className={`station-card-status mt-4 ${reviewsNeeded > 0 ? 'station-card-status-needs-review' : ''}`}>
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-current" aria-hidden="true" />
-                    <span>{communityStatus}</span>
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    <Link href={`/station/${station.id}`} className="secondary-action w-full">
-                      View station
+                  <h3 className="station-card-name">
+                    <Link href={`/station/${station.id}`} className="station-card-title-link">
+                      {station.name}
                     </Link>
-                    <Link href={`/station/${station.id}#write-review`} className="community-review-action w-full">
-                      Add review
+                  </h3>
+
+                  <div className="station-card-address-row">
+                    <span className="station-card-pin" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9">
+                        <path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z" strokeLinejoin="round" />
+                        <circle cx="12" cy="10" r="2" />
+                      </svg>
+                    </span>
+                    <div className="min-w-0">
+                      <p className={`station-card-address ${isResolvingAddress ? 'station-card-address-loading' : ''}`}>
+                        {isResolvingAddress
+                          ? 'Finding the mapped address…'
+                          : displayAddress || 'Location pinned on map'}
+                      </p>
+                      {resolvedAddress ? (
+                        <span className="station-address-source">Approx. address from map coordinates</span>
+                      ) : !displayAddress && !isResolvingAddress ? (
+                        <span className="station-address-source">Open the station to view its exact map pin</span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="station-card-community">
+                    <span className={`station-card-signal ${hasTrustScore ? 'station-card-signal-trusted' : ''}`} aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="station-card-community-title">{communityTitle}</p>
+                      <p className="station-card-community-detail">{communityDetail}</p>
+                    </div>
+                  </div>
+
+                  <div className="station-card-actions">
+                    <Link href={`/station/${station.id}`} className="station-card-view-action">
+                      View details
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <path d="M5 12h14M14 7l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </Link>
+                    <Link href={`/station/${station.id}#write-review`} className="community-review-action">
+                      Review station
                     </Link>
                   </div>
                 </article>

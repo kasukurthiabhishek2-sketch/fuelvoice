@@ -1591,6 +1591,33 @@ html:not(.dark) .home-search-shell input {
   padding-top: .9rem;
 }
 
+.station-data-attribution {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .28rem;
+  margin-top: .8rem;
+  color: var(--text-tertiary);
+  font-size: .62rem;
+  line-height: 1rem;
+}
+
+.station-data-attribution-link {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  color: var(--text-secondary);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text-secondary) 28%, transparent);
+  text-underline-offset: 3px;
+}
+
+.station-data-attribution-link:hover {
+  color: var(--text-primary);
+  text-decoration-color: currentColor;
+}
+
 .station-card-view-action {
   display: inline-flex;
   min-height: 44px;
@@ -1772,6 +1799,10 @@ html:not(.dark) .home-search-shell input {
 
   .community-review-action {
     padding-inline: .9rem;
+  }
+
+  .station-data-attribution {
+    margin-top: .65rem;
   }
 
   .contribute-hero .app-frame {

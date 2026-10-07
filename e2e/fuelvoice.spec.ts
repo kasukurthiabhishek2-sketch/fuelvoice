@@ -207,6 +207,12 @@ test.describe('Community-first homepage', () => {
     expect(nearbyBox).not.toBeNull();
     expect(nearbyBox!.y).toBeLessThan(812);
 
+    const firstStation = page.getByRole('heading', { name: 'Shell Fuel Station', exact: true });
+    await expect(firstStation).toBeVisible();
+    const stationBox = await firstStation.boundingBox();
+    expect(stationBox).not.toBeNull();
+    expect(stationBox!.y).toBeLessThan(812);
+
     await page.screenshot({
       path: 'e2e/screenshots/home-community-first-viewport.png',
       fullPage: false,
@@ -1013,9 +1019,11 @@ test.describe('Mobile station actions', () => {
     await enableMockUser(page);
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
 
-    const write = page.getByRole('link', { name: 'Write a review', exact: true });
-    const complaint = page.getByRole('link', { name: 'File a complaint', exact: true });
+    const mobileActions = page.locator('.station-mobile-actions');
+    const write = mobileActions.getByRole('link', { name: 'Write a review', exact: true });
+    const complaint = mobileActions.getByRole('link', { name: 'File a complaint', exact: true });
 
+    await expect(mobileActions).toBeVisible();
     await expect(write).toBeVisible();
     await expect(complaint).toBeVisible();
     await expect(complaint).toHaveAttribute('href', /shell\.com/);

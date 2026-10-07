@@ -1,5 +1,5 @@
 /**
- * Compact product header.
+ * Compact product header with Search and Contribute as first-class actions.
  */
 
 'use client';
@@ -18,8 +18,8 @@ export function Header() {
 
   return (
     <header className="product-header">
-      <div className="app-frame flex h-[74px] items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2.5" aria-label="FuelVoice home">
+      <div className="app-frame flex h-[68px] items-center justify-between gap-2 sm:h-[72px] sm:gap-4">
+        <Link href="/" className="flex min-h-11 items-center gap-2.5" aria-label="FuelVoice home">
           <span className="fuelvoice-mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M6.5 4.5h7.5v15H6.5z" strokeLinejoin="round" />
@@ -27,10 +27,10 @@ export function Header() {
               <path d="M6.5 15.5h7.5M5 19.5h10.5" strokeLinecap="round" />
             </svg>
           </span>
-          <span className="text-[17px] font-semibold tracking-[-0.04em] text-[var(--text-primary)]">FuelVoice</span>
+          <span className="hidden text-[17px] font-semibold tracking-[-0.04em] text-[var(--text-primary)] sm:inline">FuelVoice</span>
         </Link>
 
-        <div className="flex items-center gap-1.5">
+        <nav className="flex items-center gap-1" aria-label="Primary navigation">
           <Link
             href="/search"
             className={`header-action ${pathname === '/search' ? 'header-action-active' : ''}`}
@@ -43,9 +43,23 @@ export function Header() {
             </svg>
             <span className="hidden sm:inline">Search</span>
           </Link>
+
+          <Link
+            href="/contribute"
+            className={`header-action ${pathname === '/contribute' ? 'header-action-active' : ''}`}
+            aria-label="Contribute a fuel station review"
+            aria-current={pathname === '/contribute' ? 'page' : undefined}
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+              <circle cx="12" cy="12" r="9" />
+            </svg>
+            <span className="hidden sm:inline">Contribute</span>
+          </Link>
+
           <ThemeToggle />
           {!loading && (user ? <UserMenu /> : <LoginButton variant="compact" />)}
-        </div>
+        </nav>
       </div>
     </header>
   );

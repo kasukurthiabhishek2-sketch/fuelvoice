@@ -190,6 +190,12 @@ test.describe('Community-first visual regression', () => {
     expect(stationTitleBox!.width).toBeGreaterThanOrEqual(24);
     expect(stationTitleBox!.height).toBeGreaterThanOrEqual(24);
 
+    const mapTilerAttribution = page.getByRole('link', { name: '© MapTiler' });
+    await expect(mapTilerAttribution).toBeVisible();
+    const attributionBox = await mapTilerAttribution.boundingBox();
+    expect(attributionBox).not.toBeNull();
+    expect(attributionBox!.height).toBeGreaterThanOrEqual(24);
+
     await page.screenshot({
       path: screenshotPath(testInfo, 'homepage-light-theme'),
       fullPage: false,

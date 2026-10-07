@@ -1606,6 +1606,7 @@ html:not(.dark) .home-search-shell input {
   display: inline-flex;
   min-height: 24px;
   align-items: center;
+  padding-block: 4px;
   color: var(--text-secondary);
   font-weight: 650;
   text-decoration: underline;

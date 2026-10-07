@@ -133,8 +133,9 @@ test.describe('Community-first visual regression', () => {
     const contrast = await needsReview.evaluate((element) => {
       const parseRgb = (value: string) => {
         const match = value.match(/[\d.]+/g);
-        if (!match || match.length < 3) throw new Error('Expected rgb color: ' + value);
-        return match.slice(0, 3).map(Number);
+        if (!match || match.length < 3) throw new Error('Expected CSS color: ' + value);
+        const channels = match.slice(0, 3).map(Number);
+        return value.startsWith('color(srgb ') ? channels.map((channel) => channel * 255) : channels;
       };
       const luminance = ([r, g, b]: number[]) => {
         const linear = [r, g, b].map((channel) => {

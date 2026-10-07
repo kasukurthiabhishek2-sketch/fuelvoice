@@ -156,7 +156,7 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
           <div>
             <p className="text-sm font-bold text-[var(--text-primary)]">Write a review</p>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Rate this station and add context if it helps. {countLoading ? '' : `${remaining} review slot${remaining === 1 ? '' : 's'} remaining.`}
+              Start with a rating. Add context only when it helps another customer. {countLoading ? '' : `${remaining} review slot${remaining === 1 ? '' : 's'} remaining.`}
             </p>
           </div>
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-black transition-transform group-hover:translate-x-0.5">
@@ -170,7 +170,7 @@ export function ReviewForm({ stationId, stationName, onSuccess }: ReviewFormProp
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-lg font-bold tracking-[-0.03em] text-[var(--text-primary)]">Review {stationName}</p>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">Your rating is used in the station Trust Score.</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">Your rating contributes to the station Trust Score once enough reviews exist.</p>
             </div>
             <button
               type="button"

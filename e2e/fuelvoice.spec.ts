@@ -117,6 +117,22 @@ async function installDeterministicNetwork(page: Page) {
     });
   });
 
+  await page.route('**/api/station-addresses', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        addresses: {
+          node_6254336891: {
+            address: 'Himayat Nagar Main Road, Hyderabad, Telangana, India',
+            precision: 'street',
+            source: 'maptiler',
+          },
+        },
+      }),
+    });
+  });
+
   await page.route('https://nominatim.openstreetmap.org/**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -275,7 +291,8 @@ test.describe('Community-first homepage', () => {
     await expect(page.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Shell Fuel Station', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'IndianOil Station', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Add review', exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Review station', exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Himayat Nagar Main Road, Hyderabad, Telangana, India')).toBeVisible();
 
     expect(ipLocationRequests).toBeGreaterThan(0);
     expect(nearbyRequests).toBeGreaterThan(0);

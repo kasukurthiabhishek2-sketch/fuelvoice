@@ -57,7 +57,7 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] sm:text-3xl">
               {contributeMode ? 'Stations that need your voice' : 'Stations around you'}
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
+            <p className="nearby-support-copy mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
               {contributeMode
                 ? 'Pick a station you know. Stations with the least community evidence appear first.'
                 : hasLocation

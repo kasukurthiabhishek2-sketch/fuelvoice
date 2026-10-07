@@ -42,6 +42,11 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
   const showLocationPrompt = !hasLocation && permissionState !== 'denied';
   const showDenied = permissionState === 'denied';
   const contributeMode = context === 'contribute';
+  const visibleStations = stations
+    ? [...stations]
+        .sort((a, b) => contributeMode ? a.reviewCount - b.reviewCount : 0)
+        .slice(0, 9)
+    : [];
 
   return (
     <section className="nearby-section scroll-mt-24 py-10 sm:py-12 lg:py-14" id="nearby-stations">
@@ -54,7 +59,7 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
               {contributeMode
-                ? 'Pick a station you know. Stations below five reviews need the most community evidence.'
+                ? 'Pick a station you know. Stations with the least community evidence appear first.'
                 : hasLocation
                   ? isIpLocation
                     ? 'Using your approximate area. Enable precise location only if you want more accurate distance.'
@@ -108,7 +113,7 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
 
         {stations && stations.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {stations.slice(0, 9).map((station) => {
+            {visibleStations.map((station) => {
               const brand = station.brand ? getBrand(station.brand) : null;
               const reviewsNeeded = Math.max(0, TRUST_SCORE_MIN_REVIEWS - station.reviewCount);
               const hasTrustScore = station.reviewCount >= TRUST_SCORE_MIN_REVIEWS && station.trustScore !== undefined;

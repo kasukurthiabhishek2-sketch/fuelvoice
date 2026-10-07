@@ -143,7 +143,7 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
                   : `${station.reviewCount} review${station.reviewCount === 1 ? '' : 's'} already submitted`;
 
               return (
-                <article key={station.id} className="station-card-v2">
+                <article key={station.id} className="station-card-v2" data-station-id={station.id}>
                   <div className="station-card-topline">
                     {brand ? (
                       <span className="station-card-brand" style={{ background: brand.bgColor }}>

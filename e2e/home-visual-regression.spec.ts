@@ -137,7 +137,7 @@ test.describe('Community-first visual regression', () => {
     const stationHeading = page.getByRole('heading', { name: 'Shell Fuel Station', exact: true });
     await expect(stationHeading).toBeVisible();
     await expect(page.getByText('5-9-22 Abids Road, Abids, Hyderabad, Telangana 500001, India')).toBeVisible();
-    await expect(page.getByText('Approx. address from map coordinates')).toBeVisible();
+    await expect(page.getByText('Approx. mapped address')).toBeVisible();
     const stationBox = await stationHeading.boundingBox();
     const viewport = page.viewportSize();
     expect(stationBox).not.toBeNull();

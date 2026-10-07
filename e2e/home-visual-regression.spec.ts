@@ -59,13 +59,25 @@ async function installNetwork(page: Page) {
               amenity: 'fuel',
               name: 'Shell Fuel Station',
               brand: 'Shell',
-              'addr:street': 'Abids Road',
-              'addr:city': 'Hyderabad',
-              'addr:state': 'Telangana',
-              'addr:country': 'IN',
             },
           },
         ],
+      }),
+    });
+  });
+
+  await page.route('**/api/station-addresses', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        addresses: {
+          node_6254336890: {
+            address: '5-9-22 Abids Road, Abids, Hyderabad, Telangana 500001, India',
+            precision: 'address',
+            source: 'maptiler',
+          },
+        },
       }),
     });
   });
@@ -113,6 +125,8 @@ test.describe('Community-first visual regression', () => {
     await expect(page.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();
     const stationHeading = page.getByRole('heading', { name: 'Shell Fuel Station', exact: true });
     await expect(stationHeading).toBeVisible();
+    await expect(page.getByText('5-9-22 Abids Road, Abids, Hyderabad, Telangana 500001, India')).toBeVisible();
+    await expect(page.getByText('Approx. address from map coordinates')).toBeVisible();
     const stationBox = await stationHeading.boundingBox();
     const viewport = page.viewportSize();
     expect(stationBox).not.toBeNull();
@@ -152,9 +166,9 @@ test.describe('Community-first visual regression', () => {
       () => page.getByRole('combobox', { name: /search fuel stations/i }).evaluate((element) => getComputedStyle(element).backgroundColor),
     ).not.toBe('rgb(17, 19, 21)');
 
-    const needsReview = page.locator('.station-card-status-needs-review').first();
-    await expect(needsReview).toBeVisible();
-    expect(await contrastRatio(needsReview)).toBeGreaterThanOrEqual(4.5);
+    const communityTitle = page.locator('.station-card-community-title').first();
+    await expect(communityTitle).toBeVisible();
+    expect(await contrastRatio(communityTitle)).toBeGreaterThanOrEqual(4.5);
 
     const brandPill = page.locator('.station-card-brand').first();
     await expect(brandPill).toBeVisible();

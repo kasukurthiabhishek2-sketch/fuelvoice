@@ -1598,6 +1598,10 @@ html:not(.dark) .home-search-shell input {
     margin-bottom: 1rem;
   }
 
+  .nearby-support-copy {
+    display: none;
+  }
+
   .community-location-prompt {
     align-items: stretch;
     flex-direction: column;

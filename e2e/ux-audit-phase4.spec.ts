@@ -66,12 +66,6 @@ async function installNetwork(page: Page) {
     });
   });
 
-  await page.route('**/api/station-addresses', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ addresses: {} }),
-  }));
-
   await page.route('https://nominatim.openstreetmap.org/**', route => route.fulfill({
     status: 200,
     contentType: 'application/json',

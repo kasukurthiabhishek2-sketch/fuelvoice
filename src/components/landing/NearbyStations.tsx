@@ -1,8 +1,5 @@
 /**
- * Nearby station discovery.
- *
- * Uses a bento layout to make distance, brand and review signal scannable
- * without turning every result into the same generic card.
+ * Nearby station discovery and contribution opportunities.
  */
 
 'use client';
@@ -14,12 +11,14 @@ import { useNearbyStations } from '@/hooks/useNearbyStations';
 import { SkeletonStationCard } from '@/components/ui/Skeleton';
 import { formatDistance } from '@/lib/utils/format';
 import { getBrand } from '@/lib/constants/brands';
+import { TRUST_SCORE_MIN_REVIEWS } from '@/lib/trust/trustScore';
 
 interface NearbyStationsProps {
   geolocation: GeolocationResult;
+  context?: 'discover' | 'contribute';
 }
 
-export function NearbyStations({ geolocation }: NearbyStationsProps) {
+export function NearbyStations({ geolocation, context = 'discover' }: NearbyStationsProps) {
   const {
     latitude,
     longitude,
@@ -42,75 +41,62 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
 
   const showLocationPrompt = !hasLocation && permissionState !== 'denied';
   const showDenied = permissionState === 'denied';
+  const contributeMode = context === 'contribute';
+  const visibleStations = stations
+    ? [...stations]
+        .sort((a, b) => contributeMode ? a.reviewCount - b.reviewCount : 0)
+        .slice(0, 9)
+    : [];
 
   return (
-    <section className="nearby-section scroll-mt-24 py-16 sm:py-20 lg:py-24" id="nearby-stations">
+    <section className="nearby-section scroll-mt-24 py-10 sm:py-12 lg:py-14" id="nearby-stations">
       <div className="app-frame">
-        <div className="mb-9 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-3xl">
-            <p className="eyebrow">Around you</p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.045em] sm:text-4xl lg:text-[2.8rem]" style={{ color: 'var(--text-primary)' }}>
-              Nearby Fuel Stations, without the clutter.
+            <p className="eyebrow">{contributeMode ? 'Community contribution' : 'Around you'}</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] sm:text-3xl">
+              {contributeMode ? 'Stations that need your voice' : 'Stations around you'}
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 sm:text-base" style={{ color: 'var(--text-secondary)' }}>
-              {hasLocation
-                ? isIpLocation
-                  ? 'Ordered around your approximate area. Precise location improves distance accuracy when you choose to enable it.'
-                  : 'Mapped stations around your current location, arranged for quick comparison.'
-                : 'Enable location for distance-aware discovery, or search any place manually.'}
+            <p className="nearby-support-copy mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
+              {contributeMode
+                ? 'Pick a station you know. Stations with the least community evidence appear first.'
+                : hasLocation
+                  ? isIpLocation
+                    ? 'Using your approximate area. Enable precise location only if you want more accurate distance.'
+                    : 'Nearby mapped stations with review status visible before you open them.'
+                  : 'Enable location for nearby discovery, or search any place manually.'}
             </p>
           </div>
-
-          <Link href="/search" className="secondary-action self-start lg:self-auto">
+          <Link href="/search" className="secondary-action self-start">
             Search another area
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M14 7l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
           </Link>
         </div>
 
         {showLocationPrompt && (
-          <div className="premium-shell mb-8 grid gap-5 p-5 sm:p-6 md:grid-cols-[1fr_auto] md:items-center">
-            <div className="flex gap-4">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-500 text-white shadow-[var(--shadow-glow)]">
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
-                  <path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z" strokeLinejoin="round" />
-                  <circle cx="12" cy="10" r="2" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-brand-600 dark:text-brand-300">Optional precision</p>
-                <h3 className="mt-1 text-base font-extrabold" style={{ color: 'var(--text-primary)' }}>Use your location for meaningful distance</h3>
-                <p className="mt-1 max-w-2xl text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
-                  FuelVoice uses location only to order mapped stations nearby. Search still works normally without it.
-                </p>
-              </div>
+          <div className="community-location-prompt mb-6">
+            <div>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Want more accurate nearby results?</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+                Precise location is optional and only improves distance ordering.
+              </p>
             </div>
-
             <button
               type="button"
               onClick={requestLocation}
               disabled={geoLoading}
-              className="primary-action shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+              className="secondary-action shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {geoLoading ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Detecting…
-                </>
-              ) : (
-                'Enable precise location'
-              )}
+              {geoLoading ? 'Detecting…' : 'Use precise location'}
             </button>
           </div>
         )}
 
         {showDenied && (
-          <div className="premium-shell mb-8 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="community-location-prompt mb-6">
             <div>
-              <p className="text-sm font-extrabold text-amber-700 dark:text-amber-300">Location access is blocked</p>
-              <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Discovery still works. Search by station, brand, locality, or city instead.
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Location access is blocked</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+                Nothing else is blocked. Search by station, brand, locality, or city.
               </p>
             </div>
             <Link href="/search" className="secondary-action shrink-0">Search manually</Link>
@@ -118,127 +104,81 @@ export function NearbyStations({ geolocation }: NearbyStationsProps) {
         )}
 
         {stationsLoading && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <SkeletonStationCard
-                key={index}
-                className={index >= 3 ? 'hidden sm:block' : ''}
-              />
+              <SkeletonStationCard key={index} className={index >= 3 ? 'hidden sm:block' : ''} />
             ))}
           </div>
         )}
 
         {stations && stations.length > 0 && (
-          <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {stations.slice(0, 9).map((station, index) => {
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleStations.map((station) => {
               const brand = station.brand ? getBrand(station.brand) : null;
-              const featured = index === 0;
+              const reviewsNeeded = Math.max(0, TRUST_SCORE_MIN_REVIEWS - station.reviewCount);
+              const hasTrustScore = station.reviewCount >= TRUST_SCORE_MIN_REVIEWS && station.trustScore !== undefined;
+              const communityStatus = hasTrustScore
+                ? `Trust ${Math.round(station.trustScore!)}/100 · ${station.reviewCount} reviews`
+                : station.reviewCount === 0
+                  ? 'No reviews yet · be the first'
+                  : `${reviewsNeeded} more review${reviewsNeeded === 1 ? '' : 's'} to unlock Trust Score`;
 
               return (
-                <Link
-                  key={station.id}
-                  href={`/station/${station.id}`}
-                  className={`group min-w-0 ${featured ? 'lg:col-span-2' : ''}`}
-                >
-                  <article className={`bento-card card flex h-full flex-col ${featured ? 'min-h-[270px] p-6 sm:p-7' : 'min-h-[230px] p-5'}`}>
-                    <div className="relative z-10 flex items-start justify-between gap-4">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <div className={`grid shrink-0 place-items-center rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-300 ${featured ? 'h-12 w-12' : 'h-10 w-10'}`}>
-                          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                            <path d="M6.5 4.5h7.5v15H6.5z" strokeLinejoin="round" />
-                            <path d="M8.5 8h3.5M14 8.5h2.2l1.8 2.1V17a1.5 1.5 0 0 0 3 0v-5.7" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M5 19.5h10.5" strokeLinecap="round" />
-                          </svg>
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            {featured && (
-                              <span className="rounded-full bg-brand-500 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white">
-                                {hasLocation && !isIpLocation ? 'Closest mapped result' : 'Top mapped result'}
-                              </span>
-                            )}
-                            {brand && (
-                              <span className="rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.08em]" style={{ background: brand.bgColor, color: brand.color }}>
-                                {brand.name}
-                              </span>
-                            )}
-                          </div>
-
-                          <h3 className={`mt-3 truncate font-semibold tracking-[-0.03em] transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-300 ${featured ? 'text-xl sm:text-2xl' : 'text-[15px]'}`} style={{ color: 'var(--text-primary)' }}>
-                            {station.name}
-                          </h3>
-                        </div>
-                      </div>
-
-                      <span className="pt-1 text-[10px] font-black tracking-[0.14em]" style={{ color: 'var(--text-tertiary)' }}>
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
-                    </div>
-
-                    <div className={`relative z-10 mt-5 flex items-start gap-2 leading-5 ${featured ? 'max-w-2xl text-sm' : 'text-xs'}`} style={{ color: 'var(--text-secondary)' }}>
-                      <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z" strokeLinejoin="round" />
-                        <circle cx="12" cy="10" r="2" />
-                      </svg>
-                      <span className="line-clamp-2">{station.address || 'Address details are not available for this mapped station.'}</span>
-                    </div>
-
-                    <div className="relative z-10 mt-auto flex flex-wrap items-end justify-between gap-4 pt-7">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {station.distance !== undefined && (
-                          <span className="info-chip">{formatDistance(station.distance)}</span>
-                        )}
-                        <span className="info-chip">
-                          {station.reviewCount > 0
-                            ? `${station.reviewCount} review${station.reviewCount === 1 ? '' : 's'} · Trust score on station page`
-                            : 'Trust score available after 5 reviews'}
+                <article key={station.id} className="station-card-v2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      {brand && (
+                        <span className="station-card-brand" style={{ background: brand.bgColor, color: brand.color }}>
+                          {brand.name}
                         </span>
-                      </div>
-
-                      <span className="inline-flex items-center gap-2 text-xs font-extrabold text-brand-600 dark:text-brand-300">
-                        Open station
-                        <span className="grid h-8 w-8 place-items-center rounded-full border border-brand-500/20 bg-brand-500/10 transition-transform group-hover:translate-x-1">
-                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M5 12h14M14 7l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </span>
-                      </span>
+                      )}
+                      <h3 className="mt-2 truncate text-base font-semibold tracking-[-0.025em] text-[var(--text-primary)]">
+                        <Link href={`/station/${station.id}`} className="hover:underline hover:underline-offset-4">
+                          {station.name}
+                        </Link>
+                      </h3>
                     </div>
-                  </article>
-                </Link>
+                    {station.distance !== undefined && <span className="info-chip shrink-0">{formatDistance(station.distance)}</span>}
+                  </div>
+
+                  <p className="mt-2 line-clamp-2 min-h-10 text-xs leading-5 text-[var(--text-secondary)]">
+                    {station.address || 'Address details are not available for this mapped station.'}
+                  </p>
+
+                  <div className={`station-card-status mt-4 ${reviewsNeeded > 0 ? 'station-card-status-needs-review' : ''}`}>
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-current" aria-hidden="true" />
+                    <span>{communityStatus}</span>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <Link href={`/station/${station.id}`} className="secondary-action w-full">
+                      View station
+                    </Link>
+                    <Link href={`/station/${station.id}#write-review`} className="community-review-action w-full">
+                      Add review
+                    </Link>
+                  </div>
+                </article>
               );
             })}
           </div>
         )}
 
         {stations && stations.length === 0 && !stationsLoading && !stationsError && (
-          <div className="premium-shell mx-auto max-w-2xl p-8 text-center">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[var(--bg-tertiary)] text-[var(--text-tertiary)]">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z" strokeLinejoin="round" />
-                <path d="M9 10h6" strokeLinecap="round" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-lg font-extrabold" style={{ color: 'var(--text-primary)' }}>No Stations Nearby</h3>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
-              No mapped stations were found within 5km. Search a station, brand, or city instead.
+          <div className="empty-review-state mx-auto max-w-2xl text-center">
+            <h3 className="text-base font-semibold text-[var(--text-primary)]">No mapped stations nearby</h3>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--text-secondary)]">
+              Search a station, brand, locality, or city instead.
             </p>
             <Link href="/search" className="primary-action mt-5">Search another area</Link>
           </div>
         )}
 
         {stationsError && (
-          <div className="premium-shell mx-auto max-w-2xl p-8 text-center">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-rose-500/10 text-rose-500">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M12 4 21 20H3L12 4Z" strokeLinejoin="round" />
-                <path d="M12 9v5M12 17.2v.1" strokeLinecap="round" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-lg font-extrabold" style={{ color: 'var(--text-primary)' }}>Station data could not be loaded</h3>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
-              The mapped-station provider did not respond successfully. FuelVoice will not replace it with invented station data.
+          <div className="empty-review-state mx-auto max-w-2xl text-center">
+            <h3 className="text-base font-semibold text-[var(--text-primary)]">Station data could not be loaded</h3>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--text-secondary)]">
+              The mapped-station provider did not respond. FuelVoice will not substitute invented station data.
             </p>
             <button type="button" onClick={() => refetch()} className="primary-action mt-5">Retry</button>
           </div>

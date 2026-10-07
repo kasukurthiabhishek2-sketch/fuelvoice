@@ -64,7 +64,7 @@ test.beforeEach(async ({ page }) => {
   await installNetwork(page);
 });
 
-test.describe('Station-first visual regression', () => {
+test.describe('Community-first visual regression', () => {
   test('homepage keeps the search hero fast while nearby stations load below it', async ({ page }, testInfo) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
@@ -86,9 +86,16 @@ test.describe('Station-first visual regression', () => {
     expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
 
     await expect(page.locator('.leaflet-container')).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: /Nearby Fuel Stations/i })).toBeVisible();
-    const stationCard = page.locator(`a[href="/station/${STATION_ID}"]`);
-    await expect(stationCard.getByRole('heading', { name: 'Shell Fuel Station' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();
+    const stationHeading = page.getByRole('heading', { name: 'Shell Fuel Station', exact: true });
+    await expect(stationHeading).toBeVisible();
+    const stationBox = await stationHeading.boundingBox();
+    const viewport = page.viewportSize();
+    expect(stationBox).not.toBeNull();
+    expect(viewport).not.toBeNull();
+    if (testInfo.project.name === 'mobile') {
+      expect(stationBox!.y).toBeLessThan(viewport!.height);
+    }
 
     await page.screenshot({
       path: screenshotPath(testInfo, 'homepage'),
@@ -98,7 +105,7 @@ test.describe('Station-first visual regression', () => {
 
     const nearby = page.locator('#nearby-stations');
     await nearby.scrollIntoViewIfNeeded();
-    await expect(nearby.getByRole('heading', { name: /Nearby Fuel Stations/i })).toBeVisible();
+    await expect(nearby.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();
     await page.screenshot({
       path: screenshotPath(testInfo, 'nearby-stations'),
       fullPage: false,
@@ -115,7 +122,7 @@ test.describe('Station-first visual regression', () => {
     await expect(page.locator('html')).not.toHaveClass(/dark/);
 
     await expect.poll(
-      () => page.locator('.minimal-home').evaluate((element) => getComputedStyle(element).backgroundColor),
+      () => page.locator('.community-home-hero').evaluate((element) => getComputedStyle(element).backgroundColor),
     ).not.toBe('rgb(8, 9, 10)');
     await expect.poll(
       () => page.getByRole('combobox', { name: /search fuel stations/i }).evaluate((element) => getComputedStyle(element).backgroundColor),

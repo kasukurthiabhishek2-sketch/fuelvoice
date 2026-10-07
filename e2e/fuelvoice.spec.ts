@@ -156,13 +156,14 @@ test.beforeEach(async ({ page }) => {
   await installDeterministicNetwork(page);
 });
 
-test.describe('Minimal homepage', () => {
+test.describe('Community-first homepage', () => {
   test('keeps primary header controls at 44px targets without mobile overflow', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const controls = [
       page.getByRole('link', { name: 'Search fuel stations' }),
+      page.getByRole('link', { name: 'Contribute a fuel station review' }),
       page.getByRole('button', { name: /Switch to light mode/i }),
       page.getByRole('button', { name: 'Sign in with Google' }),
     ];
@@ -173,11 +174,11 @@ test.describe('Minimal homepage', () => {
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
 
-    const themeBox = await controls[1].boundingBox();
+    const themeBox = await controls[2].boundingBox();
     expect(themeBox).not.toBeNull();
     expect(themeBox!.width).toBeGreaterThanOrEqual(44);
 
-    const signInBox = await controls[2].boundingBox();
+    const signInBox = await controls[3].boundingBox();
     expect(signInBox).not.toBeNull();
     expect(signInBox!.height).toBeLessThanOrEqual(46);
 
@@ -186,6 +187,37 @@ test.describe('Minimal homepage', () => {
       scrollWidth: document.documentElement.scrollWidth,
     }));
     expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+  });
+
+  test('keeps search, contribution, and nearby discovery in the starting mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const search = page.getByRole('combobox', { name: /search fuel stations/i });
+    const contribute = page.getByRole('link', { name: 'Review a station', exact: true });
+    const nearbyHeading = page.getByRole('heading', { name: 'Stations around you', exact: true });
+
+    for (const element of [search, contribute]) {
+      const box = await element.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.y + box!.height).toBeLessThanOrEqual(812);
+    }
+
+    const nearbyBox = await nearbyHeading.boundingBox();
+    expect(nearbyBox).not.toBeNull();
+    expect(nearbyBox!.y).toBeLessThan(812);
+
+    const firstStation = page.getByRole('heading', { name: 'Shell Fuel Station', exact: true });
+    await expect(firstStation).toBeVisible();
+    const stationBox = await firstStation.boundingBox();
+    expect(stationBox).not.toBeNull();
+    expect(stationBox!.y).toBeLessThan(812);
+
+    await page.screenshot({
+      path: 'e2e/screenshots/home-community-first-viewport.png',
+      fullPage: false,
+      caret: 'initial',
+    });
   });
 
   test('closes the signed-in user disclosure with Escape and restores trigger focus', async ({ page }) => {
@@ -235,15 +267,15 @@ test.describe('Minimal homepage', () => {
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Know the station');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Find the station');
     await expect(page.getByRole('combobox', { name: /search fuel stations/i })).toBeVisible();
-    await expect(page.getByText('Fuel station trust, without the noise.')).toBeVisible();
+    await expect(page.getByText('Community fuel station reviews.')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Review a station', exact: true })).toBeVisible();
 
-    await expect(page.getByRole('heading', { name: /Nearby Fuel Stations/i })).toBeVisible();
-    const shellStation = page.locator(`a[href="/station/${STATION_ID}"]`);
-    const indianOilStation = page.locator('a[href="/station/node_6254336891"]');
-    await expect(shellStation.getByRole('heading', { name: 'Shell Fuel Station' })).toBeVisible();
-    await expect(indianOilStation.getByRole('heading', { name: 'IndianOil Station' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Shell Fuel Station', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'IndianOil Station', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Add review', exact: true }).first()).toBeVisible();
 
     expect(ipLocationRequests).toBeGreaterThan(0);
     expect(nearbyRequests).toBeGreaterThan(0);
@@ -800,25 +832,31 @@ test.describe('Station trust page', () => {
     await enableMockUser(page);
   });
 
-  test('puts Trust Score and reviews ahead of station details and map', async ({ page }) => {
+  test('puts contribution, Trust Score and reviews ahead of station details and map', async ({ page }) => {
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Mock Fuel Station');
     await expect(page.getByText('Trust Score', { exact: true })).toBeVisible();
     await expect(page.getByText('82', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Help the next driver decide.', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Reviews', exact: true })).toBeVisible();
+    await expect(page.locator('.station-hero a[href="#write-review"]')).toBeVisible();
+    await expect(page.locator('.station-hero a[href="#complaints"]')).toBeVisible();
 
+    const contributionBox = await page.locator('#write-review').boundingBox();
     const reviewsBox = await page.getByRole('heading', { name: 'Reviews', exact: true }).boundingBox();
     const detailsBox = await page.getByRole('heading', { name: /Useful details/i }).boundingBox();
+    expect(contributionBox).not.toBeNull();
     expect(reviewsBox).not.toBeNull();
     expect(detailsBox).not.toBeNull();
+    expect(contributionBox!.y).toBeLessThan(reviewsBox!.y);
     expect(reviewsBox!.y).toBeLessThan(detailsBox!.y);
 
-    // Map implementation and tiles must not compete with first-paint review content.
+    // Map implementation and tiles must not compete with first-paint contribution/review content.
     await expect(page.locator('.leaflet-container')).toHaveCount(0);
 
     await page.screenshot({
-      path: 'e2e/screenshots/station-reviews-first.png',
+      path: 'e2e/screenshots/station-contribution-first.png',
       fullPage: false,
       caret: 'initial',
     });
@@ -981,9 +1019,11 @@ test.describe('Mobile station actions', () => {
     await enableMockUser(page);
     await page.goto(`/station/${STATION_ID}`, { waitUntil: 'domcontentloaded' });
 
-    const write = page.getByRole('link', { name: 'Write a review', exact: true });
-    const complaint = page.getByRole('link', { name: 'File a complaint', exact: true });
+    const mobileActions = page.locator('.station-mobile-actions');
+    const write = mobileActions.getByRole('link', { name: 'Write a review', exact: true });
+    const complaint = mobileActions.getByRole('link', { name: 'File a complaint', exact: true });
 
+    await expect(mobileActions).toBeVisible();
     await expect(write).toBeVisible();
     await expect(complaint).toBeVisible();
     await expect(complaint).toHaveAttribute('href', /shell\.com/);
@@ -1126,11 +1166,42 @@ test.describe('Admin responsiveness', () => {
   });
 });
 
+test.describe('Contribution hub', () => {
+  test('shows contribution status and stays usable at mobile width', async ({ page }) => {
+    await enableMockUser(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/contribute', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Make the next fuel stop easier');
+    await expect(page.getByRole('combobox', { name: /search fuel stations/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Stations that need your voice', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Contribute a fuel station review' })).toHaveAttribute('aria-current', 'page');
+
+    const summary = page.getByLabel('Your contribution summary');
+    await expect(summary.getByText('5', { exact: true })).toBeVisible();
+    await expect(summary.getByText('2', { exact: true })).toBeVisible();
+    await expect(summary.getByText('reviews', { exact: true })).toBeVisible();
+    await expect(summary.getByText('helpful marks', { exact: true })).toBeVisible();
+
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+
+    await page.screenshot({
+      path: 'e2e/screenshots/contribute-mobile.png',
+      fullPage: false,
+      caret: 'initial',
+    });
+  });
+});
+
 test.describe('Search privacy copy', () => {
   test('distinguishes precise permission from approximate location behavior', async ({ page }) => {
     await page.goto('/search', { waitUntil: 'domcontentloaded' });
 
-    await expect(page.getByText('Search does not require precise browser-location permission.')).toBeVisible();
+    await expect(page.getByText('Precise browser location is never required for search.')).toBeVisible();
     await expect(page.getByText('Search works without precise location permission.')).toBeVisible();
     await expect(page.getByText(/does not request your location just to make search work/i)).toHaveCount(0);
   });
@@ -1154,7 +1225,7 @@ test.describe('Fallbacks and metadata', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/this-route-does-not-exist', { waitUntil: 'domcontentloaded' });
 
-    for (const name of ['FuelVoice', 'Search stations', 'OpenStreetMap']) {
+    for (const name of ['FuelVoice', 'Search stations', 'Contribute', 'OpenStreetMap']) {
       const link = page.getByRole('contentinfo').getByRole('link', { name, exact: true });
       const box = await link.boundingBox();
       expect(box).not.toBeNull();

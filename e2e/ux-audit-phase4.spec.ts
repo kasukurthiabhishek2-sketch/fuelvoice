@@ -170,6 +170,8 @@ test('keyboard-only navigation reaches search results and returns focus from the
   await page.keyboard.press('Shift+Tab');
   await expect(page.getByRole('button', { name: /Switch to light mode/i })).toBeFocused();
   await page.keyboard.press('Shift+Tab');
+  await expect(page.getByRole('link', { name: 'Contribute a fuel station review' })).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
   await expect(page.getByRole('link', { name: 'Search fuel stations' })).toBeFocused();
 
   await page.keyboard.press('Enter');

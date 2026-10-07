@@ -1,12 +1,14 @@
 /**
- * Minimal search-first homepage hero.
+ * Community-first homepage hero.
  *
- * Location-aware discovery is rendered below this hero so search remains the
- * immediate action while nearby stations can load progressively.
+ * Search and contribution are the immediate jobs. Product explanation is kept
+ * short so nearby stations can enter the first viewport instead of living
+ * behind a full-screen marketing block.
  */
 
 'use client';
 
+import Link from 'next/link';
 import { SearchBar } from '@/components/search/SearchBar';
 
 interface HeroProps {
@@ -16,47 +18,47 @@ interface HeroProps {
 
 export function Hero({ userLat, userLng }: HeroProps) {
   return (
-    <section className="minimal-home" aria-labelledby="home-title">
-      <div className="minimal-home-grid" aria-hidden="true" />
-      <div className="app-frame relative flex min-h-[calc(100svh-74px)] items-center py-16 sm:py-20">
-        <div className="mx-auto w-full max-w-4xl text-center">
-          <p className="home-kicker">Fuel station trust, without the noise.</p>
+    <section className="community-home-hero" aria-labelledby="home-title">
+      <div className="app-frame py-10 sm:py-14 lg:py-16">
+        <div className="mx-auto max-w-5xl">
+          <div className="max-w-3xl">
+            <p className="home-kicker">Community fuel station reviews.</p>
+            <h1 id="home-title" className="community-hero-title mt-4">
+              Find the station.
+              <span className="block text-[var(--text-tertiary)]">Add your voice.</span>
+            </h1>
+            <p className="community-hero-copy mt-4">
+              Search a station, check the evidence, or add what you experienced.
+            </p>
+          </div>
 
-          <h1 id="home-title" className="home-title mx-auto mt-6 max-w-4xl text-[3.2rem] font-medium leading-[0.95] tracking-[-0.065em] sm:text-[4.7rem] lg:text-[6rem]">
-            Know the station
-            <span className="home-title-muted block">before you trust it.</span>
-          </h1>
-
-          <p className="home-copy mx-auto mt-7 max-w-2xl text-[15px] leading-7 sm:text-lg sm:leading-8">
-            FuelVoice brings customer reviews, a single Trust Score, and verified official complaint routes together on each station page.
-          </p>
-
-          <div className="home-search-shell mx-auto mt-9 max-w-3xl text-left">
+          <div className="home-search-shell mt-7 max-w-3xl">
             <SearchBar
               variant="hero"
               userLat={userLat}
               userLng={userLng}
-              placeholder="Search a fuel station, brand, locality, or city"
+              placeholder="Search a station, brand, locality, or city"
             />
           </div>
 
-          <div className="mx-auto mt-8 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
-            <HomeSignal number="01" title="Trust Score" copy="One station-level signal after enough reviews exist." />
-            <HomeSignal number="02" title="Reviews first" copy="Negative experiences surface before secondary station details." />
-            <HomeSignal number="03" title="Official help" copy="Verified complaint routes when something goes wrong." />
+          <div className="community-hero-actions mt-4">
+            <Link href="/contribute" className="primary-action">
+              Review a station
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M5 12h14M14 7l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+            <Link href="/search" className="secondary-action">Browse stations</Link>
+            <span className="community-hero-note">Search works without precise location permission.</span>
+          </div>
+
+          <div className="community-proof-row mt-7" aria-label="FuelVoice product principles">
+            <span><strong>Reviews</strong> stay public</span>
+            <span><strong>Trust Score</strong> starts at 5 reviews</span>
+            <span><strong>Complaint links</strong> are verified</span>
           </div>
         </div>
       </div>
     </section>
-  );
-}
-
-function HomeSignal({ number, title, copy }: { number: string; title: string; copy: string }) {
-  return (
-    <div className="home-signal">
-      <span className="home-signal-number">{number}</span>
-      <p className="home-signal-title">{title}</p>
-      <p className="home-signal-copy">{copy}</p>
-    </div>
   );
 }

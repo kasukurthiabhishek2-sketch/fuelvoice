@@ -133,7 +133,34 @@ async function installDeterministicNetwork(page: Page) {
     });
   });
 
-  await page.route('https://api.maptiler.com/**', (route) => route.abort());
+  await page.route('https://api.maptiler.com/**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.startsWith('/geocoding/')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            text: 'Himayat Nagar Main Road',
+            place_name: 'Himayat Nagar Main Road, Hyderabad, Telangana, India',
+            place_type: ['address'],
+            context: [
+              { text: 'Hyderabad' },
+              { text: 'Telangana' },
+              { text: 'India' },
+            ],
+          }],
+          query: [],
+          attribution: '© MapTiler © OpenStreetMap contributors',
+        }),
+      });
+      return;
+    }
+
+    await route.abort();
+  });
   await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
 }
 
@@ -275,7 +302,8 @@ test.describe('Community-first homepage', () => {
     await expect(page.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Shell Fuel Station', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'IndianOil Station', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Add review', exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Review station', exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Himayat Nagar Main Road, Hyderabad, Telangana, India')).toBeVisible();
 
     expect(ipLocationRequests).toBeGreaterThan(0);
     expect(nearbyRequests).toBeGreaterThan(0);

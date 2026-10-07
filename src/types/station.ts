@@ -62,12 +62,16 @@ export interface StationScores {
   airFilling: number;
 }
 
+export type StationAddressQuality = 'full' | 'partial' | 'missing';
+
 /** Minimal station data for list/card views */
 export interface StationSummary {
   id: string;
   name: string;
   brand: string;
   address: string;
+  addressQuality?: StationAddressQuality;
+  addressSource?: 'osm' | 'reverse-geocoded';
   lat: number;
   lng: number;
   avgRating: number;

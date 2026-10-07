@@ -59,10 +59,6 @@ async function installNetwork(page: Page) {
               amenity: 'fuel',
               name: 'Shell Fuel Station',
               brand: 'Shell',
-              'addr:street': 'Abids Road',
-              'addr:city': 'Hyderabad',
-              'addr:state': 'Telangana',
-              'addr:country': 'IN',
             },
           },
         ],
@@ -80,7 +76,34 @@ async function installNetwork(page: Page) {
       }),
     });
   });
-  await page.route('https://api.maptiler.com/**', (route) => route.abort());
+  await page.route('https://api.maptiler.com/**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.startsWith('/geocoding/')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            text: 'Abids Road',
+            place_name: '5-9-22 Abids Road, Abids, Hyderabad, Telangana 500001, India',
+            place_type: ['address'],
+            context: [
+              { text: 'Hyderabad' },
+              { text: 'Telangana' },
+              { text: 'India' },
+            ],
+          }],
+          query: [],
+          attribution: '© MapTiler © OpenStreetMap contributors',
+        }),
+      });
+      return;
+    }
+
+    await route.abort();
+  });
   await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
 }
 
@@ -113,6 +136,8 @@ test.describe('Community-first visual regression', () => {
     await expect(page.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();
     const stationHeading = page.getByRole('heading', { name: 'Shell Fuel Station', exact: true });
     await expect(stationHeading).toBeVisible();
+    await expect(page.getByText('5-9-22 Abids Road, Abids, Hyderabad, Telangana 500001, India')).toBeVisible();
+    await expect(page.getByText('Approx. mapped address')).toBeVisible();
     const stationBox = await stationHeading.boundingBox();
     const viewport = page.viewportSize();
     expect(stationBox).not.toBeNull();
@@ -152,9 +177,7 @@ test.describe('Community-first visual regression', () => {
       () => page.getByRole('combobox', { name: /search fuel stations/i }).evaluate((element) => getComputedStyle(element).backgroundColor),
     ).not.toBe('rgb(17, 19, 21)');
 
-    const needsReview = page.locator('.station-card-status-needs-review').first();
-    await expect(needsReview).toBeVisible();
-    expect(await contrastRatio(needsReview)).toBeGreaterThanOrEqual(4.5);
+    await expect(page.locator('.station-card-community-title').first()).toBeVisible();
 
     const brandPill = page.locator('.station-card-brand').first();
     await expect(brandPill).toBeVisible();

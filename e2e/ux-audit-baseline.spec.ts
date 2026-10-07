@@ -211,7 +211,34 @@ async function installNetwork(page: Page, mode: NetworkMode) {
     });
   });
 
-  await page.route('https://api.maptiler.com/**', (route) => route.abort());
+  await page.route('https://api.maptiler.com/**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.startsWith('/geocoding/')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            text: 'Himayat Nagar Main Road',
+            place_name: 'Himayat Nagar Main Road, Hyderabad, Telangana, India',
+            place_type: ['address'],
+            context: [
+              { text: 'Hyderabad' },
+              { text: 'Telangana' },
+              { text: 'India' },
+            ],
+          }],
+          query: [],
+          attribution: '© MapTiler © OpenStreetMap contributors',
+        }),
+      });
+      return;
+    }
+
+    await route.abort();
+  });
   await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
 }
 
@@ -385,7 +412,7 @@ const scenarios: Scenario[] = [
     name: 'home-nearby-card-hover',
     route: '/',
     prepare: async (page) => {
-      const card = page.locator(`a[href="/station/${STATION_ID}"]`);
+      const card = page.locator(`article[data-station-id="${STATION_ID}"]`);
       await card.getByRole('heading', { name: 'Shell Fuel Station' }).waitFor();
       await card.scrollIntoViewIfNeeded();
       await card.hover();

@@ -128,7 +128,7 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       {brand && (
-                        <span className="station-card-brand" style={{ background: brand.bgColor, color: brand.color }}>
+                        <span className="station-card-brand" style={{ background: brand.bgColor }}>
                           {brand.name}
                         </span>
                       )}

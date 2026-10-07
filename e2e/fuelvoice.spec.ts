@@ -269,7 +269,7 @@ test.describe('Community-first homepage', () => {
 
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Find the station');
     await expect(page.getByRole('combobox', { name: /search fuel stations/i })).toBeVisible();
-    await expect(page.getByText('Fuel stations, judged by the people who use them.')).toBeVisible();
+    await expect(page.getByText('Community fuel station reviews.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Review a station', exact: true })).toBeVisible();
 
     await expect(page.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();

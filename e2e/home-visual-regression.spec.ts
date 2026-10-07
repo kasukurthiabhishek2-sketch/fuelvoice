@@ -1,10 +1,34 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 
 const STATION_ID = 'node_6254336890';
 
 function screenshotPath(testInfo: TestInfo, name: string) {
   const project = testInfo.project.name.replace(/[^a-z0-9_-]+/gi, '-').toLowerCase();
   return `e2e/screenshots/visual-${project}-${name}.png`;
+}
+
+async function contrastRatio(locator: Locator) {
+  return locator.evaluate((element) => {
+    const parseRgb = (value: string) => {
+      const match = value.match(/[\d.]+/g);
+      if (!match || match.length < 3) throw new Error('Expected CSS color: ' + value);
+      const channels = match.slice(0, 3).map(Number);
+      return value.startsWith('color(srgb ') ? channels.map((channel) => channel * 255) : channels;
+    };
+    const luminance = ([r, g, b]: number[]) => {
+      const linear = [r, g, b].map((channel) => {
+        const value = channel / 255;
+        return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    };
+    const style = getComputedStyle(element);
+    const foreground = luminance(parseRgb(style.color));
+    const background = luminance(parseRgb(style.backgroundColor));
+    const lighter = Math.max(foreground, background);
+    const darker = Math.min(foreground, background);
+    return (lighter + 0.05) / (darker + 0.05);
+  });
 }
 
 async function installNetwork(page: Page) {
@@ -130,33 +154,17 @@ test.describe('Community-first visual regression', () => {
 
     const needsReview = page.locator('.station-card-status-needs-review').first();
     await expect(needsReview).toBeVisible();
-    const contrast = await needsReview.evaluate((element) => {
-      const parseRgb = (value: string) => {
-        const match = value.match(/[\d.]+/g);
-        if (!match || match.length < 3) throw new Error('Expected CSS color: ' + value);
-        const channels = match.slice(0, 3).map(Number);
-        return value.startsWith('color(srgb ') ? channels.map((channel) => channel * 255) : channels;
-      };
-      const luminance = ([r, g, b]: number[]) => {
-        const linear = [r, g, b].map((channel) => {
-          const value = channel / 255;
-          return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
-        });
-        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
-      };
-      const style = getComputedStyle(element);
-      const foreground = luminance(parseRgb(style.color));
-      const background = luminance(parseRgb(style.backgroundColor));
-      const lighter = Math.max(foreground, background);
-      const darker = Math.min(foreground, background);
-      return (lighter + 0.05) / (darker + 0.05);
-    });
-    expect(contrast).toBeGreaterThanOrEqual(4.5);
+    expect(await contrastRatio(needsReview)).toBeGreaterThanOrEqual(4.5);
+
+    const brandPill = page.locator('.station-card-brand').first();
+    await expect(brandPill).toBeVisible();
+    expect(await contrastRatio(brandPill)).toBeGreaterThanOrEqual(4.5);
 
     const stationTitleLink = page.locator('.station-card-title-link').first();
     await expect(stationTitleLink).toBeVisible();
     const stationTitleBox = await stationTitleLink.boundingBox();
     expect(stationTitleBox).not.toBeNull();
+    expect(stationTitleBox!.width).toBeGreaterThanOrEqual(24);
     expect(stationTitleBox!.height).toBeGreaterThanOrEqual(24);
 
     await page.screenshot({

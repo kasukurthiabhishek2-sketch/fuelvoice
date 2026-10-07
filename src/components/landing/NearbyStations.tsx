@@ -158,11 +158,7 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
                     )}
                     {station.distance !== undefined && (
                       <span className="station-card-distance">
-                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
-                          <circle cx="12" cy="12" r="8" />
-                          <path d="M12 7.5v4.75l3 1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        {formatDistance(station.distance)}
+                        {formatDistance(station.distance)} away
                       </span>
                     )}
                   </div>
@@ -187,7 +183,7 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
                           : displayAddress || 'Location pinned on map'}
                       </p>
                       {resolvedAddress ? (
-                        <span className="station-address-source">Approx. address from map coordinates</span>
+                        <span className="station-address-source">Approx. mapped address</span>
                       ) : !displayAddress && !isResolvingAddress ? (
                         <span className="station-address-source">Open the station to view its exact map pin</span>
                       ) : null}

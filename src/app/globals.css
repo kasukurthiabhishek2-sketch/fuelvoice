@@ -1820,4 +1820,8 @@ html:not(.dark) .home-search-shell input {
   .community-review-action:hover {
     transform: none;
   }
+
+  .station-card-address-loading {
+    animation: none;
+  }
 }

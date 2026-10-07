@@ -22,13 +22,13 @@ export function Hero({ userLat, userLng }: HeroProps) {
       <div className="app-frame py-10 sm:py-14 lg:py-16">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-3xl">
-            <p className="home-kicker">Fuel stations, judged by the people who use them.</p>
+            <p className="home-kicker">Community fuel station reviews.</p>
             <h1 id="home-title" className="community-hero-title mt-4">
               Find the station.
               <span className="block text-[var(--text-tertiary)]">Add your voice.</span>
             </h1>
             <p className="community-hero-copy mt-4">
-              Search any station, check community evidence, or review one you know. FuelVoice keeps the useful actions up front.
+              Search a station, check the evidence, or add what you experienced.
             </p>
           </div>
 

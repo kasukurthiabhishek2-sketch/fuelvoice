@@ -142,11 +142,16 @@ export default function StationPage() {
                 {station.address || 'Mapped location available. Address details have not been published for this station.'}
               </p>
 
-              <div className="mt-6 flex flex-wrap gap-2">
-                <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="primary-action">
+              <div className="mt-6 flex flex-wrap items-center gap-2">
+                <a href="#write-review" className="primary-action">
+                  Write a review
+                </a>
+                <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="secondary-action">
                   Get directions
                 </a>
-                <a href="#reviews" className="secondary-action">Read reviews</a>
+                <a href="#complaints" className="station-inline-action">
+                  Official complaint options
+                </a>
               </div>
             </div>
 
@@ -158,6 +163,9 @@ export default function StationPage() {
                   <p className="mt-2 text-xs leading-5 text-[var(--text-tertiary)]">
                     {station.reviewCount} of {TRUST_SCORE_MIN_REVIEWS} reviews needed
                   </p>
+                  <a href="#write-review" className="mt-3 inline-flex min-h-11 items-center text-xs font-semibold text-white underline decoration-white/25 underline-offset-4 hover:decoration-white/70">
+                    Help unlock the Trust Score
+                  </a>
                 </>
               ) : (
                 <>
@@ -181,10 +189,23 @@ export default function StationPage() {
       <div className="app-frame py-8 sm:py-10">
         <div className="mx-auto max-w-4xl">
           <div className="min-w-0">
-            <section id="reviews" className="scroll-mt-28">
+            <section className="community-contribution-entry" aria-labelledby="contribution-heading">
+              <div className="mb-4">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Add your experience</p>
+                <h2 id="contribution-heading" className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                  Help the next driver decide.
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
+                  Start with a rating. Written context is optional, and low ratings ask only for the issue categories that apply.
+                </p>
+              </div>
+              <ReviewForm stationId={stationId} stationName={station.name} />
+            </section>
+
+            <section id="reviews" className="mt-10 scroll-mt-28">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Customer experiences</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Community evidence</p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
                     Reviews
                   </h2>
@@ -196,16 +217,12 @@ export default function StationPage() {
                 )}
               </div>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-                Risk-heavy experiences appear first by default. Filter by issue when you need something specific.
+                Risk-heavy experiences appear first by default. Helpful reactions and issue filters keep the useful evidence easier to find.
               </p>
 
               <div className="mt-5">
                 <ReviewList stationId={stationId} />
               </div>
-            </section>
-
-            <section className="mt-8">
-              <ReviewForm stationId={stationId} stationName={station.name} />
             </section>
 
             <section className="mt-10">

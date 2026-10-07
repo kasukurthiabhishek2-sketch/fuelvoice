@@ -133,7 +133,7 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
                         </span>
                       )}
                       <h3 className="mt-2 truncate text-base font-semibold tracking-[-0.025em] text-[var(--text-primary)]">
-                        <Link href={`/station/${station.id}`} className="hover:underline hover:underline-offset-4">
+                        <Link href={`/station/${station.id}`} className="station-card-title-link hover:underline hover:underline-offset-4">
                           {station.name}
                         </Link>
                       </h3>

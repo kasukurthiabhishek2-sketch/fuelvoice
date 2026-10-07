@@ -11,11 +11,12 @@ export function Footer() {
         <div>
           <Link href="/" className="inline-flex min-h-11 items-center text-sm font-semibold tracking-[-0.02em] text-[var(--text-primary)]">FuelVoice</Link>
           <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-            Reviews and verified complaint paths for fuel stations worldwide.
+            Community reviews and verified complaint paths for fuel stations.
           </p>
         </div>
-        <div className="flex items-center gap-3 text-xs font-semibold text-[var(--text-secondary)] sm:gap-4">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--text-secondary)] sm:gap-4">
           <Link href="/search" className={footerLinkClass}>Search stations</Link>
+          <Link href="/contribute" className={footerLinkClass}>Contribute</Link>
           <a
             href="https://www.openstreetmap.org/copyright"
             target="_blank"

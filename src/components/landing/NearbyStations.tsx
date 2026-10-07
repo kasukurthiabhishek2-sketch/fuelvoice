@@ -54,6 +54,10 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
     isFetching: addressesLoading,
   } = useStationAddresses(visibleStations);
 
+  const usesAddressLookup = visibleStations.some(
+    (station) => station.addressQuality !== 'full',
+  );
+
   return (
     <section className="nearby-section scroll-mt-24 py-10 sm:py-12 lg:py-14" id="nearby-stations">
       <div className="app-frame">
@@ -212,6 +216,34 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
                 </article>
               );
             })}
+          </div>
+        )}
+
+        {stations && stations.length > 0 && (
+          <div className="station-data-attribution">
+            <span>Map data</span>
+            <a
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="station-data-attribution-link"
+            >
+              © OpenStreetMap contributors
+            </a>
+            {usesAddressLookup && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>Address lookup</span>
+                <a
+                  href="https://www.maptiler.com/copyright/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="station-data-attribution-link"
+                >
+                  © MapTiler
+                </a>
+              </>
+            )}
           </div>
         )}
 

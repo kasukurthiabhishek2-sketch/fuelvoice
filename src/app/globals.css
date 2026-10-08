@@ -2164,3 +2164,23 @@ html:not(.dark) .station-list-brand-name { color: #795328; }
   .station-list-card.station-card-v2:hover { transform: none; }
   .nearby-location-button, .station-list-card .community-review-action { transition: none; }
 }
+
+
+/* Keep discovery and the hero on the same reading axis. */
+.nearby-section .app-frame {
+  max-width: 64rem;
+}
+
+.community-home-hero .primary-action {
+  background: #e5c28f;
+  color: #272016;
+  box-shadow: 0 5px 20px rgba(153, 110, 56, .12);
+}
+.community-home-hero .primary-action:hover {
+  background: #efd1a1;
+  color: #272016;
+}
+
+@media (max-width: 640px) {
+  .nearby-section .app-frame { max-width: 100%; }
+}

@@ -74,7 +74,7 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
                 aria-expanded={isBlocked ? showPermissionHelp : undefined}
                 aria-controls={isBlocked ? 'nearby-location-help' : undefined}
                 disabled={geoLoading}
-                onClick={() => isBlocked ? setShowPermissionHelp((current) => !current) : requestLocation()}
+                onClick={() => isBlocked ? setShowPermissionHelp(true) : requestLocation()}
               >
                 <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
                   <circle cx="12" cy="12" r="3.5" />

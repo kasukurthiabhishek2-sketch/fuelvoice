@@ -290,6 +290,49 @@ test.describe('Community-first homepage', () => {
     )).toBe(3);
   });
 
+  test('discovery cards are stacked rows with brand logos and one contribution action', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const cards = page.locator('.station-list-card');
+    await expect(cards).toHaveCount(2);
+    const first = await cards.nth(0).boundingBox();
+    const second = await cards.nth(1).boundingBox();
+    expect(first).not.toBeNull();
+    expect(second).not.toBeNull();
+    expect(Math.abs(first!.x - second!.x)).toBeLessThan(2);
+    expect(Math.abs(first!.width - second!.width)).toBeLessThan(2);
+    expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height);
+
+    await expect(cards.nth(0).getByRole('img', { name: 'Shell logo' })).toBeVisible();
+    await expect(cards.nth(1).getByRole('img', { name: 'IndianOil logo' })).toBeVisible();
+    await expect(cards.nth(0).getByText('No one has reviewed this station yet.', { exact: false })).toBeVisible();
+    await expect(cards.nth(0).getByRole('link', { name: 'View Shell Fuel Station station details' })).toBeVisible();
+    await expect(cards.nth(0).getByRole('link', { name: 'Review station' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'View details' })).toHaveCount(0);
+    await page.screenshot({ path: 'e2e/screenshots/station-list-desktop.png', fullPage: false, caret: 'initial' });
+  });
+
+  test('blocked location has a usable enable control and instructions', async ({ page }) => {
+    await page.context().grantPermissions([]);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const enable = page.getByRole('button', { name: 'Enable location' });
+    await expect(enable).toBeVisible();
+    await enable.click();
+    await expect(enable).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByText(/set Location to Allow/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Retry location' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Search another area/ })).toBeVisible();
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+    await page.screenshot({ path: 'e2e/screenshots/location-permission-help.png', fullPage: false, caret: 'initial' });
+  });
+
   test('loads nearby stations from approximate location without eager map work', async ({ page }) => {
     let ipLocationRequests = 0;
     let nearbyRequests = 0;

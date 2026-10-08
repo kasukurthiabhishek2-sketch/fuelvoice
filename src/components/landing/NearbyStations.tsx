@@ -123,13 +123,13 @@ export function NearbyStations({ geolocation, context = 'discover' }: NearbyStat
         )}
 
         {stationsLoading && (
-          <div className="station-list" aria-label="Loading nearby stations">
+          <div className="station-list" role="status" aria-label="Loading nearby stations">
             {Array.from({ length: 3 }).map((_, index) => <SkeletonStationCard key={index} />)}
           </div>
         )}
 
         {stations && stations.length > 0 && (
-          <div className="station-list" aria-label="Nearby fuel stations">
+          <div className="station-list">
             {visibleStations.map((station) => {
               const reviewsNeeded = Math.max(0, TRUST_SCORE_MIN_REVIEWS - station.reviewCount);
               const hasTrustScore = station.reviewCount >= TRUST_SCORE_MIN_REVIEWS && station.trustScore !== undefined;

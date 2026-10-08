@@ -1,34 +1,10 @@
-import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
 const STATION_ID = 'node_6254336890';
 
 function screenshotPath(testInfo: TestInfo, name: string) {
   const project = testInfo.project.name.replace(/[^a-z0-9_-]+/gi, '-').toLowerCase();
   return `e2e/screenshots/visual-${project}-${name}.png`;
-}
-
-async function contrastRatio(locator: Locator) {
-  return locator.evaluate((element) => {
-    const parseRgb = (value: string) => {
-      const match = value.match(/[\d.]+/g);
-      if (!match || match.length < 3) throw new Error('Expected CSS color: ' + value);
-      const channels = match.slice(0, 3).map(Number);
-      return value.startsWith('color(srgb ') ? channels.map((channel) => channel * 255) : channels;
-    };
-    const luminance = ([r, g, b]: number[]) => {
-      const linear = [r, g, b].map((channel) => {
-        const value = channel / 255;
-        return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
-      });
-      return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
-    };
-    const style = getComputedStyle(element);
-    const foreground = luminance(parseRgb(style.color));
-    const background = luminance(parseRgb(style.backgroundColor));
-    const lighter = Math.max(foreground, background);
-    const darker = Math.min(foreground, background);
-    return (lighter + 0.05) / (darker + 0.05);
-  });
 }
 
 async function installNetwork(page: Page) {
@@ -104,6 +80,12 @@ async function installNetwork(page: Page) {
 
     await route.abort();
   });
+  await page.route('https://cdn.simpleicons.org/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'image/svg+xml', body: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\"><path fill=\"#d34\" d=\"M8 16h32v24H8z\"/></svg>" });
+  });
+  await page.route('https://commons.wikimedia.org/wiki/Special:Redirect/file/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'image/svg+xml', body: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\"><path fill=\"#d34\" d=\"M8 16h32v24H8z\"/></svg>" });
+  });
   await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
 }
 
@@ -133,11 +115,14 @@ test.describe('Community-first visual regression', () => {
     expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
 
     await expect(page.locator('.leaflet-container')).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Fuel stations near you', exact: true })).toBeVisible();
     const stationHeading = page.getByRole('heading', { name: 'Shell Fuel Station', exact: true });
     await expect(stationHeading).toBeVisible();
     await expect(page.getByText('5-9-22 Abids Road, Abids, Hyderabad, Telangana 500001, India')).toBeVisible();
     await expect(page.getByText('Approx. mapped address')).toBeVisible();
+    await expect(page.locator('.station-list-card')).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'View details' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Review station' })).toHaveCount(1);
     const stationBox = await stationHeading.boundingBox();
     const viewport = page.viewportSize();
     expect(stationBox).not.toBeNull();
@@ -154,7 +139,7 @@ test.describe('Community-first visual regression', () => {
 
     const nearby = page.locator('#nearby-stations');
     await nearby.scrollIntoViewIfNeeded();
-    await expect(nearby.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();
+    await expect(nearby.getByRole('heading', { name: 'Fuel stations near you', exact: true })).toBeVisible();
     await page.screenshot({
       path: screenshotPath(testInfo, 'nearby-stations'),
       fullPage: false,
@@ -179,11 +164,11 @@ test.describe('Community-first visual regression', () => {
 
     await expect(page.locator('.station-card-community-title').first()).toBeVisible();
 
-    const brandPill = page.locator('.station-card-brand').first();
-    await expect(brandPill).toBeVisible();
-    expect(await contrastRatio(brandPill)).toBeGreaterThanOrEqual(4.5);
+    const brandLogo = page.getByRole('img', { name: 'Shell logo' }).first();
+    await expect(brandLogo).toBeVisible();
+    await expect(brandLogo).toHaveAttribute('src', /simpleicons.org\/shell/);
 
-    const stationTitleLink = page.locator('.station-card-title-link').first();
+    const stationTitleLink = page.locator('.station-card-main-link').first();
     await expect(stationTitleLink).toBeVisible();
     const stationTitleBox = await stationTitleLink.boundingBox();
     expect(stationTitleBox).not.toBeNull();

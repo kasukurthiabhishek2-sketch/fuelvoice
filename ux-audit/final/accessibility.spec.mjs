@@ -12,7 +12,7 @@ async function installNetwork(page, mode = 'default') {
     contentType: 'application/json',
     body: JSON.stringify({ success: true, latitude: 17.3887027, longitude: 78.4753829 }),
   }));
-  await page.route('https://photon.komoot.io/api**', route => route.fulfill({
+  await page.route('**/api/photon**', route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify(mode === 'search-empty' ? { features: [] } : {

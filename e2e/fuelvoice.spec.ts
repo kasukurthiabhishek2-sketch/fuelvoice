@@ -161,6 +161,12 @@ async function installDeterministicNetwork(page: Page) {
 
     await route.abort();
   });
+  await page.route('https://cdn.simpleicons.org/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'image/svg+xml', body: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\"><path fill=\"#d34\" d=\"M8 16h32v24H8z\"/></svg>" });
+  });
+  await page.route('https://commons.wikimedia.org/wiki/Special:Redirect/file/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'image/svg+xml', body: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\"><path fill=\"#d34\" d=\"M8 16h32v24H8z\"/></svg>" });
+  });
   await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
 }
 
@@ -222,7 +228,7 @@ test.describe('Community-first homepage', () => {
 
     const search = page.getByRole('combobox', { name: /search fuel stations/i });
     const contribute = page.getByRole('link', { name: 'Review a station', exact: true });
-    const nearbyHeading = page.getByRole('heading', { name: 'Stations around you', exact: true });
+    const nearbyHeading = page.getByRole('heading', { name: 'Fuel stations near you', exact: true });
 
     for (const element of [search, contribute]) {
       const box = await element.boundingBox();
@@ -299,7 +305,7 @@ test.describe('Community-first homepage', () => {
     await expect(page.getByText('Community fuel station reviews.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Review a station', exact: true })).toBeVisible();
 
-    await expect(page.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Fuel stations near you', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Shell Fuel Station', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'IndianOil Station', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Review station', exact: true }).first()).toBeVisible();

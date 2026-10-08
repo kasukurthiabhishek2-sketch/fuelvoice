@@ -2,7 +2,7 @@
  * useStationSearch Hook
  * 
  * Debounced search for fuel stations using Photon API.
- * Autocomplete-friendly with 300ms debounce.
+ * Autocomplete-friendly with 200ms debounce and stale-request cancellation.
  */
 
 'use client';
@@ -26,7 +26,7 @@ export function useStationSearch({ lat, lng }: UseStationSearchOptions = {}) {
 
     timerRef.current = setTimeout(() => {
       setDebouncedTerm(searchTerm);
-    }, 300);
+    }, 200);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -35,18 +35,20 @@ export function useStationSearch({ lat, lng }: UseStationSearchOptions = {}) {
 
   const query = useQuery<SearchResult[]>({
     queryKey: ['station-search', debouncedTerm, lat, lng],
-    queryFn: () =>
+    queryFn: ({ signal }) =>
       searchFuelStations(
-        debouncedTerm,
+        debouncedTerm.trim(),
         lat ?? undefined,
-        lng ?? undefined
+        lng ?? undefined,
+        8,
+        signal,
       ),
-    enabled: debouncedTerm.length >= 2,
+    enabled: debouncedTerm.trim().length >= 2,
     staleTime: 2 * 60 * 1000,
     retry: false,
   });
 
-  const hasActiveSearch = searchTerm.length >= 2;
+  const hasActiveSearch = searchTerm.trim().length >= 2;
   const queryMatchesInput = hasActiveSearch && debouncedTerm === searchTerm;
   const isDebouncing = hasActiveSearch && !queryMatchesInput;
   const isSearching = hasActiveSearch && (

@@ -186,7 +186,7 @@ async function installNetwork(page: Page, mode: NetworkMode) {
     });
   });
 
-  await page.route('https://photon.komoot.io/api**', async (route) => {
+  await page.route('**/api/photon**', async (route) => {
     if (mode === 'search-loading') await sleep(3500);
     await route.fulfill({
       status: 200,

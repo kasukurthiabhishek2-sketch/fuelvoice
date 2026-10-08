@@ -94,6 +94,30 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Community-first visual regression', () => {
+  test('station loading skeleton has valid status semantics before real results arrive', async ({ page }) => {
+    let releaseStationLookup!: () => void;
+    const gate = new Promise<void>((resolve) => { releaseStationLookup = resolve; });
+
+    await page.route('**/api/overpass', async (route) => {
+      await gate;
+      await route.fallback();
+    });
+
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    try {
+      const loading = page.getByRole('status', { name: 'Loading nearby stations' });
+      await expect(loading).toBeVisible();
+      await expect(page.locator('#nearby-stations div[aria-label]:not([role])')).toHaveCount(0);
+    } finally {
+      releaseStationLookup();
+    }
+
+    await expect(page.locator('.station-list-card')).toHaveCount(1);
+    await expect(page.getByRole('status', { name: 'Loading nearby stations' })).toHaveCount(0);
+    await expect(page.locator('#nearby-stations div[aria-label]:not([role])')).toHaveCount(0);
+  });
+
   test('homepage keeps the search hero fast while nearby stations load below it', async ({ page }, testInfo) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 

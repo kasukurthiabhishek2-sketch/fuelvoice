@@ -318,8 +318,16 @@ test.describe('Community-first homepage', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
+    // WebKit may not reveal the denied Permissions API state until a user
+    // explicitly asks for geolocation. Verify the genuine user journey.
+    const initialLocationAction = page.getByRole('button', { name: /Use precise location|Enable location/ });
+    await expect(initialLocationAction).toBeVisible();
+    const requestPrecise = page.getByRole('button', { name: 'Use precise location' });
+    if (await requestPrecise.isVisible()) {
+      await requestPrecise.click();
+    }
     const enable = page.getByRole('button', { name: 'Enable location' });
-    await expect(enable).toBeVisible();
+    await expect(enable).toBeVisible({ timeout: 15000 });
     await enable.click();
     await expect(enable).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByText(/set Location to Allow/)).toBeVisible();

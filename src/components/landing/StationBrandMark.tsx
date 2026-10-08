@@ -57,7 +57,6 @@ export function StationBrandMark({ brand, stationName }: { brand: string; statio
     <span
       className="station-brand-mark"
       style={identity ? { backgroundColor: identity.background } : undefined}
-      aria-label={identity ? `${identity.label} station` : 'Fuel station'}
     >
       {identity && failedSource !== identity.src ? (
         <Image

@@ -504,6 +504,78 @@ test.describe('Community-first homepage', () => {
     })).toBe(true);
   });
 
+  test('searches a neighbourhood by finding real nearby OSM station IDs', async ({ page }) => {
+    await page.unroute('**/api/photon**');
+    await page.route('**/api/photon**', async (route) => {
+      const url = new URL(route.request().url());
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: url.searchParams.has('osm_tag') ? [] : [{
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [78.448, 17.437] },
+            properties: {
+              osm_id: 712300001,
+              osm_type: 'N',
+              osm_key: 'place',
+              osm_value: 'suburb',
+              name: 'Ameerpet',
+              city: 'Hyderabad',
+              state: 'Telangana',
+              country: 'India',
+              countrycode: 'IN',
+            },
+          }],
+        }),
+      });
+    });
+
+    let nearbyRequests = 0;
+    await page.unroute('**/api/overpass');
+    await page.route('**/api/overpass', async (route) => {
+      nearbyRequests += 1;
+      expect(decodeURIComponent(route.request().postData() || '')).toContain('around:5000,17.437,78.448');
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          elements: [{
+            type: 'node',
+            id: 712300002,
+            lat: 17.4374,
+            lon: 78.4486,
+            tags: {
+              amenity: 'fuel',
+              name: 'IndianOil Ameerpet',
+              brand: 'IndianOil',
+              'addr:city': 'Hyderabad',
+            },
+          }],
+        }),
+      });
+    });
+
+    await page.goto('/search', { waitUntil: 'domcontentloaded' });
+    const input = page.getByRole('combobox', { name: /search fuel stations/i });
+    await input.fill('Ameerpet');
+
+    const result = page.getByRole('option', { name: /IndianOil Ameerpet/i });
+    await expect(result).toBeVisible({ timeout: 10000 });
+    expect(nearbyRequests).toBe(1);
+    await result.click();
+    await expect(page).toHaveURL(/\/station\/node_712300002$/);
+  });
+
+  test('rejects invalid Photon gateway queries without calling the provider', async ({ request }) => {
+    const tooShort = await request.get('/api/photon?q=a');
+    expect(tooShort.status()).toBe(400);
+    const unsafeCategory = await request.get('/api/photon?q=Shell&osm_tag=amenity%3Abank');
+    expect(unsafeCategory.status()).toBe(400);
+    const invalidBounds = await request.get('/api/photon?q=Shell&bbox=1,1,0,0');
+    expect(invalidBounds.status()).toBe(400);
+  });
+
   test('keeps debounce and provider work in one honest searching state', async ({ page }) => {
     await page.unroute('**/api/photon**');
     await page.route('**/api/photon**', async (route) => {

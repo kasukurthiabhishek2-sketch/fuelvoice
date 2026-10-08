@@ -109,7 +109,7 @@ async function installDeterministicNetwork(page: Page) {
     });
   });
 
-  await page.route('https://photon.komoot.io/api**', async (route) => {
+  await page.route('**/api/photon**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -387,8 +387,8 @@ test.describe('Community-first homepage', () => {
   test('resolves explicit place context before searching a multi-word station query', async ({ page }) => {
     const requestedUrls: string[] = [];
 
-    await page.unroute('https://photon.komoot.io/api**');
-    await page.route('https://photon.komoot.io/api**', async (route) => {
+    await page.unroute('**/api/photon**');
+    await page.route('**/api/photon**', async (route) => {
       const url = new URL(route.request().url());
       requestedUrls.push(url.toString());
       const q = url.searchParams.get('q');
@@ -505,8 +505,8 @@ test.describe('Community-first homepage', () => {
   });
 
   test('keeps debounce and provider work in one honest searching state', async ({ page }) => {
-    await page.unroute('https://photon.komoot.io/api**');
-    await page.route('https://photon.komoot.io/api**', async (route) => {
+    await page.unroute('**/api/photon**');
+    await page.route('**/api/photon**', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 700));
       await route.fulfill({
         status: 200,
@@ -556,8 +556,8 @@ test.describe('Community-first homepage', () => {
     let shouldFail = true;
     let attempts = 0;
 
-    await page.unroute('https://photon.komoot.io/api**');
-    await page.route('https://photon.komoot.io/api**', async (route) => {
+    await page.unroute('**/api/photon**');
+    await page.route('**/api/photon**', async (route) => {
       attempts += 1;
 
       if (shouldFail) {
@@ -620,8 +620,8 @@ test.describe('Community-first homepage', () => {
   });
 
   test('keeps long search results inside mobile and desktop viewports with internal scrolling', async ({ page }) => {
-    await page.unroute('https://photon.komoot.io/api**');
-    await page.route('https://photon.komoot.io/api**', async (route) => {
+    await page.unroute('**/api/photon**');
+    await page.route('**/api/photon**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

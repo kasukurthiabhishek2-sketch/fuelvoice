@@ -16,6 +16,9 @@ export default function SearchPage() {
           <p className="mt-5 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
             Search a fuel station, brand or neighbourhood. Explore real community experiences before you visit.
           </p>
+          <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+            Precise browser location is never required for search.
+          </p>
 
           <div className="home-search-shell mt-7 max-w-3xl">
             <SearchBar
@@ -29,7 +32,10 @@ export default function SearchPage() {
             <div>
               <p className="text-sm font-semibold text-[var(--text-primary)]">Found a station you know?</p>
               <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-                Share a review to help drivers make better choices. No precise location permission needed to search.
+                Share a review to help drivers make better choices.
+              </p>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-tertiary)]">
+                Search works without precise location permission.
               </p>
             </div>
             <Link href="/contribute" className="secondary-action shrink-0">

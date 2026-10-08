@@ -18,6 +18,7 @@ interface SearchBarProps {
   userLat?: number | null;
   userLng?: number | null;
   placeholder?: string;
+  suggestions?: string[];
 }
 
 export function SearchBar({
@@ -25,6 +26,7 @@ export function SearchBar({
   userLat,
   userLng,
   placeholder = 'Search fuel stations worldwide…',
+  suggestions = [],
 }: SearchBarProps) {
   const router = useRouter();
   const {
@@ -81,9 +83,7 @@ export function SearchBar({
         break;
       case 'Enter':
         event.preventDefault();
-        if (selectedIndex >= 0 && results[selectedIndex]) {
-          handleSelect(results[selectedIndex]);
-        }
+        handleSelect(results[Math.max(0, selectedIndex)]);
         break;
     }
   };
@@ -92,6 +92,13 @@ export function SearchBar({
     setSearchTerm('');
     setSelectedIndex(-1);
     setIsOpen(false);
+    inputRef.current?.focus();
+  };
+
+  const chooseSuggestion = (value: string) => {
+    setSearchTerm(value);
+    setSelectedIndex(-1);
+    setIsOpen(true);
     inputRef.current?.focus();
   };
 
@@ -125,7 +132,7 @@ export function SearchBar({
           onChange={(event) => {
             const nextValue = event.target.value;
             setSearchTerm(nextValue);
-            setIsOpen(nextValue.length >= 2);
+            setIsOpen(nextValue.trim().length >= 2);
             setSelectedIndex(-1);
           }}
           onFocus={() => results.length > 0 && setIsOpen(true)}
@@ -179,7 +186,7 @@ export function SearchBar({
       </div>
 
       <AnimatePresence>
-        {isOpen && results.length > 0 && (
+        {hasResultsPopup && (
           <motion.div
             id="search-results"
             initial={{ opacity: 0, y: 8, scale: 0.99 }}
@@ -191,8 +198,10 @@ export function SearchBar({
             aria-label="Fuel station search results"
           >
             <div className="flex items-center justify-between px-3 pb-1.5 pt-1">
-              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Stations</span>
-              <span className="text-[10px] text-[var(--text-tertiary)]">Use ↑ ↓ and Enter</span>
+              <span className="text-[11px] font-semibold text-[var(--text-secondary)]">
+                {results.length} matching station{results.length === 1 ? '' : 's'}
+              </span>
+              <span className="text-[11px] text-[var(--text-tertiary)]">↑ ↓ to navigate · Enter to open</span>
             </div>
             {results.map((result, index) => (
               <button
@@ -280,6 +289,22 @@ export function SearchBar({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {suggestions.length > 0 && !searchTerm && (
+        <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Popular searches">
+          <span className="mr-1 text-xs text-[var(--text-tertiary)]">Try searching</span>
+          {suggestions.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => chooseSuggestion(suggestion)}
+              className="min-h-9 rounded-full border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:border-brand-500 hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -6,9 +6,10 @@
  */
 
 import type { PhotonFeature } from '@/types/station';
+import { findNearbyStations } from '@/lib/api/overpass';
 
-const PHOTON_API = 'https://photon.komoot.io/api';
-const PHOTON_REQUEST_TIMEOUT_MS = 6_000;
+const PHOTON_API = '/api/photon';
+const PHOTON_REQUEST_TIMEOUT_MS = 7_000;
 const LOCATION_LAYERS = ['city', 'locality', 'district', 'county', 'state', 'country'] as const;
 
 export interface SearchResult {
@@ -78,17 +79,15 @@ function distanceKm(
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-async function fetchPhotonFeatures(params: URLSearchParams): Promise<PhotonFeature[]> {
+async function fetchPhotonFeatures(params: URLSearchParams, signal?: AbortSignal): Promise<PhotonFeature[]> {
   const controller = new AbortController();
+  const forwardAbort = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  else signal?.addEventListener('abort', forwardAbort, { once: true });
   const timeout = setTimeout(() => controller.abort(), PHOTON_REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${PHOTON_API}?${params}`, {
-      headers: {
-        'User-Agent': 'FuelVoice/1.0 (community fuel station reviews)',
-      },
-      signal: controller.signal,
-    });
+    const response = await fetch(`${PHOTON_API}?${params}`, { signal: controller.signal });
 
     if (!response.ok) {
       throw new Error(`Photon API error: ${response.status}`);
@@ -97,13 +96,14 @@ async function fetchPhotonFeatures(params: URLSearchParams): Promise<PhotonFeatu
     const data = await response.json();
     return data.features || [];
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError' && !signal?.aborted) {
       throw new Error('Photon API request timed out');
     }
 
     throw error;
   } finally {
     clearTimeout(timeout);
+    signal?.removeEventListener('abort', forwardAbort);
   }
 }
 
@@ -133,7 +133,8 @@ function locationContextFromFeature(
 async function inferLocationContexts(
   query: string,
   userLat?: number,
-  userLng?: number
+  userLng?: number,
+  signal?: AbortSignal
 ): Promise<LocationContext[]> {
   const tokens = meaningfulQueryTokens(query);
   if (tokens.length < 2) return [];
@@ -153,7 +154,7 @@ async function inferLocationContexts(
     });
     LOCATION_LAYERS.forEach((layer) => params.append('layer', layer));
 
-    const features = await fetchPhotonFeatures(params);
+    const features = await fetchPhotonFeatures(params, signal);
     const matching = features
       .map((feature) => {
         const result = featureToSearchResult(feature);
@@ -225,7 +226,8 @@ function rankStationCandidates(
 
 async function searchWithinLocation(
   context: LocationContext,
-  limitCount: number
+  limitCount: number,
+  signal?: AbortSignal
 ): Promise<SearchResult[]> {
   const params = new URLSearchParams({
     q: context.brandQuery,
@@ -242,7 +244,7 @@ async function searchWithinLocation(
     params.set('bbox', context.bbox.join(','));
   }
 
-  const features = await fetchPhotonFeatures(params);
+  const features = await fetchPhotonFeatures(params, signal);
   const results = features
     .map(featureToSearchResult)
     .filter((result): result is SearchResult => result !== null)
@@ -312,15 +314,16 @@ export async function searchFuelStations(
   query: string,
   lat?: number,
   lng?: number,
-  limitCount: number = 8
+  limitCount: number = 8,
+  signal?: AbortSignal
 ): Promise<SearchResult[]> {
   if (query.trim().length < 2) return [];
 
-  const locationContexts = await inferLocationContexts(query, lat, lng);
+  const locationContexts = await inferLocationContexts(query, lat, lng, signal);
 
   if (locationContexts.length > 0) {
     const contextualResults = await Promise.all(
-      locationContexts.map((context) => searchWithinLocation(context, limitCount))
+      locationContexts.map((context) => searchWithinLocation(context, limitCount, signal))
     );
 
     return interleaveUnique(contextualResults, limitCount);
@@ -345,12 +348,55 @@ export async function searchFuelStations(
     params.set('location_bias_scale', '0.05');
   }
 
-  const features = await fetchPhotonFeatures(params);
+  const features = await fetchPhotonFeatures(params, signal);
   const results = features
     .map(featureToSearchResult)
     .filter((result): result is SearchResult => result !== null);
 
-  return rankSearchResults(query, results).slice(0, limitCount);
+  if (results.length > 0) return rankSearchResults(query, results).slice(0, limitCount);
+
+  // A place name alone (e.g. "Ameerpet") will not match amenity:fuel.
+  // Resolve it to a locality, then use the existing nearby-OSM station API.
+  // Keep provider errors distinct from empty search results.
+  if (queryTokens.length === 1) {
+    try {
+      const locationParams = new URLSearchParams({ q: query, limit: '5', lang: 'en' });
+      LOCATION_LAYERS.forEach((layer) => locationParams.append('layer', layer));
+      const places = await fetchPhotonFeatures(locationParams, signal);
+      const normalized = normalizeSearchText(query);
+      const place = places.find((feature) => {
+        const name = normalizeSearchText(feature.properties.name || feature.properties.city || '');
+        return name === normalized || name.startsWith(normalized + ' ');
+      });
+      if (place && !signal?.aborted) {
+        const location = featureToSearchResult(place);
+        if (location) {
+          const nearby = await findNearbyStations(location.lat, location.lng, 5000);
+          if (signal?.aborted) return [];
+          return nearby.slice(0, limitCount).map((station) => {
+            const [osmType, osmIdString] = station.id.split('_');
+            return {
+              id: station.id,
+              name: station.name,
+              city: location.city || location.name,
+              state: location.state,
+              country: location.country,
+              countryCode: location.countryCode,
+              lat: station.lat,
+              lng: station.lng,
+              osmType,
+              osmId: Number(osmIdString),
+            };
+          });
+        }
+      }
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      // No verified nearby stations is an empty result, not invented data.
+    }
+  }
+
+  return [];
 }
 
 /**

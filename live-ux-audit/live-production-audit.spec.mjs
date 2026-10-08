@@ -125,7 +125,7 @@ async function capture(page, testInfo, scenario, signals) {
 }
 
 async function installDeterministicStationSearch(page) {
-  await page.route('https://photon.komoot.io/api**', async route => {
+  await page.route('**/api/photon**', async route => {
     const url = new URL(route.request().url());
     const query = (url.searchParams.get('q') || '').toLowerCase();
     const isStationSearch = url.searchParams.has('osm_tag');

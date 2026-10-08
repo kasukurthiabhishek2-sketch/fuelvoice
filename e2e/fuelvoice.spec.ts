@@ -559,7 +559,9 @@ test.describe('Community-first homepage', () => {
     await page.goto('/search', { waitUntil: 'domcontentloaded' });
     const input = page.getByRole('combobox', { name: /search fuel stations/i });
     await expect.poll(() => input.evaluate((element) =>
-      Object.keys(element).some((key) => key.startsWith('__reactProps
+      Object.keys(element).some((key) => key.startsWith('__reactProps'))
+    )).toBe(true);
+    await input.fill('Ameerpet');
 
     const result = page.getByRole('option', { name: /IndianOil Ameerpet/i });
     await expect(result).toBeVisible({ timeout: 10000 });

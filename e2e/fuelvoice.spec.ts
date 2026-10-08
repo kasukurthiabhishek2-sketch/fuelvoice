@@ -161,6 +161,12 @@ async function installDeterministicNetwork(page: Page) {
 
     await route.abort();
   });
+  await page.route('https://cdn.simpleicons.org/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'image/svg+xml', body: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\"><path fill=\"#d34\" d=\"M8 16h32v24H8z\"/></svg>" });
+  });
+  await page.route('https://commons.wikimedia.org/wiki/Special:Redirect/file/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'image/svg+xml', body: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\"><path fill=\"#d34\" d=\"M8 16h32v24H8z\"/></svg>" });
+  });
   await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
 }
 
@@ -222,7 +228,7 @@ test.describe('Community-first homepage', () => {
 
     const search = page.getByRole('combobox', { name: /search fuel stations/i });
     const contribute = page.getByRole('link', { name: 'Review a station', exact: true });
-    const nearbyHeading = page.getByRole('heading', { name: 'Stations around you', exact: true });
+    const nearbyHeading = page.getByRole('heading', { name: 'Fuel stations near you', exact: true });
 
     for (const element of [search, contribute]) {
       const box = await element.boundingBox();
@@ -284,6 +290,57 @@ test.describe('Community-first homepage', () => {
     )).toBe(3);
   });
 
+  test('discovery cards are stacked rows with brand logos and one contribution action', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const cards = page.locator('.station-list-card');
+    await expect(cards).toHaveCount(2);
+    const first = await cards.nth(0).boundingBox();
+    const second = await cards.nth(1).boundingBox();
+    expect(first).not.toBeNull();
+    expect(second).not.toBeNull();
+    expect(Math.abs(first!.x - second!.x)).toBeLessThan(2);
+    expect(Math.abs(first!.width - second!.width)).toBeLessThan(2);
+    expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height);
+
+    await expect(cards.nth(0).getByRole('img', { name: 'Shell logo' })).toBeVisible();
+    await expect(cards.nth(1).getByRole('img', { name: 'IndianOil logo' })).toBeVisible();
+    await expect(cards.nth(0).getByText('No one has reviewed this station yet.', { exact: false })).toBeVisible();
+    await expect(cards.nth(0).getByRole('link', { name: 'View Shell Fuel Station station details' })).toBeVisible();
+    await expect(cards.nth(0).getByRole('link', { name: 'Review station' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'View details' })).toHaveCount(0);
+    await page.screenshot({ path: 'e2e/screenshots/station-list-desktop.png', fullPage: false, caret: 'initial' });
+  });
+
+  test('blocked location has a usable enable control and instructions', async ({ page }) => {
+    await page.context().grantPermissions([]);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    // WebKit may not reveal the denied Permissions API state until a user
+    // explicitly asks for geolocation. Verify the genuine user journey.
+    const initialLocationAction = page.getByRole('button', { name: /Use precise location|Enable location/ });
+    await expect(initialLocationAction).toBeVisible();
+    const requestPrecise = page.getByRole('button', { name: 'Use precise location' });
+    if (await requestPrecise.isVisible()) {
+      await requestPrecise.click();
+    }
+    const enable = page.getByRole('button', { name: 'Enable location' });
+    await expect(enable).toBeVisible({ timeout: 15000 });
+    await enable.click();
+    await expect(enable).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByText(/set Location to Allow/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Retry location' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Search another area/ })).toBeVisible();
+    const metrics = await page.evaluate(() => ({
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+    await page.screenshot({ path: 'e2e/screenshots/location-permission-help.png', fullPage: false, caret: 'initial' });
+  });
+
   test('loads nearby stations from approximate location without eager map work', async ({ page }) => {
     let ipLocationRequests = 0;
     let nearbyRequests = 0;
@@ -299,7 +356,7 @@ test.describe('Community-first homepage', () => {
     await expect(page.getByText('Community fuel station reviews.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Review a station', exact: true })).toBeVisible();
 
-    await expect(page.getByRole('heading', { name: 'Stations around you', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Fuel stations near you', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Shell Fuel Station', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'IndianOil Station', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Review station', exact: true }).first()).toBeVisible();
